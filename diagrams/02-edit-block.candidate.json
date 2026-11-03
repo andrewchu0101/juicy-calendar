@@ -1,0 +1,87 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "調整與命名區塊（FR-02、FR-03）",
+    "locale": "zh-TW",
+    "quality_profile": "showcase",
+    "output": "diagrams/02-edit-block.html",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": { "label": "使用者操作" },
+        "frontend": { "label": "介面" },
+        "backend": { "label": "系統規則" },
+        "security": { "label": "判斷／拒絕" },
+        "database": { "label": "工作區檔案" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "edge", "label": "拖曳邊緣" },
+    { "id": "name", "label": "雙擊命名" },
+    { "id": "panel", "label": "右側面板輸入" },
+    { "id": "disk", "label": "工作區資料夾" },
+    { "id": "result", "label": "使用者看到" }
+  ],
+  "mainPath": ["a_in", "a_clamp", "write", "seen"],
+  "nodes": [
+    { "id": "a_in", "lane": "edge", "col": 0, "type": "external", "label": "拖曳上緣或下緣", "sublabel": "只改變該端的時間", "tag": "AC-01.1" },
+    { "id": "a_clamp", "lane": "edge", "col": 2, "type": "backend", "label": "限制在 1 分鐘～7 天", "sublabel": "到邊界時邊緣停住，不拒絕", "tag": "FR-02 · R-3" },
+
+    { "id": "b_in", "lane": "name", "col": 0, "type": "external", "label": "雙擊區塊輸入名稱", "sublabel": "按 Enter 送出", "tag": "AC-01.3" },
+    { "id": "b_trim", "lane": "name", "col": 1, "type": "backend", "label": "去掉前後空白", "sublabel": "FR-02" },
+    { "id": "b_check", "lane": "name", "col": 2, "type": "security", "label": "非空且不超過 30 字？", "sublabel": "中英文字母數字各算 1 字", "tag": "R-3" },
+    { "id": "b_keep", "lane": "name", "col": 3, "type": "security", "label": "保持原名稱", "sublabel": "不寫入任何檔案；Escape 亦同", "tag": "AC-01.3" },
+
+    { "id": "c_in", "lane": "panel", "col": 0, "type": "external", "label": "在面板改欄位", "sublabel": "名稱、日期、開始、結束、持續分鐘", "tag": "FR-03" },
+    { "id": "c_check", "lane": "panel", "col": 2, "type": "security", "label": "依規則 R-3 驗證", "sublabel": "格式、結束須晚於開始、1～10080 分鐘", "tag": "R-3" },
+    { "id": "c_revert", "lane": "panel", "col": 3, "type": "security", "label": "拒絕：欄位還原為原值", "sublabel": "不寫入任何檔案", "tag": "Q-04" },
+
+    { "id": "write", "lane": "disk", "col": 4, "type": "database", "label": "寫入事件檔", "sublabel": "events/<id>.json", "tag": "FR-05 · R-4" },
+    { "id": "seen", "lane": "result", "col": 5, "type": "frontend", "label": "看到更新後的區塊", "sublabel": "拒絕時看到的是原值", "tag": "AC-01.1" }
+  ],
+  "edges": [
+    { "id": "a1", "from": "a_in", "to": "a_clamp", "variant": "default" },
+    { "id": "a2", "from": "a_clamp", "to": "write", "label": "提交", "variant": "emphasis" },
+
+    { "id": "b1", "from": "b_in", "to": "b_trim", "variant": "default" },
+    { "id": "b2", "from": "b_trim", "to": "b_check", "variant": "default" },
+    { "id": "b3", "from": "b_check", "to": "write", "label": "是：存為名稱", "variant": "emphasis" },
+    { "id": "b4", "from": "b_check", "to": "b_keep", "label": "否", "variant": "default", "role": "error" },
+
+    { "id": "c1", "from": "c_in", "to": "c_check", "variant": "default" },
+    { "id": "c2", "from": "c_check", "to": "write", "label": "通過", "variant": "emphasis" },
+    { "id": "c3", "from": "c_check", "to": "c_revert", "label": "不合法", "variant": "default", "role": "error" },
+
+    { "id": "w1", "from": "write", "to": "seen", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "對應 SRS",
+      "items": [
+        "FR-02、FR-03；AC-01.1、AC-01.3；規則 R-3、R-4",
+        "拒絕的共同結果：欄位還原、事件檔不被改寫、沒有新增或刪除檔案"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "面板欄位邊界例（事件為週一 10:30–12:30）",
+      "items": [
+        "結束 10:30 或 09:00 → 拒絕（不再當成隔天）",
+        "結束 10:31 → 接受，長度 1 分鐘",
+        "持續分鐘 10080 → 接受；10081、10080.4 → 拒絕",
+        "名稱 30 字接受、31 字拒絕"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "此圖未畫",
+      "items": [
+        "日期與開始欄的格式檢查細節（R-3）",
+        "跨午夜事件的結束欄規則（R-3，U-06）"
+      ]
+    }
+  ]
+}

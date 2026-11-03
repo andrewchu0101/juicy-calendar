@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\02-edit-block.candidate.json",
+    "sha256": "8c4f677a4745b7990b2c9188ef064c078b6f516f98014fa6ae6fa9679f957f7b",
+    "bytes": 4483
+  },
+  "artifact": {
+    "path": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\02-edit-block.html",
+    "sha256": "06f99a78172a6b4caee43fb705c91932c197303e5a6cdad736b7b9b1aeb54257",
+    "bytes": 841365
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\02-edit-block.finalize.json",
+    "summaryReceipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\02-edit-block.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\02-edit-block.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-03T17:05:36.634Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2806,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

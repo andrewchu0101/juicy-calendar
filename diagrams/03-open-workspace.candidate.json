@@ -1,0 +1,256 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "開啟工作區（FR-05 還原、FR-06、FR-07）",
+    "locale": "zh-TW",
+    "quality_profile": "showcase",
+    "output": "diagrams/03-open-workspace.html",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": {
+          "label": "使用者操作"
+        },
+        "frontend": {
+          "label": "介面"
+        },
+        "backend": {
+          "label": "系統規則"
+        },
+        "security": {
+          "label": "判斷／拒絕"
+        },
+        "database": {
+          "label": "工作區檔案"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "user",
+      "label": "使用者"
+    },
+    {
+      "id": "app",
+      "label": "系統規則"
+    },
+    {
+      "id": "disk",
+      "label": "工作區資料夾"
+    },
+    {
+      "id": "reject",
+      "label": "拒絕與略過（不修改檔案）",
+      "variant": "exception"
+    },
+    {
+      "id": "ui",
+      "label": "使用者看到"
+    }
+  ],
+  "mainPath": [
+    "choose",
+    "locked",
+    "meta",
+    "files",
+    "check",
+    "load",
+    "shown"
+  ],
+  "nodes": [
+    {
+      "id": "choose",
+      "lane": "user",
+      "col": 0,
+      "type": "external",
+      "label": "開啟工作區資料夾",
+      "sublabel": "選擇或自動還原上次的資料夾",
+      "tag": "AC-02.1"
+    },
+    {
+      "id": "locked",
+      "lane": "app",
+      "col": 1,
+      "type": "security",
+      "label": "已在其他視窗開啟？",
+      "sublabel": "檢查先後待設計確認",
+      "tag": "FR-07"
+    },
+    {
+      "id": "meta",
+      "lane": "app",
+      "col": 2,
+      "type": "security",
+      "label": "workspace.json 可用？",
+      "sublabel": "存在、可解析、版本不比程式新",
+      "tag": "FR-06 · R-5"
+    },
+    {
+      "id": "files",
+      "lane": "disk",
+      "col": 3,
+      "type": "database",
+      "label": "events/ 與 templates/",
+      "sublabel": "每個實體一個檔"
+    },
+    {
+      "id": "check",
+      "lane": "app",
+      "col": 4,
+      "type": "security",
+      "label": "逐檔驗證",
+      "sublabel": "格式、檔名=id、結束晚於開始、≤7 天、名稱≤30 字",
+      "tag": "R-5"
+    },
+    {
+      "id": "load",
+      "lane": "app",
+      "col": 5,
+      "type": "backend",
+      "label": "載入有效實體",
+      "sublabel": "其餘檔案照常載入",
+      "tag": "FR-05"
+    },
+    {
+      "id": "shown",
+      "lane": "ui",
+      "col": 5,
+      "type": "frontend",
+      "label": "看到與關閉前一致的區塊",
+      "sublabel": "時間、名稱、顏色相同；附壞檔通知",
+      "tag": "AC-02.1 · AC-02.2"
+    },
+    {
+      "id": "r_lock",
+      "lane": "reject",
+      "col": 1,
+      "type": "security",
+      "label": "不寫入該資料夾",
+      "sublabel": "顯示說明；原視窗資料不受影響",
+      "tag": "AC-02.3"
+    },
+    {
+      "id": "r_meta",
+      "lane": "reject",
+      "col": 2,
+      "type": "security",
+      "label": "拒絕開啟並顯示原因",
+      "sublabel": "不修改任何檔案",
+      "tag": "FR-06"
+    },
+    {
+      "id": "r_file",
+      "lane": "reject",
+      "col": 4,
+      "type": "security",
+      "label": "略過該檔並通知",
+      "sublabel": "檔案內容在磁碟上不被修改",
+      "tag": "AC-02.2"
+    }
+  ],
+  "edges": [
+    {
+      "id": "o1",
+      "from": "choose",
+      "to": "locked",
+      "variant": "default"
+    },
+    {
+      "id": "o2",
+      "from": "locked",
+      "to": "meta",
+      "label": "否",
+      "variant": "emphasis"
+    },
+    {
+      "id": "o3",
+      "from": "locked",
+      "to": "r_lock",
+      "label": "是",
+      "variant": "default",
+      "role": "error",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "o4",
+      "from": "meta",
+      "to": "files",
+      "label": "可用",
+      "variant": "emphasis"
+    },
+    {
+      "id": "o5",
+      "from": "meta",
+      "to": "r_meta",
+      "label": "缺少／損毀／版本較新",
+      "variant": "default",
+      "role": "error",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "o6",
+      "from": "files",
+      "to": "check",
+      "variant": "default"
+    },
+    {
+      "id": "o7",
+      "from": "check",
+      "to": "load",
+      "label": "有效",
+      "variant": "emphasis"
+    },
+    {
+      "id": "o8",
+      "from": "check",
+      "to": "r_file",
+      "label": "無法解析或不符",
+      "variant": "default",
+      "role": "error"
+    },
+    {
+      "id": "o9",
+      "from": "r_file",
+      "to": "shown",
+      "label": "通知",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "o10",
+      "from": "load",
+      "to": "shown",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "對應 SRS",
+      "items": [
+        "FR-05（還原）、FR-06、FR-07；AC-02.1、AC-02.2、AC-02.3；規則 R-5",
+        "單一寫入者的鎖在原視窗異常結束後必須自動失效（U-05）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "SRS 未規定、此圖的畫法需你確認",
+      "items": [
+        "「已在其他視窗開啟」的檢查與讀取 workspace.json 的先後順序，SRS 沒有規定；此處先檢查是為了畫圖",
+        "第二個視窗是被阻擋開啟，還是唯讀開啟，留給設計階段（FR-07）"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "此圖未畫",
+      "items": [
+        "settings.json 損毀時另存 settings.corrupt.json 並改用預設值（R-5，會寫入新檔）",
+        "舊版工作區開啟時升級格式版本（R-5）"
+      ]
+    }
+  ]
+}

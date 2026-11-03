@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f7385d30-31f5-4217-bca5-2d92a89e1781",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\01-place-ball.candidate.json",
+  "output": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\01-place-ball.html",
+  "specification": {
+    "sha256": "982e31886d1e78959f6789e14fc133b8c8de396f36ae3ecb82463af0c152c7fe",
+    "bytes": 5068
+  },
+  "artifact": {
+    "sha256": "34731cd35d6653ee3497c181abbee2975f29b41cb5a071df44dfd0540c40ada6",
+    "bytes": 840654
+  }
+}

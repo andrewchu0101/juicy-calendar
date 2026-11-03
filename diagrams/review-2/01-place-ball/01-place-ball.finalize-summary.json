@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\01-place-ball.candidate.json",
+    "sha256": "982e31886d1e78959f6789e14fc133b8c8de396f36ae3ecb82463af0c152c7fe",
+    "bytes": 5068
+  },
+  "artifact": {
+    "path": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\01-place-ball.html",
+    "sha256": "34731cd35d6653ee3497c181abbee2975f29b41cb5a071df44dfd0540c40ada6",
+    "bytes": 840654
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\review-2\\01-place-ball\\01-place-ball.finalize.json",
+    "summaryReceipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\review-2\\01-place-ball\\01-place-ball.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\review-2\\01-place-ball\\01-place-ball.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-03T17:05:36.634Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2912,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

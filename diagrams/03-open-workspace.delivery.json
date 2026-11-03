@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f8db6139-a0f8-4458-a9c3-09fb4946fe68",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\03-open-workspace.candidate.json",
+  "output": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\03-open-workspace.html",
+  "specification": {
+    "sha256": "fdb4da3bb833370830634c0476956e82343a6b9ac59bbc2969ca676e5bb36604",
+    "bytes": 5724
+  },
+  "artifact": {
+    "sha256": "6bcdedf04c4d2cd87bba46ad8a18ea32585c7b2bfd908afbc8e85d263f90a713",
+    "bytes": 842076
+  }
+}

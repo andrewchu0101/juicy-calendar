@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\03-open-workspace.candidate.json",
+    "sha256": "fdb4da3bb833370830634c0476956e82343a6b9ac59bbc2969ca676e5bb36604",
+    "bytes": 5724
+  },
+  "artifact": {
+    "path": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\03-open-workspace.html",
+    "sha256": "6bcdedf04c4d2cd87bba46ad8a18ea32585c7b2bfd908afbc8e85d263f90a713",
+    "bytes": 842076
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\review-3\\03-open-workspace\\03-open-workspace.finalize.json",
+    "summaryReceipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\review-3\\03-open-workspace\\03-open-workspace.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\review-3\\03-open-workspace\\03-open-workspace.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-03T17:05:36.634Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2822,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

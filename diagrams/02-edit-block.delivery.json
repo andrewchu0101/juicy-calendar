@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "fd498cf1-9054-4bb8-bb00-869060037b7d",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\02-edit-block.candidate.json",
+  "output": "D:\\Project\\Fun\\juicy-calendar\\juicy-calendar\\diagrams\\02-edit-block.html",
+  "specification": {
+    "sha256": "8c4f677a4745b7990b2c9188ef064c078b6f516f98014fa6ae6fa9679f957f7b",
+    "bytes": 4483
+  },
+  "artifact": {
+    "sha256": "06f99a78172a6b4caee43fb705c91932c197303e5a6cdad736b7b9b1aeb54257",
+    "bytes": 841365
+  }
+}

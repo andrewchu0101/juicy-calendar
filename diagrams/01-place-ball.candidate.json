@@ -1,0 +1,249 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "放球建立區塊（FR-01）",
+    "locale": "zh-TW",
+    "quality_profile": "showcase",
+    "output": "diagrams/01-place-ball.html",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": {
+          "label": "使用者操作"
+        },
+        "frontend": {
+          "label": "介面"
+        },
+        "backend": {
+          "label": "系統規則"
+        },
+        "security": {
+          "label": "判斷／拒絕"
+        },
+        "database": {
+          "label": "工作區檔案"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "user",
+      "label": "使用者"
+    },
+    {
+      "id": "ui",
+      "label": "介面"
+    },
+    {
+      "id": "rules",
+      "label": "系統規則"
+    },
+    {
+      "id": "disk",
+      "label": "工作區資料夾"
+    },
+    {
+      "id": "reject",
+      "label": "拒絕路徑（不產生副作用）",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "start",
+    "release",
+    "zone",
+    "resolve",
+    "create",
+    "shown"
+  ],
+  "nodes": [
+    {
+      "id": "start",
+      "lane": "user",
+      "col": 0,
+      "type": "external",
+      "label": "拖曳一顆球",
+      "sublabel": "從側邊球開始",
+      "tag": "AC-01.1"
+    },
+    {
+      "id": "esc",
+      "lane": "user",
+      "col": 1,
+      "type": "external",
+      "label": "拖曳中按 Escape",
+      "sublabel": "取消拖曳"
+    },
+    {
+      "id": "release",
+      "lane": "ui",
+      "col": 1,
+      "type": "frontend",
+      "label": "放開滑鼠",
+      "sublabel": "取得放開點位置"
+    },
+    {
+      "id": "zone",
+      "lane": "rules",
+      "col": 2,
+      "type": "security",
+      "label": "放開點在日曆欄內？",
+      "sublabel": "以放開點下方元素判定",
+      "tag": "FR-01 · R-1"
+    },
+    {
+      "id": "resolve",
+      "lane": "rules",
+      "col": 3,
+      "type": "backend",
+      "label": "換算開始時間",
+      "sublabel": "最近整分鐘；磁吸 30 分鐘線",
+      "tag": "R-1"
+    },
+    {
+      "id": "create",
+      "lane": "rules",
+      "col": 4,
+      "type": "backend",
+      "label": "建立事件",
+      "sublabel": "120 分鐘；名稱=模板名；複製顏色",
+      "tag": "R-2"
+    },
+    {
+      "id": "write",
+      "lane": "disk",
+      "col": 5,
+      "type": "database",
+      "label": "寫入事件檔",
+      "sublabel": "events/<id>.json",
+      "tag": "FR-05 · R-4"
+    },
+    {
+      "id": "shown",
+      "lane": "ui",
+      "col": 5,
+      "type": "frontend",
+      "label": "看到新區塊",
+      "sublabel": "位於放開位置；球仍可再拖",
+      "tag": "AC-01.1"
+    },
+    {
+      "id": "nothing",
+      "lane": "reject",
+      "col": 3,
+      "type": "security",
+      "label": "不建立區塊",
+      "sublabel": "不寫入任何檔案",
+      "tag": "AC-01.2"
+    },
+    {
+      "id": "burst",
+      "lane": "reject",
+      "col": 4,
+      "type": "frontend",
+      "label": "回饋",
+      "sublabel": "日曆外放開：碎片消散"
+    },
+    {
+      "id": "unchanged",
+      "lane": "reject",
+      "col": 5,
+      "type": "frontend",
+      "label": "看到沒有新區塊",
+      "sublabel": "球仍可再次拖曳"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "start",
+      "to": "release",
+      "variant": "default"
+    },
+    {
+      "id": "e2",
+      "from": "release",
+      "to": "zone",
+      "variant": "default"
+    },
+    {
+      "id": "e3",
+      "from": "zone",
+      "to": "resolve",
+      "label": "是",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e4",
+      "from": "resolve",
+      "to": "create",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e5",
+      "from": "create",
+      "to": "shown",
+      "label": "顯示",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e6",
+      "from": "create",
+      "to": "write",
+      "label": "寫入",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "e7",
+      "from": "zone",
+      "to": "nothing",
+      "label": "否：日曆外",
+      "variant": "default",
+      "role": "error"
+    },
+    {
+      "id": "e8",
+      "from": "esc",
+      "to": "nothing",
+      "label": "Escape",
+      "variant": "default",
+      "role": "error"
+    },
+    {
+      "id": "e9",
+      "from": "nothing",
+      "to": "burst",
+      "variant": "default",
+      "role": "error"
+    },
+    {
+      "id": "e10",
+      "from": "burst",
+      "to": "unchanged",
+      "variant": "default",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "對應 SRS",
+      "items": [
+        "FR-01、AC-01.1、AC-01.2；規則 R-1、R-2、R-4",
+        "新區塊一律 120 分鐘，以經過的時間計算",
+        "寫入失敗時變更留在佇列重試（R-4）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "此圖未畫",
+      "items": [
+        "磁吸關閉時不吸附（R-1）",
+        "側邊球的 hover 動畫（FR-04）"
+      ]
+    }
+  ]
+}
