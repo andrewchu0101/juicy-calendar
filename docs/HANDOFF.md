@@ -28,7 +28,7 @@
 - **e2e 不穩定的原因已查出（2026-11-04，尚未修）**：`e2e/core.spec.ts` 的 `dragBall` 在最後一次 `mouse.move` 後立刻 `mouse.up()`。dnd-kit 的拖曳啟動要等 React 狀態提交，約 100 ms 後 `ball-dragging-source` 才出現；`mouse.up()` 若早於此，`onDragEnd` 拿不到 active，就不會建立事件。證據：獨立腳本每組 5 次，放開前等 0 ms → 0/5 建立事件；等 50／200／500 ms → 皆 5/5。完整測試時各測試的耗時與機器負載不同，所以失敗數每次都不一樣（9／20／23）。已排除：沒有殘留 server、`isPrimary`／`button` 正常、沒有 blur／resize／visibilitychange 取消、沒有 console 錯誤、載入後多等 3 秒無改善。
   - 判斷：測試端的時序問題。人類操作放開前通常超過 50 ms，不受影響；但快速甩動加上慢速機器是否會漏建事件，尚待人確認。
   - 建議修法（待你同意）：在 `dragBall` 的最後一次移動後，等到 `drop-ghost` 出現（`expect(page.getByTestId('drop-ghost')).toBeVisible()`）再 `mouse.up()`。這是確定性等待，不是加 sleep，也不放寬任何斷言。
-- `npm run desktop`、`npm run test:desktop` 尚未執行（Not Run）。
+- 票 000 結果（2026-11-04，Windows 11）：`typecheck`、`lint`、`npm test`（48）、`test:rust`（5）皆 Passed；`npm run test:desktop` 在 Windows（Git Bash）**Passed**（建立工作區、拖放後 10:30–12:30、關閉後重開事件仍在、越界寫入被拒）；`npm run desktop` 視窗出現，Vite `http://localhost:1420` 回 200。人工操作驗收（建立工作區、關閉、重開還原）**Manual Pending**。追溯：`docs/06-test-plan.md` G-03 列。未修改任何產品程式。
 - Playwright WebKit 已重裝到 `D:\DevTools\playwright-browsers`（實體檔案，175 MB），C 槽 `ms-playwright` 已刪除（那是 2026-11-03 我自己裝的）。
 
 ### 下一步（最多三項）

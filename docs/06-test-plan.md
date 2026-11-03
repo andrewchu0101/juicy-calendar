@@ -231,6 +231,7 @@
 | NFR-03 | M-06 | 未執行 | 監看方法待定 |
 | NFR-06 | 無 | — | **缺口**：待量測，不設 TC |
 | NFR-07 | M-04 | 未執行 | |
+| G-03（基準線，票 000） | `typecheck`、`lint`、`npm test`、`test:rust`、`test:desktop` | 2026-11-04，Windows 11、node 24.22.0、Rust 1.99.1：`typecheck` Passed；`lint` Passed；`npm test` 48 passed／0 failed；`test:rust` 5 passed／0 failed；`test:desktop`（bash 腳本，Git Bash）Passed，輸出 `Desktop smoke test passed`（建立工作區、拖放一顆球得 10:30–12:30、重開後 `blocksOnLaunch: 1`，路徑穿越類寫入全被拒絕）。`npm run desktop` 視窗出現、Vite 回 HTTP 200 | 人工「建立工作區、關閉、重開還原」尚待人工驗收；`test:e2e` 不在此票範圍，仍不穩定 |
 
 票完成時更新實際指令、通過／失敗數與人工證據；區分「已設計」「已實作」「已執行通過」。目前所有列都只到「已設計」。
 
