@@ -1,0 +1,11 @@
+# Codex 的專案層 MCP 設定，與 .mcp.json（Claude Code）同兩個伺服器。
+# Codex 只在「信任的專案」載入這份檔；第一次在這個 repo 開 Codex 時選信任。
+# 兩邊要同步改，.maintain/check-mcp.sh 會擋不同步。
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@4.1.1"]
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@0.0.83", "--headless", "--isolated"]
