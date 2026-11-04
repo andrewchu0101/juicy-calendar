@@ -67,7 +67,7 @@
 ### 下一步（最多三項）
 1. 票 022：用 `/diagnosing-bugs` 查 e2e 間歇失敗（`overlapping events…`、`weekly and daily views…`、magnet），讓 NFR-01 成立。
 2. 票 009／010（建議順序見 `issues/README.md`）；其他可開始的票：018。每張票另開新對話，用 `/implement` 與 `/tdd`。
-3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿）；待決項：Q-05（票 020）（S-01 採用 portable.flag、S-02 選 A 皆已於 2026-11-05 決定；票 016 下一步是取得同意後跑 tauri build）、Q-05（票 020）、NFR-01 的重複次數 N（待人定；票 022 的驗收依賴它）。
+3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿）；待決項：Q-05（票 020）（S-01 採用 portable.flag、S-02 選 A 皆已於 2026-11-05 決定；票 016 已建置成功，M-01 乾淨 Windows 驗收暫緩，晚點回頭：安裝檔在私有 repo 的 draft release v0.1.0-m01-test，測完回報後回填票 016 與追溯表，並刪除該 draft）
 
 ### 狀態核對
 

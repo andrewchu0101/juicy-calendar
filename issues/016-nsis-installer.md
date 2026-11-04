@@ -1,6 +1,6 @@
 # 016：NSIS 安裝檔與 README
 
-**大小：** M　**狀態：** 進行中（S-02 已於 2026-11-05 決定選 A；`tauri build` 前須再取得同意）
+**大小：** M　**狀態：** 實作完成（建置成功；M-01 乾淨 Windows 人工驗收待專案擁有者）
 
 **成果（What to build）：** 提供 Windows 的 NSIS 安裝檔：缺少 WebView2 時由安裝程式連網下載微軟官方版本；不簽章；最低支援 Windows 10 1803 64 位元。README 補上 Windows 安裝、解除安裝、SmartScreen 警告的處理，以及「工作區資料夾不要放在雲端同步資料夾」的建議。
 
@@ -14,11 +14,11 @@
 
 ## 驗收條件
 
-- [ ] **執行 `tauri build` 之前，先查證並向專案擁有者說明 NSIS 工具的下載與寫入位置，取得同意後才執行**（`CLAUDE.md` 3.3）。
-- [x] 打包設定新增 NSIS 目標；WebView2 採 `downloadBootstrapper`，**先對照 Tauri 官方文件確認設定值**（SDS 標為未驗證）。已改 `tauri.conf.json`：`targets` 加 `nsis`、`useLocalToolsDir: true`、`webviewInstallMode.type = downloadBootstrapper`；值已對照官方文件與本機 CLI 2.12.4 的 schema（預設值即此）。**尚未執行 `tauri build`，設定是否讓 Windows 上的 `app` 目標被略過而不報錯，未驗證。**
+- [x] **執行 `tauri build` 之前，先查證並向專案擁有者說明 NSIS 工具的下載與寫入位置，取得同意後才執行**（`CLAUDE.md` 3.3）。已說明（見末段「S-02 查證」），專案擁有者選 A 並在 2026-11-05 明確同意執行建置。
+- [x] 打包設定新增 NSIS 目標；WebView2 採 `downloadBootstrapper`，**先對照 Tauri 官方文件確認設定值**（SDS 標為未驗證）。已改 `tauri.conf.json`：`targets` 加 `nsis`、`useLocalToolsDir: true`、`webviewInstallMode.type = downloadBootstrapper`；值已對照官方文件與本機 CLI 2.12.4 的 schema（預設值即此）。已實際建置：Windows 上的 `app` 目標沒有造成錯誤（見實作紀錄）。
 - [ ] M-01：乾淨 Windows 安裝、啟動、建立工作區、完成 AC-01.1 的流程、解除安裝；解除安裝後工作區資料夾與檔案仍在。記錄環境版本與證據。
 - [ ] Windows 10 1803 若沒有環境，記為「未驗證」，不宣稱通過。
-- [ ] README 步驟能被他人照做；建置產物不進版控。
+- [ ] README 步驟能被他人照做（Windows 段落已寫成草稿，**未在乾淨機器上照做過**）；建置產物不進版控（已確認：`src-tauri/target` 被 `.gitignore` 排除）。
 
 共同規則（先讀）：[`issues/README.md`](README.md)。
 
@@ -44,3 +44,14 @@
 **需要你決定**：選 A、B 或 C。選 A 時，我會先改設定、跑 `tauri build`，並在前後比對 `%LOCALAPPDATA%/tauri` 是否被建立；仍然需要你同意才執行建置（AGENTS.md 規則 15）。
 
 **決定紀錄（2026-11-05）**：專案擁有者選 A。已改設定；`tauri build` 尚未執行，執行前會再次詢問（規則 15）；建置前後比對 `%LOCALAPPDATA%/tauri`，出現就停下回報。
+
+## 實作紀錄與偏差（2026-11-05）
+
+- 這張票沒有可寫成自動測試的業務行為：成果是打包設定、README 與人工驗收（M-01）。所以沒有做紅燈到綠燈的循環，也沒有新增測試；驗收指令 `typecheck`、`lint`、`npm test`（27 檔 314 passed）本輪 Passed，只代表沒有破壞既有程式。
+- 設定（`src-tauri/tauri.conf.json`）：`bundle.targets` 為 `["app", "nsis"]`、`bundle.useLocalToolsDir: true`、`bundle.windows.webviewInstallMode.type: downloadBootstrapper`。
+- 建置（2026-11-05，Windows 11，CLI 2.12.4、tauri 2.12.5、Rust 1.90.0，專案擁有者已同意）：`npx tauri build --bundles nsis` exit 0；產物 `src-tauri/target/release/bundle/nsis/Juicy Calendar_0.1.0_x64-setup.exe`（2,171,263 位元組，SHA-256 `2b7eeef6957730609bc9ae42ec286652b135e0398f73abd156e7283f4171b0fa`，未簽章）。
+- 工具位置實測：NSIS 工具在 `src-tauri/target/.tauri/NSIS`（約 7.9 MB，D 槽）；建置前後 `%LOCALAPPDATA%/tauri` 都**不存在**。日誌顯示 `nsis-3.13.zip` 與 `nsis_tauri_utils.dll` 都經雜湊驗證。
+- 偏差（已解除疑慮）：SDS 打包契約只寫新增 `nsis`；設定仍保留 `app`（macOS 用），在 Windows 上被略過、沒有報錯。
+- 傳送給乾淨機器測試：已上傳到私有 repo 的 draft 預發布版（`v0.1.0-m01-test`，只有擁有者看得到；附件雜湊與本機一致）。該 draft 的 tag 目標是 `main`，不含本次 commit；測完建議刪除。
+- **未驗證**：①M-01（乾淨 Windows 安裝、啟動、建立工作區、完成 AC-01.1、解除安裝、確認工作區資料夾仍在）；②Windows 10 1803（可能無環境，須記為「未驗證」）；③安裝時 WebView2 的下載行為（只讀過設定，沒實測；新電腦若已有 WebView2 也無法驗證）；④這個 release 版從未執行過；⑤SmartScreen 的實際畫面與 README 描述的按鈕名稱；⑥解除安裝是否保留工作區（README 寫的是預期）；⑦預設安裝位置（依官方文件為目前使用者的 `%LOCALAPPDATA%`，未實測）；⑧文件沒有「最低 Windows 版本」設定鍵，1803 的下限無法由設定強制。
+- README 上兩處過時敘述（「只在 macOS 跑過」、「兩個視窗未協調」）本票未動，待專案擁有者決定是否順手修正。
