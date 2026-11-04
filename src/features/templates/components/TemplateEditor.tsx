@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { ColorPicker } from '../../../components/ColorPicker';
+import { useT } from '../../../i18n/useT';
 import { useAppStore } from '../../../stores/appStore';
 import type { Template } from '../../../types';
 import { PALETTE } from '../../../utils/color';
 import { validateTitle } from '../../calendar/engine';
 
 export function TemplateEditor({ template, onClose }: { template?: Template; onClose: () => void }) {
+  const t = useT();
   const saveTemplate = useAppStore((state) => state.saveTemplate);
   const deleteTemplate = useAppStore((state) => state.deleteTemplate);
   const [name, setName] = useState(template?.name ?? '');
@@ -33,29 +35,29 @@ export function TemplateEditor({ template, onClose }: { template?: Template; onC
       }}
     >
       <label className="flex flex-col gap-1 text-xs text-muted">
-        Name
+        {t('field.name')}
         <input
           autoFocus
-          aria-label="Template name"
+          aria-label={t('template.nameAria')}
           className="rounded-lg border border-line px-2 py-1.5 text-sm text-ink select-text"
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
       </label>
       <label className="flex flex-col gap-1 text-xs text-muted">
-        Default duration (minutes)
+        {t('template.durationLabel')}
         <input
           type="number"
           min={1}
-          aria-label="Default duration"
+          aria-label={t('template.durationAria')}
           className="rounded-lg border border-line px-2 py-1.5 text-sm text-ink select-text"
           value={duration}
           onChange={(event) => setDuration(event.target.value)}
         />
-        <span className="text-[11px] leading-snug">Saved for later. New blocks always start at 2 hours.</span>
+        <span className="text-[11px] leading-snug">{t('template.durationHint')}</span>
       </label>
       <div className="flex flex-col gap-1.5 text-xs text-muted">
-        Colour
+        {t('color.label')}
         <ColorPicker value={color} onChange={setColor} />
       </div>
       <div className="flex items-center gap-2 pt-1">
@@ -64,10 +66,10 @@ export function TemplateEditor({ template, onClose }: { template?: Template; onC
           disabled={!valid}
           className="rounded-full bg-ink px-3.5 py-1.5 text-sm font-medium text-white disabled:opacity-40"
         >
-          Save
+          {t('action.save')}
         </button>
         <button type="button" className="rounded-full px-2 py-1.5 text-sm text-muted hover:text-ink" onClick={onClose}>
-          Cancel
+          {t('action.cancel')}
         </button>
         {template && (
           <button
@@ -82,7 +84,7 @@ export function TemplateEditor({ template, onClose }: { template?: Template; onC
               onClose();
             }}
           >
-            {confirming ? 'Confirm' : 'Delete'}
+            {confirming ? t('action.confirm') : t('action.delete')}
           </button>
         )}
       </div>

@@ -25,15 +25,15 @@ describe('toBackendError', () => {
     if (detail !== null) expect(error.detail).toBe(detail);
   });
 
-  // 票 006 驗收：畫面文字暫時不變，且 detail 不直接顯示。String(error) 是現有畫面使用的形式。
-  it.each([
-    ['NOT_A_WORKSPACE', 'This folder is not a workspace: it has no workspace.json.'],
-    ['NO_WORKSPACE_OPEN', 'No workspace is open'],
-    ['PATH_NOT_ALLOWED', 'Path is not allowed'],
-  ] as const)('shows the previous English sentence for %s and never the detail', (code, sentence) => {
-    const error = toBackendError({ code, detail: 'C:/secret/path' });
-    expect(error.message).toBe(sentence);
-    expect(String(error)).toBe(sentence);
-    expect(String(error)).not.toContain('secret');
-  });
+  // TC-11｜FR-09、票 012、AGENTS.md 規則 11：message 只是診斷用的代碼，不是畫面句子，也不含 detail；
+  // 畫面文字一律由字典依代碼產生（見 notices.test.ts）。
+  it.each(['WORKSPACE_LOCKED', 'NOT_A_WORKSPACE', 'NO_WORKSPACE_OPEN', 'PATH_NOT_ALLOWED', 'IO_ERROR'] as const)(
+    'message of %s is the bare code and never the detail',
+    (code) => {
+      const error = toBackendError({ code, detail: 'C:/secret/path' });
+      expect(error.message).toBe(code);
+      expect(String(error)).toBe(code);
+      expect(String(error)).not.toContain('secret');
+    },
+  );
 });

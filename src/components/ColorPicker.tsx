@@ -1,6 +1,8 @@
+import { useT } from '../i18n/useT';
 import { PALETTE } from '../utils/color';
 
 export function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  const t = useT();
   const isCustom = !PALETTE.some((color) => color.toLowerCase() === value.toLowerCase());
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -8,7 +10,7 @@ export function ColorPicker({ value, onChange }: { value: string; onChange: (col
         <button
           key={color}
           type="button"
-          aria-label={`Colour ${color}`}
+          aria-label={t('color.swatchAria', { color })}
           aria-pressed={color.toLowerCase() === value.toLowerCase()}
           className="size-5 rounded-full transition-transform hover:scale-110 aria-pressed:ring-2 aria-pressed:ring-ink aria-pressed:ring-offset-2"
           style={{ backgroundColor: color }}
@@ -16,14 +18,14 @@ export function ColorPicker({ value, onChange }: { value: string; onChange: (col
         />
       ))}
       <label
-        title="Custom colour"
+        title={t('color.custom')}
         className={`relative flex size-5 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-line-strong text-xs text-muted ${isCustom ? 'ring-2 ring-ink ring-offset-2' : ''}`}
         style={isCustom ? { backgroundColor: value } : undefined}
       >
         {!isCustom && '+'}
         <input
           type="color"
-          aria-label="Custom colour"
+          aria-label={t('color.custom')}
           className="absolute inset-0 cursor-pointer opacity-0"
           value={value}
           onChange={(event) => onChange(event.target.value)}

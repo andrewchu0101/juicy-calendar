@@ -20,12 +20,48 @@ const calendarTexts: ReadonlyArray<readonly [TranslationKey, string, string]> = 
   ['grid.hiddenOne', '1 event outside the visible hours', '有 1 個事件在可見時段之外'],
   ['grid.hiddenMany', '{count} events outside the visible hours', '有 {count} 個事件在可見時段之外'],
   ['event.nameAria', 'Event name', '事件名稱'],
+  ['notice.dismiss', 'Dismiss', '關閉'],
+  ['color.label', 'Colour', '顏色'],
+  ['color.swatchAria', 'Colour {color}', '顏色 {color}'],
+  ['color.custom', 'Custom colour', '自訂顏色'],
+  ['field.name', 'Name', '名稱'],
+  ['field.date', 'Date', '日期'],
+  ['field.start', 'Start', '開始'],
+  ['field.end', 'End', '結束'],
+  ['inspector.aria', 'Event details', '事件詳細資料'],
+  ['inspector.deletedTemplate', 'Deleted template', '已刪除的模板'],
+  ['inspector.collapse', 'Collapse inspector', '收合面板'],
+  ['inspector.expand', 'Expand inspector', '展開面板'],
+  ['inspector.durationLabel', 'Duration (minutes) · {duration}', '持續時間（分鐘）· {duration}'],
+  ['inspector.durationAria', 'Duration in minutes', '持續分鐘數'],
+  ['inspector.delete', 'Delete event', '刪除事件'],
+  ['template.nameAria', 'Template name', '模板名稱'],
+  ['template.durationLabel', 'Default duration (minutes)', '預設時長（分鐘）'],
+  ['template.durationAria', 'Default duration', '預設時長'],
+  ['template.durationHint', 'Saved for later. New blocks always start at 2 hours.', '先存起來備用。新區塊一律從 2 小時開始。'],
+  ['action.save', 'Save', '儲存'],
+  ['action.cancel', 'Cancel', '取消'],
+  ['action.confirm', 'Confirm', '確認'],
+  ['action.delete', 'Delete', '刪除'],
+  ['palette.dragAria', 'Drag {name} onto the calendar', '將 {name} 拖到日曆上'],
+  ['palette.editTitle', 'Edit {name}', '編輯 {name}'],
+  ['palette.add', 'Add template', '新增模板'],
+  ['palette.switch', 'Switch', '切換'],
+  ['radial.aria', 'Hold and drag a ball onto the calendar', '按住球並拖到日曆上'],
+  ['error.noWorkspaceOpen', 'No workspace is open', '目前沒有開啟的工作區。'],
+  ['error.pathNotAllowed', 'Path is not allowed', '不允許這個路徑。'],
+  ['error.ioError', 'The file operation failed.', '檔案操作失敗。'],
 ];
 
 describe('calendar and toolbar texts (TC-11, FR-09, ticket 011)', () => {
   it.each(calendarTexts)('%s → en "%s", zh-TW "%s"', (key, en, zh) => {
     expect(translate('en', key)).toBe(en);
     expect(translate('zh-TW', key)).toBe(zh);
+  });
+
+  it('a name with replacement-pattern characters is inserted verbatim', () => {
+    expect(translate('en', 'palette.editTitle', { name: "A$&B$1'" })).toBe("Edit A$&B$1'");
+    expect(translate('zh-TW', 'palette.dragAria', { name: '寫 $& PRD' })).toBe('將 寫 $& PRD 拖到日曆上');
   });
 
   it('parameters are filled in both languages', () => {

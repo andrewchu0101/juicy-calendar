@@ -44,6 +44,7 @@ function LanguageMenu() {
 export function WelcomeScreen() {
   const t = useT();
   const openError = useAppStore((state) => state.openError);
+  const language = useI18nStore((state) => state.language);
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-8 px-6 text-center select-none">
       <LanguageMenu />
@@ -72,7 +73,7 @@ export function WelcomeScreen() {
       </div>
       {openError && (
         <p role="alert" className="max-w-md text-sm text-danger">
-          {openErrorText(openError)}
+          {openErrorText(language, openError)}
         </p>
       )}
     </div>

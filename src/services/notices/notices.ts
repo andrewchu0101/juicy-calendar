@@ -2,9 +2,10 @@
  * Structured notices: the store keeps codes, never sentences. `detail` is a diagnostic for logs and
  * tests and is never shown on screen (AGENTS.md rule 11).
  *
- * TEMPORARY: the English sentences below are the single table that ticket 012 replaces with the
- * i18n dictionary. Keep every screen sentence here and nowhere else.
+ * Screen sentences come from the i18n dictionary (FR-09); this module only picks the key for a code.
  */
+import type { Language } from '../../i18n/detectLanguage';
+import { translate } from '../../i18n/i18n';
 import type { ErrorCode } from '../persistence/backendError';
 import type { WorkspaceIssue } from '../persistence/repository';
 import { SCHEMA_VERSION } from '../persistence/schemas';
@@ -21,45 +22,50 @@ export type OpenErrorState = { code: OpenErrorCode; version?: number; detail?: s
 
 export type SaveErrorState = { code: 'SAVE_FAILED'; detail: string };
 
-/** Sentences for errors raised by the Rust side. */
-const BACKEND_TEXT: Record<ErrorCode, string> = {
-  WORKSPACE_LOCKED: 'This workspace is already open in another window.',
-  NOT_A_WORKSPACE: 'This folder is not a workspace: it has no workspace.json.',
-  NO_WORKSPACE_OPEN: 'No workspace is open',
-  PATH_NOT_ALLOWED: 'Path is not allowed',
-  IO_ERROR: 'The file operation failed.',
-};
-
-export function backendErrorText(code: ErrorCode): string {
-  return BACKEND_TEXT[code];
+/** Rust 端錯誤代碼的畫面文字（FR-09）。目前沒有畫面直接顯示它們，但每個代碼兩種語言都有文字。 */
+export function backendErrorText(language: Language, code: ErrorCode): string {
+  switch (code) {
+    case 'WORKSPACE_LOCKED':
+      return translate(language, 'notice.open.workspaceLocked');
+    case 'NOT_A_WORKSPACE':
+      return translate(language, 'notice.open.notAWorkspace');
+    case 'NO_WORKSPACE_OPEN':
+      return translate(language, 'error.noWorkspaceOpen');
+    case 'PATH_NOT_ALLOWED':
+      return translate(language, 'error.pathNotAllowed');
+    case 'IO_ERROR':
+      return translate(language, 'error.ioError');
+  }
 }
 
-export function openErrorText(error: OpenErrorState): string {
+/** 開啟錯誤的畫面文字（FR-09、SDS UI-01）。`detail` 只給診斷，不顯示（AGENTS.md 規則 11）。 */
+export function openErrorText(language: Language, error: OpenErrorState): string {
   switch (error.code) {
     case 'NO_WORKSPACE_JSON':
-      return 'This folder has no workspace.json.';
+      return translate(language, 'notice.open.noWorkspaceJson');
     case 'WORKSPACE_DAMAGED':
-      return 'workspace.json is damaged, so the workspace was not opened.';
+      return translate(language, 'notice.open.workspaceDamaged');
     case 'WORKSPACE_TOO_NEW':
-      return `This workspace uses format ${error.version}, newer than this app supports (${SCHEMA_VERSION}).`;
+      return translate(language, 'notice.open.workspaceTooNew', { version: String(error.version), supported: SCHEMA_VERSION });
     case 'WORKSPACE_LOCKED':
-      return BACKEND_TEXT.WORKSPACE_LOCKED;
+      return translate(language, 'notice.open.workspaceLocked');
     case 'NOT_A_WORKSPACE':
-      return BACKEND_TEXT.NOT_A_WORKSPACE;
+      return translate(language, 'notice.open.notAWorkspace');
     case 'OPEN_FAILED':
-      return 'Could not open the workspace.';
+      return translate(language, 'notice.open.openFailed');
   }
 }
 
-export function issueText(issue: WorkspaceIssue): string {
+/** 通知的畫面文字（FR-09、SDS UI-02）。`detail` 只給診斷，不顯示。 */
+export function issueText(language: Language, issue: WorkspaceIssue): string {
   switch (issue.code) {
     case 'FILE_SKIPPED':
-      return `Skipped ${issue.file}: not a valid file. It was left untouched.`;
+      return translate(language, 'notice.issue.fileSkipped', { file: issue.file });
     case 'SETTINGS_RESET':
-      return 'settings.json was damaged. Defaults are in use; the old file is saved as settings.corrupt.json.';
+      return translate(language, 'notice.issue.settingsReset');
   }
 }
 
-export function saveErrorText(_error: SaveErrorState): string {
-  return 'Changes could not be saved and will be retried.';
+export function saveErrorText(language: Language, _error: SaveErrorState): string {
+  return translate(language, 'notice.saveFailed');
 }
