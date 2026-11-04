@@ -23,7 +23,7 @@ export type PersistenceSync = { flush(): Promise<void>; stop(): Promise<void> };
 /** Mirrors store changes to disk. Undo and redo need no special handling: they are just changes. */
 export function startPersistenceSync(backend: WorkspaceBackend): PersistenceSync {
   const queue = createWriteQueue(backend, (error) => {
-    useAppStore.getState().setSaveError(error);
+    useAppStore.getState().setSaveError(error === null ? null : { code: 'SAVE_FAILED', detail: error });
   });
 
   const unsubscribe = useAppStore.subscribe((state: AppState, previous: AppState) => {

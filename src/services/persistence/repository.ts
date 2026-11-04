@@ -8,11 +8,27 @@ export type WorkspaceData = {
   templates: Record<string, Template>;
   events: Record<string, CalendarEvent>;
   settings: Settings;
-  /** Human-readable problems found while loading. The affected files are left untouched. */
-  issues: string[];
+  /** Problems found while loading. The affected files are left untouched. */
+  issues: WorkspaceIssue[];
 };
 
-export class WorkspaceOpenError extends Error {}
+/** `detail` is a diagnostic for logs and tests; the screen shows text chosen by `code` only. */
+export type WorkspaceIssue =
+  | { code: 'FILE_SKIPPED'; file: string; detail: string }
+  | { code: 'SETTINGS_RESET' };
+
+export type WorkspaceOpenErrorCode = 'NO_WORKSPACE_JSON' | 'WORKSPACE_DAMAGED' | 'WORKSPACE_TOO_NEW';
+
+/** Why a workspace was refused. `message` is for logs and tests; the screen shows text chosen by `code`. */
+export class WorkspaceOpenError extends Error {
+  constructor(
+    message: string,
+    readonly code: WorkspaceOpenErrorCode,
+    readonly version?: number,
+  ) {
+    super(message);
+  }
+}
 
 export function templatePath(id: string): string {
   return `templates/${id}.json`;
@@ -35,11 +51,20 @@ function parseWith<T>(raw: string, schema: ZodType<T>): T | null {
   }
 }
 
+function skipReason(raw: string, parsedOk: boolean): string {
+  try {
+    JSON.parse(raw);
+  } catch {
+    return 'invalid JSON';
+  }
+  return parsedOk ? 'file name does not match id' : 'invalid content';
+}
+
 async function loadEntities<T extends { id: string }>(
   backend: WorkspaceBackend,
   dir: 'templates' | 'events',
   schema: ZodType<T>,
-  issues: string[],
+  issues: WorkspaceIssue[],
 ): Promise<Record<string, T>> {
   const entities: Record<string, T> = {};
   for (const file of await backend.list(dir)) {
@@ -47,23 +72,27 @@ async function loadEntities<T extends { id: string }>(
     if (raw === null) continue;
     const entity = parseWith(raw, schema);
     if (entity && file === `${entity.id}.json`) entities[entity.id] = entity;
-    else issues.push(`Skipped ${dir}/${file}: not a valid file. It was left untouched.`);
+    else issues.push({ code: 'FILE_SKIPPED', file: `${dir}/${file}`, detail: skipReason(raw, entity !== null) });
   }
   return entities;
 }
 
 export async function loadWorkspace(backend: WorkspaceBackend): Promise<WorkspaceData> {
   const rawMeta = await backend.read('workspace.json');
-  if (rawMeta === null) throw new WorkspaceOpenError('This folder has no workspace.json.');
+  if (rawMeta === null) throw new WorkspaceOpenError('This folder has no workspace.json.', 'NO_WORKSPACE_JSON');
   const meta = parseWith(rawMeta, workspaceSchema);
-  if (!meta) throw new WorkspaceOpenError('workspace.json is damaged, so the workspace was not opened.');
+  if (!meta) {
+    throw new WorkspaceOpenError('workspace.json is damaged, so the workspace was not opened.', 'WORKSPACE_DAMAGED');
+  }
   if (meta.schemaVersion > SCHEMA_VERSION) {
     throw new WorkspaceOpenError(
       `This workspace uses format ${meta.schemaVersion}, newer than this app supports (${SCHEMA_VERSION}).`,
+      'WORKSPACE_TOO_NEW',
+      meta.schemaVersion,
     );
   }
 
-  const issues: string[] = [];
+  const issues: WorkspaceIssue[] = [];
   const templates = await loadEntities(backend, 'templates', templateSchema, issues);
   const events = await loadEntities(backend, 'events', eventSchema, issues);
 
@@ -75,7 +104,7 @@ export async function loadWorkspace(backend: WorkspaceBackend): Promise<Workspac
       settings = parsed;
     } else {
       await backend.write('settings.corrupt.json', rawSettings);
-      issues.push('settings.json was damaged. Defaults are in use; the old file is saved as settings.corrupt.json.');
+      issues.push({ code: 'SETTINGS_RESET' });
     }
   }
   if (meta.schemaVersion < SCHEMA_VERSION) {

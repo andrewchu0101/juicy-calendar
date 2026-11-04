@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { newEventTimes, shiftAnchor, validateTitle, type EventTimes } from '../features/calendar/engine';
 import { DEFAULT_SETTINGS } from '../services/persistence/schemas';
-import type { WorkspaceData } from '../services/persistence/repository';
+import type { OpenErrorState, SaveErrorState } from '../services/notices/notices';
+import type { WorkspaceData, WorkspaceIssue } from '../services/persistence/repository';
 import type { CalendarEvent, Settings, Template } from '../types';
 
 const HISTORY_LIMIT = 100;
@@ -14,9 +15,9 @@ export type AppState = {
   booted: boolean;
   workspacePath: string | null;
   workspaceName: string;
-  openError: string | null;
-  saveError: string | null;
-  issues: string[];
+  openError: OpenErrorState | null;
+  saveError: SaveErrorState | null;
+  issues: WorkspaceIssue[];
 
   templates: TemplateMap;
   events: EventMap;
@@ -31,8 +32,8 @@ export type AppState = {
   future: EventMap[];
 
   setBooted(): void;
-  setOpenError(error: string | null): void;
-  setSaveError(error: string | null): void;
+  setOpenError(error: OpenErrorState | null): void;
+  setSaveError(error: SaveErrorState | null): void;
   dismissIssues(): void;
   hydrate(data: WorkspaceData, path: string): void;
   reset(): void;
@@ -61,7 +62,7 @@ const initial = {
   workspacePath: null,
   workspaceName: '',
   saveError: null,
-  issues: [] as string[],
+  issues: [] as WorkspaceIssue[],
   templates: {} as TemplateMap,
   events: {} as EventMap,
   settings: DEFAULT_SETTINGS,

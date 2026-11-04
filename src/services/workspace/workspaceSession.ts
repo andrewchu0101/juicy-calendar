@@ -1,4 +1,6 @@
+import type { OpenErrorState } from '../notices/notices';
 import { backend, type WorkspaceLocation } from '../persistence/backend';
+import { BackendError } from '../persistence/backendError';
 import { startPersistenceSync, type PersistenceSync } from '../persistence/persistenceSync';
 import { initializeWorkspace, loadWorkspace, WorkspaceOpenError } from '../persistence/repository';
 import { useAppStore } from '../../stores/appStore';
@@ -18,8 +20,16 @@ async function enter(location: WorkspaceLocation): Promise<void> {
   sync = startPersistenceSync(backend);
 }
 
-function describe(error: unknown): string {
-  return error instanceof WorkspaceOpenError ? error.message : `Could not open the workspace: ${String(error)}`;
+/** Turns anything thrown while opening into a code. `detail` keeps the diagnostic off the screen. */
+function toOpenError(error: unknown): OpenErrorState {
+  if (error instanceof WorkspaceOpenError) {
+    return error.version === undefined ? { code: error.code } : { code: error.code, version: error.version };
+  }
+  if (error instanceof BackendError) {
+    if (error.code === 'WORKSPACE_LOCKED' || error.code === 'NOT_A_WORKSPACE') return { code: error.code };
+    return { code: 'OPEN_FAILED', detail: error.detail ?? error.code };
+  }
+  return { code: 'OPEN_FAILED', detail: error instanceof Error ? error.message : String(error) };
 }
 
 export async function restoreLastWorkspace(): Promise<void> {
@@ -28,7 +38,7 @@ export async function restoreLastWorkspace(): Promise<void> {
     if (location) await enter(location);
   } catch (error) {
     await backend.close().catch(() => undefined);
-    useAppStore.getState().setOpenError(describe(error));
+    useAppStore.getState().setOpenError(toOpenError(error));
   } finally {
     useAppStore.getState().setBooted();
   }
@@ -42,7 +52,7 @@ export async function selectWorkspace(mode: 'create' | 'open'): Promise<void> {
     if (location) await enter(location);
   } catch (error) {
     await backend.close().catch(() => undefined);
-    store.setOpenError(describe(error));
+    store.setOpenError(toOpenError(error));
   }
 }
 

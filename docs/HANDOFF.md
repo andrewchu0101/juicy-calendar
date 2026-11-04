@@ -4,7 +4,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-04（票 006 完成並 commit） |
+| 更新時間 | 2026-11-04（票 007 完成，已 commit 並 push；下一個 session 做票 008） |
 | 目前目標 | 把一次性 demo 接手成「依 template 流程開發」的專案；下一步補文件（Brief → PRD → SRS …） |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
 | 分支／HEAD | `main` ／ 票 006 的 commit 在 `ddd3551`（票 005）之上；無遠端，未 push |
@@ -33,6 +33,8 @@
 
 - 票 006（2026-11-04，已 commit，未 push）：Rust 命令錯誤由英文句子改為 `{code, detail}`（新 `src-tauri/src/error.rs`：`ErrorCode`、`IpcError`；`fs_safe::resolve`、`lib.rs` 全部命令改回傳 `IpcError`；`choose_root` 從 `workspace_select` 抽出以便測試）。前端新增 `services/persistence/backendError.ts`（Zod 驗證、`BackendError`），`backend.ts` 的每個 `invoke` 經 `call()` 轉換。`BackendError.message`／`String(error)` 暫為舊英文句子（`detail` 不顯示），票 007 換成集中對照表、票 012 換成字典後移除。`serde_json = "1"` 經同意加入 `[dev-dependencies]`。測試：`typecheck`、`lint` Passed；`npm test` 93/93；`test:rust` 9/9（原有 5 + 新增 4）；`test:desktop` Passed。**偏差**：`IO_ERROR` 畫面文字改為固定句子，不再顯示系統訊息。**未驗證**：symlink／跳出工作區的 `PATH_NOT_ALLOWED` 僅 unix 測得到；`test:desktop` 只確認被拒絕、未確認代碼；`test:e2e` 未跑；人工驗收未做。
 
+- 票 007（2026-11-04，已 commit 並 push）：`issues`、`openError`、`saveError` 由字串改為結構。`WorkspaceOpenError` 帶 `code`（`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`、`WORKSPACE_TOO_NEW` 含 `version`）；`issues` 為 `FILE_SKIPPED {file, detail}`／`SETTINGS_RESET`；store 的 `openError`（另有 `WORKSPACE_LOCKED`、`NOT_A_WORKSPACE`、`OPEN_FAILED` 含 `detail`）與 `saveError`（`SAVE_FAILED`）存代碼。新增 `src/services/notices/notices.ts`：型別與**唯一**英文對照表（票 012 取代它），`Notices`、`WelcomeScreen` 依代碼顯示，`BackendError.message` 改讀此表。測試：`openErrors.test.ts`（TC-08 三情境含雜湊不變、`FILE_SKIPPED`、`SETTINGS_RESET`）、`workspaceSession.test.ts`、`saveError.test.ts`、`notices.test.ts`。`typecheck`、`lint` Passed；`npm test` 109/109；`test:e2e` 單次 34/34（含 magnet，本次未失敗，未跑 `--repeat-each`，不代表已修）。**偏差**：`saveError`、`OPEN_FAILED` 畫面不再附加診斷句；`WorkspaceOpenError.message` 仍是英文（非畫面文字）；`FILE_SKIPPED` 的「長度或名稱」原因目前歸在 `invalid content`。**未驗證**：真實磁碟與 Tauri 桌面版、`test:rust`（未動 Rust）、NFR-01 連續 3 次 e2e、人工驗收。追溯：`docs/06-test-plan.md` 第 224 列已回填；票 007 驗收條件已勾選（含偏差註記）。
+
 ### 進行中
 - 無。
 
@@ -46,7 +48,7 @@
 ### 下一步（最多三項）
 1. 用 `/diagnosing-bugs` 查 9 個 e2e 失敗的原因（先分環境／測試／實作）。
 2. 試 `npm run desktop`（Edge WebView 156 已在本機）。
-3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿；待決 S-01、S-02、Q-05、NFR-01 的重複次數 N）；拆票已完成（`issues/` 共 21 張，`issues/README.md` 有索引與依賴圖）；可立即開始的票：018、022（006 已完成；007 的前置已滿足），每張票另開新對話，用 `/implement` 與 `/tdd`。Brief、PRD、SRS 已確認，三張流程圖已產出於 `diagrams/`。
+3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿；待決 S-01、S-02、Q-05、NFR-01 的重複次數 N）；拆票已完成（`issues/` 共 21 張，`issues/README.md` 有索引與依賴圖）；**下一個 session 做票 008**（`issues/008-load-rules-stricter.md`，前置 007 已完成）；其他可開始的票：018、022，每張票另開新對話，用 `/implement` 與 `/tdd`。Brief、PRD、SRS 已確認，三張流程圖已產出於 `diagrams/`。
 
 ### 狀態核對
 

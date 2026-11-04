@@ -1,3 +1,4 @@
+import { openErrorText } from '../services/notices/notices';
 import { selectWorkspace } from '../services/workspace/workspaceSession';
 import { useAppStore } from '../stores/appStore';
 import { PALETTE } from '../utils/color';
@@ -31,7 +32,7 @@ export function WelcomeScreen() {
       </div>
       {openError && (
         <p role="alert" className="max-w-md text-sm text-danger">
-          {openError}
+          {openErrorText(openError)}
         </p>
       )}
     </div>
