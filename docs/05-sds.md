@@ -97,7 +97,7 @@
 
 ### API-02｜`workspace_restore()`（FR-05、FR-11；修改）
 
-啟動時還原。安裝版：讀 `last-workspace.txt`，檔案不存在或資料夾已無 `workspace.json` → 回傳 `null`（回到歡迎畫面，不重建）；否則依 API-01 的③④⑥取鎖並回傳位置。**免安裝版**（見 API-07）：根目錄固定為執行檔旁的 `data`（不存在就建立，這是 App 自己的資料夾），不讀也不寫 `last-workspace.txt`；`initialized` 為 `false` 時前端走既有的初始化流程建立工作區。取鎖失敗同樣回傳 `WORKSPACE_LOCKED`。
+啟動時還原。安裝版：讀 `last-workspace.txt`，檔案不存在或資料夾已無 `workspace.json` → 回傳 `null`（回到歡迎畫面，不重建）；否則依 API-01 的③④⑥取鎖並回傳位置。**免安裝版**（見 API-07）：啟動時一律開啟執行檔旁的 `data`（不存在就建立，這是 App 自己的資料夾），不讀也不寫 `last-workspace.txt`；`initialized` 為 `false` 時前端走既有的初始化流程建立工作區。取鎖失敗同樣回傳 `WORKSPACE_LOCKED`。`data` 無法建立或寫入時回傳明確的錯誤代碼（`PORTABLE_DATA_UNAVAILABLE`，`detail` 僅供診斷），**不改存**使用者目錄、也不退回歡迎畫面假裝成功。手動切換工作區（API-01）在免安裝版照常運作，但不寫 `last-workspace.txt`，下次啟動仍回到 `data`。
 
 ### API-03｜`workspace_close()`（修改）
 
@@ -121,7 +121,7 @@
 
 在 Tauri 啟動**之前**執行，輸入為「執行檔所在目錄」。
 
-- 免安裝判斷：目錄內存在 `portable.flag` → 免安裝模式，工作區與 App 設定都用 `<目錄>/data`。
+- 免安裝判斷：目錄內存在 `portable.flag` → 免安裝模式，啟動時開啟 `<目錄>/data`，App 設定始終存在該處（不隨手動切換的工作區移動）。
 - WebView2 偵測（僅 Windows）：登錄值 `EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}` 的 `pv` 存在且不是 `0.0.0.0`（檢查 64 位元的 `WOW6432Node` 與 `HKCU`）。缺少 → 顯示原生說明視窗後以結束碼 1 結束，**不啟動 Tauri**。視窗文字依 `locale` 內建兩種語言（`zh*` 為繁體中文，其他為英文），內容為「找不到 Microsoft Edge WebView2 執行階段，請用瀏覽器到微軟官方網頁下載後再開啟」並附網址（網址於實作時再確認）。App 本身不連網（NFR-03）。
 
 ## UI 與模組契約
@@ -189,8 +189,8 @@
 
 | ID | 問題 | 決策人 |
 |---|---|---|
-| S-01 | ADR-05：以 `portable.flag` 判斷免安裝模式，是否同意 | 專案擁有者 |
-| S-02 | 做安裝檔前，`tauri build` 下載 NSIS 工具的寫入位置（可能在 C 槽，未驗證）是否接受 | 專案擁有者 |
+| S-01 | ADR-05：以 `portable.flag` 判斷免安裝模式，是否同意 | **已決定（2026-11-05）**：同意，附三項條件，見 SAD ADR-05 |
+| S-02 | 做安裝檔前，`tauri build` 下載 NSIS 工具的寫入位置（可能在 C 槽，未驗證）是否接受 | **已決定（2026-11-05）**：選 A，`useLocalToolsDir: true`，見票 016 末段 |
 | Q-05 | radial hover 效果樣式（不影響其他契約） | 專案擁有者 |
 | — | WebView2 官方下載網址、Windows 10 1803 實機行為，於實作與驗證時確認 | 實作者 |
 

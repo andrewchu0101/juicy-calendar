@@ -24,6 +24,8 @@
 - 票 009（2026-11-04，未 commit）：新增 `src-tauri/src/workspace_lock.rs`（`acquire` 用 `File::try_lock`，`.juicy.lock` 不截斷）；`lib.rs` 的 `activate_in` 先取鎖再 `remember`，同資料夾（正規化後）不重鎖；`fs_safe::new_workspace_dir` 忽略 `.juicy.lock`。Rust 改釘 1.90.0（`rust-toolchain.toml`、`Cargo.toml` rust-version 1.90；本機已裝 1.90.0，1.99.1 仍在）。`test:rust` 15 passed、`typecheck`／`lint` Passed、`npm test` 123 passed。**人工驗收未做**（兩個真實 App 行程；不能用真實 `last-workspace.txt`，需另想隔離做法）；`JUICY_SMOKE_WORKSPACE` 路徑未取鎖（是否補鎖待專案擁有者決定，補了會影響 `test:desktop`）；`test:e2e`、`test:desktop` 本票未跑。
 - 票 010（2026-11-04，已 commit）：新增 `src/i18n/`（`detectLanguage`、`dictionary`、`i18n` store 含 `initLanguage`／`setLanguage`／`translate`、`useT`）；`WorkspaceBackend` 加 `readAppSettings`／`writeAppSettings`／`systemInfo`（瀏覽器版用 `localStorage` 與 `navigator`，Tauri 版呼叫新命令）；Rust 新增 `app_settings.rs`、`platform_win.rs`（`system_locale`，unsafe 只在此）並在 `lib.rs` 註冊 `app_settings_read`／`app_settings_write`／`system_info`；歡迎畫面有語言選單、完整翻譯、儲存失敗的紅底錯誤。`typecheck`、`lint` Passed；`npm test` 181 passed；`test:rust` 23 passed；`test:e2e` 44 passed；`test:desktop` Passed。偏差與未驗證見 `issues/010-i18n-foundation.md` 末段與追溯表 AC-03.2 列。**未驗證**：桌面版實際寫入 `%APPDATA%\app.juicycalendar.timeblock\app-settings.json`（需同意）；日曆畫面沒有語言選單；`serde_json` 搬到正式依賴（已同意）。
 
+- 票 015 免安裝模式（2026-11-05，未 commit）：S-01 決定採用 portable.flag（啟動一律開 data、App 設定始終在 data、data 無法使用時顯示明確錯誤且不改存別處、外部工作區不在整包帶走承諾內）。新增 portable.rs、restore_portable、錯誤代碼 PORTABLE_DATA_UNAVAILABLE（前端 Zod、字典兩種語言、workspaceSession）；SRS FR-11 的「刪除資料夾即移除」改為「即可移除程式與其中的使用者資料」。typecheck、lint Passed；npm test 314 passed；test:rust 43 passed；test:desktop Passed；debug 執行檔實機驗證第一次啟動、複製資料夾再啟動。未驗證：M-02 人工流程、release 版與 zip（票 017）、錯誤畫面實機文字、WebView2 快取位置、test:e2e 本輪未跑。細節見 issues/015-portable-mode.md 末段。
+
 - pre-commit 控制字元檢查（2026-11-04）：新增 `.githooks/pre-commit`（只檢查本次 commit 暫存的內容：文字檔不得有控制字元、`.md` 不得有 Tab、文字副檔名不得含 NUL）與回歸規格 `.githooks/test-pre-commit.sh`（17 項；先紅後綠，4 種突變都會變紅；真實 repo 端到端驗證過被擋）。`.maintain/check.sh` 會跑它，`.maintain/check-hooks.sh` 檢查已啟用；`AGENTS.md` 規則 16 與「怎麼跑」已補說明。**每個新 clone 要執行一次 `git config core.hooksPath .githooks`**（存在本機 `.git/config`，不隨 repo 傳出）。其他系統 clone 若 hook 沒觸發，commit 時加 `--chmod=+x`。**下一個 session 從票 011（翻譯日曆與工具列）開始**，開工前先讀 `AGENTS.md`、`CLAUDE.md`、`docs/LESSONS.md` 與本檔。
 
 - 與 demo 去耦合（2026-11-04）：專案與 demo 的 Tauri `identifier` 相同（`app.juicycalendar.desktop`）、開發埠同為 1420 且 `strictPort`，會共用 `%APPDATA%` 設定資料夾與瀏覽器 `localStorage`、也不能同時跑 `npm run dev`。已改為識別碼 `app.juicycalendar.timeblock`、埠 1421（`tauri.conf.json`、`vite.config.ts`、`playwright.config.ts`，並同步 `AGENTS.md`、`README.md`、SAD／SDS／追溯表的路徑）。`typecheck`、`lint`、`npm test` 181、`test:rust` 23、`test:e2e` 44、`test:desktop` 皆 Passed。**影響**：換識別碼後，桌面版不會讀到舊的 `last-workspace.txt`，第一次啟動回到歡迎畫面（需重新選一次工作區）；舊資料夾 `%APPDATA%\app.juicycalendar.desktop\` 仍在，App 不再使用，未刪除。**未處理**：`HANDOFF.md` 摘要仍寫有 demo 的相對路徑（專案擁有者表示不用改）。
@@ -65,7 +67,7 @@
 ### 下一步（最多三項）
 1. 票 022：用 `/diagnosing-bugs` 查 e2e 間歇失敗（`overlapping events…`、`weekly and daily views…`、magnet），讓 NFR-01 成立。
 2. 票 009／010（建議順序見 `issues/README.md`）；其他可開始的票：018。每張票另開新對話，用 `/implement` 與 `/tdd`。
-3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿）；待決項：S-01（票 015）、S-02（票 016）、Q-05（票 020）、NFR-01 的重複次數 N（待人定；票 022 的驗收依賴它）。
+3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿）；待決項：Q-05（票 020）（S-01 採用 portable.flag、S-02 選 A 皆已於 2026-11-05 決定；票 016 下一步是取得同意後跑 tauri build）、Q-05（票 020）、NFR-01 的重複次數 N（待人定；票 022 的驗收依賴它）。
 
 ### 狀態核對
 

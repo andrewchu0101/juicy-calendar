@@ -36,8 +36,8 @@
 | 012 | [翻譯面板、模板編輯器、通知與錯誤](012-translate-panel-notices.md) | M | 007、010 | 完成（人工驗收未做） |
 | 013 | [時間格式跟隨 Windows](013-time-format-windows.md) | M | 010 | 實作完成（M-05 人工驗收待專案擁有者） |
 | 014 | [缺少 WebView2 時顯示說明](014-webview2-preflight.md) | M | 010 | 完成（英文版與 release 版未驗證） |
-| 015 | [免安裝模式](015-portable-mode.md) | M | 009、010，**S-01 決定** | **未就緒** |
-| 016 | [NSIS 安裝檔與 README](016-nsis-installer.md) | M | 000，**S-02 決定** | **未就緒** |
+| 015 | [免安裝模式](015-portable-mode.md) | M | 009、010（S-01 已於 2026-11-05 決定） | 實作完成（M-02 人工驗收、WebView2 快取位置待專案擁有者） |
+| 016 | [NSIS 安裝檔與 README](016-nsis-installer.md) | M | 000（S-02 已於 2026-11-05 決定：選 A） | 設定已改；建置前須再確認 |
 | 017 | [免安裝 .zip 組裝腳本](017-portable-zip.md) | S | 015、016 | 等待前置票 |
 | 018 | [離線靜態檢查](018-offline-static-check.md) | S | 無 | 可開始 |
 | 019 | [排版隨內容與視窗調整](019-adaptive-layout.md) | M | 003、011、012 | 等待前置票 |
@@ -46,7 +46,7 @@
 | 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |
 | 023 | [工具列語言選單](023-toolbar-language-menu.md) | S | 010、011 | 可開始 |
 
-**待專案擁有者決定**：S-01（以 `portable.flag` 判斷免安裝模式，見 `docs/04-sad.md` ADR-05）、S-02（`tauri build` 下載 NSIS 工具的寫入位置，預期在 C 槽，見 SDS 打包契約）、Q-05（radial hover 樣式）。
+**待專案擁有者決定**：Q-05（radial hover 樣式）。
 
 ## 依賴圖
 
