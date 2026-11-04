@@ -23,6 +23,8 @@
 
 - 票 001（2026-11-04）：`e2e/core.spec.ts` 的 `dragBall` 改為放開前等待拖曳狀態與放置預覽；TC-01／TC-02 已標註。`test:e2e` 連續 3 次皆 29/29 通過（修復前 22／9／16）；`typecheck`、`lint`、`npm test`（48）Passed。未改產品程式與斷言。`dragFromTo`（移動／調整）未改，但 3 次皆綠。
 
+- 票 002（2026-11-04，未 commit）：新增 `src/test-support/workspaceFixture.ts`（測試專用 fixture 建構器：格式版本 2、6 模板、可附加事件與壞檔）與 `src/services/persistence/reopen.test.ts`（TC-06、AC-02.1、FR-05）。`typecheck`、`lint` Passed；`npm test` 49/49 Passed；`npm run build` 的 `dist` 檔名與大小與先前完全相同、無 fixture 內容。未改產品程式。未跑 test:rust、test:e2e（與本票無關）。
+
 ### 進行中
 - 無。
 

@@ -219,7 +219,7 @@
 | AC-01.3 | TC-03 | 未執行 | |
 | AC-01.4、FR-04 | M-03 | 未執行 | **缺口**：受阻於 Q-05 |
 | FR-03 | TC-04 | 未執行 | |
-| AC-02.1、FR-05 | TC-06 | 未執行 | |
+| AC-02.1、FR-05 | TC-06 | 2026-11-04，`npx vitest run src/services/persistence/reopen.test.ts` 1/1 Passed；完整 `npm test` 49/49 Passed（Windows 11、Node 24.22.0、記憶體版 backend、假時鐘 2026-11-02 12:00 EST）。先紅後綠：紅燈原因為空 fixture（`This folder has no workspace.json.`） | 重開驗證用記憶體版 backend，**未驗證**真實磁碟寫入；`.juicy.lock` 等屬 TC-09／10 |
 | AC-02.2、FR-06、NFR-04 | TC-07、TC-08 | 未執行 | |
 | AC-02.3、FR-07 | TC-09 | 未執行 | 雲端同步資料夾與網路磁碟**未涵蓋** |
 | AC-03.1、FR-08、NFR-05 | M-01、M-07 | 未執行 | Windows 10 1803 可能無環境 |
