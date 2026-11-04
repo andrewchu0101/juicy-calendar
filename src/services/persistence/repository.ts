@@ -51,13 +51,16 @@ function parseWith<T>(raw: string, schema: ZodType<T>): T | null {
   }
 }
 
-function skipReason(raw: string, parsedOk: boolean): string {
+function skipReason<T>(raw: string, schema: ZodType<T>): string {
+  let value: unknown;
   try {
-    JSON.parse(raw);
+    value = JSON.parse(raw);
   } catch {
     return 'invalid JSON';
   }
-  return parsedOk ? 'file name does not match id' : 'invalid content';
+  const result = schema.safeParse(value);
+  if (result.success) return 'file name does not match id';
+  return result.error.issues[0]?.message ?? 'invalid content';
 }
 
 async function loadEntities<T extends { id: string }>(
@@ -72,7 +75,7 @@ async function loadEntities<T extends { id: string }>(
     if (raw === null) continue;
     const entity = parseWith(raw, schema);
     if (entity && file === `${entity.id}.json`) entities[entity.id] = entity;
-    else issues.push({ code: 'FILE_SKIPPED', file: `${dir}/${file}`, detail: skipReason(raw, entity !== null) });
+    else issues.push({ code: 'FILE_SKIPPED', file: `${dir}/${file}`, detail: skipReason(raw, schema) });
   }
   return entities;
 }

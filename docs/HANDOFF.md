@@ -4,7 +4,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-04（票 007 完成，已 commit 並 push；下一個 session 做票 008） |
+| 更新時間 | 2026-11-04（票 008 完成，未 commit；票 007 已 push） |
 | 目前目標 | 把一次性 demo 接手成「依 template 流程開發」的專案；下一步補文件（Brief → PRD → SRS …） |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
 | 分支／HEAD | `main` ／ 票 006 的 commit 在 `ddd3551`（票 005）之上；無遠端，未 push |
