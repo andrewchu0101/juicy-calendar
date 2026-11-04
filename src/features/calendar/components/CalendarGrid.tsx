@@ -1,6 +1,10 @@
 import { format, isSameDay } from 'date-fns';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../../stores/appStore';
+import { formatDate } from '../../../i18n/dateFormat';
+import { useI18nStore } from '../../../i18n/i18n';
+import { hiddenEventsTitle } from '../../../i18n/hiddenEventsTitle';
+import { useT } from '../../../i18n/useT';
 import {
   isPastDate,
   formatDuration,
@@ -56,6 +60,8 @@ export function CalendarGrid({
   ghost: GhostEvent | null;
 }) {
   const { days, timeline } = useCalendarModel();
+  const t = useT();
+  const language = useI18nStore((state) => state.language);
   const events = useAppStore((state) => state.events);
   const selectedEventId = useAppStore((state) => state.selectedEventId);
   const editingEventId = useAppStore((state) => state.editingEventId);
@@ -101,11 +107,11 @@ export function CalendarGrid({
               <button
                 key={day.toISOString()}
                 data-testid="day-header"
-                title={`Open ${format(day, 'EEEE')}`}
+                title={t('grid.openDay', { weekday: formatDate(day, 'EEEE', language) })}
                 className="flex min-w-0 flex-1 items-center justify-center gap-1.5 py-2 text-sm hover:bg-canvas"
                 onClick={() => openDay(day)}
               >
-                <span className="text-muted">{format(day, 'EEE')}</span>
+                <span className="text-muted">{formatDate(day, 'EEE', language)}</span>
                 <span
                   className={`flex size-6 items-center justify-center rounded-full font-semibold ${today ? 'bg-ink text-white' : ''}`}
                 >
@@ -114,7 +120,7 @@ export function CalendarGrid({
                 {hiddenCount > 0 && (
                   <span
                     data-testid="hidden-count"
-                    title={`${hiddenCount} event${hiddenCount > 1 ? 's' : ''} outside the visible hours`}
+                    title={hiddenEventsTitle(language, hiddenCount)}
                     className="rounded-full bg-line px-1.5 text-xs text-muted"
                   >
                     +{hiddenCount}

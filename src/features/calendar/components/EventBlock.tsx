@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useAppStore } from '../../../stores/appStore';
+import { useT } from '../../../i18n/useT';
 import type { CalendarEvent } from '../../../types';
 import { mutedEventColor, readableTextColor } from '../../../utils/color';
 import { formatTimeRange, type EventSegment } from '../engine';
@@ -23,6 +24,7 @@ function cornerClasses(segment: EventSegment): string {
 }
 
 function TitleEditor({ event }: { event: CalendarEvent }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const cancelled = useRef(false);
   const eventId = event.id;
@@ -48,7 +50,7 @@ function TitleEditor({ event }: { event: CalendarEvent }) {
     <input
       ref={inputRef}
       data-testid="event-title-input"
-      aria-label="Event name"
+      aria-label={t('event.nameAria')}
       defaultValue={event.title}
       className="absolute inset-x-1 top-1 z-10 min-w-0 rounded bg-white/90 px-1 py-0.5 text-xs font-semibold text-ink outline-none select-text"
       onPointerDown={(press) => press.stopPropagation()}
