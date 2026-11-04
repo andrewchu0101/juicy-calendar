@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // TC-11｜AC-03.2、FR-09、SRS R-7：瀏覽器版 backend（localStorage 與 navigator）。
-// 預設 locale 是 en-US（playwright.config.ts）；這裡以 test.use 逐組覆寫，不改全域設定。
+// 預設 locale 是 en-GB（英文、24 小時制，見 playwright.config.ts）；這裡以 test.use 逐組覆寫，不改全域設定。
 const KEY = 'juicy-calendar:app-settings';
 const stored = (page: Page) => page.evaluate((key) => localStorage.getItem(key), KEY);
 

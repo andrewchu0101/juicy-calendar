@@ -1,11 +1,12 @@
 import { useAppStore } from '../../../stores/appStore';
 import { useI18nStore } from '../../../i18n/i18n';
+import { formatTime } from '../../../i18n/formatTime';
 import { rangeLabel } from '../../../i18n/rangeLabel';
 import { useT } from '../../../i18n/useT';
+import { useTimeFormat } from '../../../i18n/useTimeFormat';
 import { useCalendarModel } from '../hooks/useCalendarModel';
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
-const hourLabel = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 const iconButton =
   'flex size-8 items-center justify-center rounded-full text-lg text-ink transition-transform hover:scale-110 hover:bg-line active:scale-95';
@@ -13,6 +14,9 @@ const iconButton =
 export function CalendarToolbar() {
   const { days } = useCalendarModel();
   const t = useT();
+  const timeFormat = useTimeFormat();
+  /** 時間軸選單的整點標籤，跟隨 Windows 的 12／24 小時設定（FR-10）。 */
+  const hourLabel = (hour: number) => formatTime(new Date(2000, 0, 1, hour, 0), timeFormat);
   const language = useI18nStore((state) => state.language);
   const settings = useAppStore((state) => state.settings);
   const updateSettings = useAppStore((state) => state.updateSettings);

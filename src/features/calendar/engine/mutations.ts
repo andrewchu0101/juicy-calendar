@@ -1,4 +1,4 @@
-import { addDays, format } from 'date-fns';
+import { addDays } from 'date-fns';
 
 import { EVENT_MAX_MINUTES, EVENT_MIN_MINUTES, NAME_MAX_CHARS, NEW_EVENT_MINUTES } from './limits';
 
@@ -122,6 +122,3 @@ export function formatDuration(minutes: number): string {
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 
-export function formatTimeRange(event: TimedEvent): string {
-  return `${format(new Date(event.startAt), 'HH:mm')}–${format(new Date(event.endAt), 'HH:mm')}`;
-}

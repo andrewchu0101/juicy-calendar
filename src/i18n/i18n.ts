@@ -5,9 +5,15 @@ import { dictionaries, type Dictionary, type TranslationKey } from './dictionary
 
 /** `saveError` is a code, never a sentence or a diagnostic: the screen translates it (AGENTS.md rule 11). */
 export type LanguageSaveError = 'LANGUAGE_SAVE_FAILED';
-type I18nState = { language: Language; ready: boolean; saveError: LanguageSaveError | null };
+type I18nState = {
+  language: Language;
+  ready: boolean;
+  saveError: LanguageSaveError | null;
+  /** Windows' 12/24-hour setting (API-06); null until read or when it cannot be read (FR-10). */
+  systemHour12: boolean | null;
+};
 
-export const useI18nStore = create<I18nState>(() => ({ language: 'en', ready: false, saveError: null }));
+export const useI18nStore = create<I18nState>(() => ({ language: 'en', ready: false, saveError: null, systemHour12: null }));
 
 type LanguageBackend = Pick<WorkspaceBackend, 'readAppSettings' | 'writeAppSettings' | 'systemInfo'>;
 
@@ -26,8 +32,10 @@ export async function initLanguage(
     (settings) => settings.language,
     () => null,
   );
-  const language = saved ?? detectLanguage((await backend.systemInfo()).locale, navigatorLanguages);
-  useI18nStore.setState({ language, ready: true });
+  // System info is read every time (FR-10 needs `hour12` even when a language is saved); it never blocks start-up.
+  const info = await backend.systemInfo().catch(() => ({ locale: null, hour12: null }));
+  const language = saved ?? detectLanguage(info.locale, navigatorLanguages);
+  useI18nStore.setState({ language, ready: true, systemHour12: info.hour12 });
 }
 
 /**

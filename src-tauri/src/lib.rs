@@ -235,10 +235,10 @@ struct SystemInfo {
     hour12: Option<bool>,
 }
 
-/// Never fails: a value that cannot be read is reported as null. `hour12` is ticket 013's job.
+/// Never fails: a value that cannot be read is reported as null (FR-09, FR-10).
 #[tauri::command]
 fn system_info() -> SystemInfo {
-    SystemInfo { locale: platform_win::system_locale(), hour12: None }
+    SystemInfo { locale: platform_win::system_locale(), hour12: platform_win::system_hour12() }
 }
 
 #[cfg(test)]

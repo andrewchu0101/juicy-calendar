@@ -13,6 +13,30 @@ fn locale_from_utf16(buffer: &[u16]) -> Option<String> {
     (language_ok && rest_ok).then_some(name)
 }
 
+/// Decides 12- or 24-hour from a Windows time pattern such as `tt hh:mm` or `HH:mm` (FR-10, API-06).
+/// The first `h` / `H` outside single quotes decides: `h` is a 12-hour clock, `H` a 24-hour one.
+/// Returns `None` when the pattern has no hour symbol.
+/// A doubled quote (`''`) is one literal quote character, so toggling on every quote handles it.
+fn hour12_from_time_pattern(pattern: &str) -> Option<bool> {
+    let mut quoted = false;
+    for symbol in pattern.chars() {
+        match symbol {
+            '\'' => quoted = !quoted,
+            'h' if !quoted => return Some(true),
+            'H' if !quoted => return Some(false),
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Turns the UTF-16 buffer Windows filled in into the pattern text. `None` without a terminator or when empty.
+fn pattern_from_utf16(buffer: &[u16]) -> Option<String> {
+    let end = buffer.iter().position(|&unit| unit == 0)?;
+    let text = String::from_utf16(&buffer[..end]).ok()?;
+    (!text.is_empty()).then_some(text)
+}
+
 #[cfg(windows)]
 mod ffi {
     #[link(name = "kernel32")]
@@ -22,6 +46,10 @@ mod ffi {
     /// A null locale name means "the current user's default locale".
     pub const LOCALE_NAME_USER_DEFAULT: *const u16 = std::ptr::null();
     pub const LOCALE_SNAME: u32 = 0x0000_005C;
+    /// The short time pattern the user has set, for example `tt hh:mm` or `HH:mm`.
+    pub const LOCALE_SSHORTTIME: u32 = 0x0000_0079;
+    /// Time patterns are at most 80 characters long, plus the terminator.
+    pub const TIME_PATTERN_MAX_LENGTH: usize = 81;
     /// LOCALE_NAME_MAX_LENGTH, including the terminator.
     pub const LOCALE_NAME_MAX_LENGTH: usize = 85;
 }
@@ -43,6 +71,27 @@ pub fn system_locale() -> Option<String> {
 
 #[cfg(not(windows))]
 pub fn system_locale() -> Option<String> {
+    None
+}
+
+/// Whether Windows shows a 12-hour clock (`Some(true)`), a 24-hour one (`Some(false)`), or is unknown
+/// (`None`, also on other platforms). Reads the user's short time pattern, so custom formats count.
+#[cfg(windows)]
+pub fn system_hour12() -> Option<bool> {
+    let mut buffer = [0u16; ffi::TIME_PATTERN_MAX_LENGTH];
+    // SAFETY: `buffer` is valid for `buffer.len()` UTF-16 units and the length passed is exactly that;
+    // a null locale name is the documented way to ask for the user default.
+    let written = unsafe {
+        ffi::GetLocaleInfoEx(ffi::LOCALE_NAME_USER_DEFAULT, ffi::LOCALE_SSHORTTIME, buffer.as_mut_ptr(), buffer.len() as i32)
+    };
+    if written <= 0 {
+        return None;
+    }
+    hour12_from_time_pattern(&pattern_from_utf16(&buffer)?)
+}
+
+#[cfg(not(windows))]
+pub fn system_hour12() -> Option<bool> {
     None
 }
 
@@ -94,5 +143,70 @@ mod tests {
     #[test]
     fn other_platforms_report_unknown() {
         assert_eq!(system_locale(), None);
+        assert_eq!(system_hour12(), None);
+    }
+
+    // TC-12｜FR-10：Windows 一定有短時間圖樣，其中一定有小時符號。
+    #[cfg(windows)]
+    #[test]
+    fn windows_reports_a_twelve_or_twenty_four_hour_clock() {
+        assert!(system_hour12().is_some(), "the user default time pattern always has an hour symbol");
+    }
+
+    // TC-12、API-06｜FR-10：由 Windows 的短時間圖樣判斷 12／24 小時。
+    #[test]
+    fn hour_symbol_decides_twelve_or_twenty_four_hour() {
+        for (pattern, expected) in [
+            ("tt hh:mm", Some(true)),
+            ("h:mm tt", Some(true)),
+            ("tt h:mm", Some(true)),
+            ("hh:mm:ss tt", Some(true)),
+            ("HH:mm", Some(false)),
+            ("H:mm", Some(false)),
+            ("HH:mm:ss", Some(false)),
+        ] {
+            assert_eq!(hour12_from_time_pattern(pattern), expected, "{pattern}");
+        }
+    }
+
+    // 單引號內是字面文字，不是時間符號；兩個單引號是一個單引號字元。
+    #[test]
+    fn quoted_text_is_not_an_hour_symbol() {
+        for (pattern, expected) in [
+            ("'h' HH:mm", Some(false)),
+            ("HH'h'mm", Some(false)),
+            ("'H' hh:mm", Some(true)),
+            ("'o''clock' h:mm tt", Some(true)),
+        ] {
+            assert_eq!(hour12_from_time_pattern(pattern), expected, "{pattern}");
+        }
+    }
+
+    // 沒有小時符號（或根本不是時間圖樣）→ 不知道，前端退回 Intl。
+    #[test]
+    fn a_pattern_without_an_hour_symbol_is_unknown() {
+        for pattern in ["", "mm:ss", "tt", "'hh'", "   "] {
+            assert_eq!(hour12_from_time_pattern(pattern), None, "{pattern:?}");
+        }
+    }
+
+    // Windows 回傳以 NUL 結尾的 UTF-16，後面可能還有舊資料。
+    #[test]
+    fn reads_the_pattern_up_to_the_terminator() {
+        assert_eq!(pattern_from_utf16(&utf16("tt hh:mm", &[0x41, 0x42])).as_deref(), Some("tt hh:mm"));
+        assert_eq!(pattern_from_utf16(&utf16("HH:mm", &[])).as_deref(), Some("HH:mm"));
+    }
+
+    #[test]
+    fn unusable_pattern_buffers_are_unknown() {
+        let unterminated: Vec<u16> = "HH:mm".encode_utf16().collect();
+        for (label, buffer) in [
+            ("empty slice", Vec::new()),
+            ("immediately terminated", vec![0]),
+            ("no terminator", unterminated),
+            ("lone surrogate", vec![0xD800u16, 0]),
+        ] {
+            assert_eq!(pattern_from_utf16(&buffer), None, "{label}");
+        }
     }
 }

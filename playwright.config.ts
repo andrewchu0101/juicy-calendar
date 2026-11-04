@@ -10,7 +10,9 @@ export default defineConfig({
     browserName: 'webkit',
     viewport: { width: 1400, height: 900 },
     timezoneId: 'America/New_York',
-    locale: 'en-US',
+    // English with a 24-hour clock: browser mode has no Windows setting, so the time format comes from Intl
+    // (FR-10, API-06). Specs that need a 12-hour clock set their own locale (en-US, zh-TW).
+    locale: 'en-GB',
   },
   webServer: {
     command: 'npm run dev',

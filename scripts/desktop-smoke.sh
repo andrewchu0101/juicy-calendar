@@ -29,10 +29,14 @@ run desktop-smoke.js
 echo "Report:"; cat "$workspace/settings.corrupt.json"; echo
 report="$workspace/settings.corrupt.json"
 for expected in '"ballCount": 6' '"ballImage": "none"' '"stylesLoaded": true' '"ghostShown": true' \
-  '"blocksAfterDrop": 1' '"droppedTime": "10:30–12:30"' '"readTraversal": "rejected"' \
+  '"blocksAfterDrop": 1' '"readTraversal": "rejected"' \
   '"writeAbsolute": "rejected"' '"writeNested": "rejected"' '"listOutside": "rejected"'; do
   grep -qF "$expected" "$report" || fail "report is missing $expected"
 done
+# The drop must land on 10:30 and end at 12:30. How the times are written follows the machine's 12/24-hour
+# setting and the saved language (10:30–12:30, 10:30 AM–12:30 PM, 上午 10:30–下午 12:30), so this checks
+# the two moments in order and leaves the format to the TC-12 unit tests (ticket 013).
+grep -qE '"droppedTime": "[^"]*10:30[^"]*12:30[^"]*"' "$report" || fail "report is missing the drop time 10:30 to 12:30"
 [ -f "$workspace/workspace.json" ] || fail "workspace.json was not created"
 [ "$(ls "$workspace/templates" | wc -l | tr -d ' ')" = 6 ] || fail "templates were not seeded"
 [ "$(ls "$workspace/events" | wc -l | tr -d ' ')" = 1 ] || fail "the event was not written to disk"

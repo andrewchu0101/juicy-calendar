@@ -1,9 +1,11 @@
 import { useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useAppStore } from '../../../stores/appStore';
+import { formatTimeRange } from '../../../i18n/formatTimeRange';
 import { useT } from '../../../i18n/useT';
+import { useTimeFormat } from '../../../i18n/useTimeFormat';
 import type { CalendarEvent } from '../../../types';
 import { mutedEventColor, readableTextColor } from '../../../utils/color';
-import { formatTimeRange, type EventSegment } from '../engine';
+import { type EventSegment } from '../engine';
 import type { InteractionMode } from '../hooks/useEventInteractions';
 import type { GhostEvent } from './CalendarGrid';
 
@@ -87,6 +89,7 @@ export function EventBlock({
   active: boolean;
   onBegin: (press: ReactPointerEvent, mode: InteractionMode) => void;
 }) {
+  const timeFormat = useTimeFormat();
   const setEditing = useAppStore((state) => state.setEditing);
   const displayColor = past ? mutedEventColor(event.color) : event.color;
   const showTime = segment.height >= 38;
@@ -97,7 +100,7 @@ export function EventBlock({
       data-event-id={event.id}
       data-selected={selected}
       data-active={active}
-      title={`${event.title} · ${formatTimeRange(event)}`}
+      title={`${event.title} · ${formatTimeRange(event, timeFormat)}`}
       className={`event-block absolute cursor-grab overflow-hidden px-1.5 ${cornerClasses(segment)} ${dropped ? 'event-drop' : ''}`}
       style={{
         ...segmentStyle(segment),
@@ -125,7 +128,7 @@ export function EventBlock({
           </div>
           {showTime && (
             <div data-testid="event-time" className="truncate opacity-75 tabular-nums">
-              {formatTimeRange(event)}
+              {formatTimeRange(event, timeFormat)}
             </div>
           )}
         </div>
@@ -152,6 +155,7 @@ export function EventBlock({
 
 /** Where a dragged ball would land. */
 export function GhostBlock({ segment, event }: { segment: EventSegment; event: GhostEvent }) {
+  const timeFormat = useTimeFormat();
   return (
     <div
       data-testid="drop-ghost"
@@ -166,7 +170,7 @@ export function GhostBlock({ segment, event }: { segment: EventSegment; event: G
       }}
     >
       <div className="truncate font-semibold">{event.title}</div>
-      <div className="truncate opacity-75">{formatTimeRange(event)}</div>
+      <div className="truncate opacity-75">{formatTimeRange(event, timeFormat)}</div>
     </div>
   );
 }

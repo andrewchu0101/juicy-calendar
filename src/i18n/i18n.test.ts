@@ -8,7 +8,7 @@ import { initLanguage, setLanguage, setMissingKeyHandler, translate, useI18nStor
 // TC-11｜AC-03.2、FR-09、SRS R-7、SDS i18n 契約。預期值來自規格文字，不從實作推算。
 const language = () => useI18nStore.getState().language;
 
-function memoryBackend(saved: Language | null, locale: string | null) {
+function memoryBackend(saved: Language | null, locale: string | null, hour12: boolean | null = null) {
   const { backend } = buildWorkspaceFixture();
   let stored = saved;
   const writes: unknown[] = [];
@@ -21,12 +21,12 @@ function memoryBackend(saved: Language | null, locale: string | null) {
         writes.push(settings);
         stored = settings.language;
       },
-      systemInfo: async () => ({ locale, hour12: null }),
+      systemInfo: async () => ({ locale, hour12 }),
     },
   };
 }
 
-beforeEach(() => useI18nStore.setState({ language: 'en', ready: false, saveError: null }));
+beforeEach(() => useI18nStore.setState({ language: 'en', ready: false, saveError: null, systemHour12: null }));
 
 describe('initLanguage (TC-11, AC-03.2)', () => {
   it('a saved language wins over the system language', async () => {
@@ -170,3 +170,39 @@ describe('translate (TC-11, FR-09)', () => {
     });
   });
 });
+
+// TC-12｜FR-10、SDS API-06：啟動時讀取 Windows 的 12／24 小時設定並存起來；與是否已儲存語言無關。
+describe('initLanguage reads the Windows time format (TC-12, FR-10)', () => {
+  const hour12 = () => useI18nStore.getState().systemHour12;
+
+  it.each([
+    ['nothing saved', null],
+    ['a saved language', 'zh-TW'],
+  ] as const)('%s: Windows says 12-hour → recorded', async (_label, saved) => {
+    const { backend } = memoryBackend(saved, 'en-US', true);
+    await initLanguage(backend, []);
+    expect(hour12()).toBe(true);
+  });
+
+  it('Windows says 24-hour → recorded as false', async () => {
+    const { backend } = memoryBackend('en', 'en-US', false);
+    await initLanguage(backend, []);
+    expect(hour12()).toBe(false);
+  });
+
+  it('Windows cannot tell (null) → stays null so the browser value is used', async () => {
+    const { backend } = memoryBackend('en', 'en-US', null);
+    await initLanguage(backend, []);
+    expect(hour12()).toBeNull();
+  });
+
+  it('a system info call that fails does not stop the app from starting', async () => {
+    const { backend } = memoryBackend('zh-TW', 'en-US');
+    const failing = { ...backend, systemInfo: async () => Promise.reject(new Error('unreadable')) };
+    await initLanguage(failing, []);
+    expect(hour12()).toBeNull();
+    expect(language()).toBe('zh-TW');
+    expect(useI18nStore.getState().ready).toBe(true);
+  });
+});
+

@@ -4,11 +4,12 @@ import { useAppStore } from '../../../stores/appStore';
 import { formatDate } from '../../../i18n/dateFormat';
 import { useI18nStore } from '../../../i18n/i18n';
 import { hiddenEventsTitle } from '../../../i18n/hiddenEventsTitle';
+import { formatTimeRange } from '../../../i18n/formatTimeRange';
 import { useT } from '../../../i18n/useT';
+import { useTimeFormat } from '../../../i18n/useTimeFormat';
 import {
   isPastDate,
   formatDuration,
-  formatTimeRange,
   durationMinutes,
   hiddenEventCounts,
   hourMarks,
@@ -61,6 +62,7 @@ export function CalendarGrid({
 }) {
   const { days, timeline } = useCalendarModel();
   const t = useT();
+  const timeFormat = useTimeFormat();
   const language = useI18nStore((state) => state.language);
   const events = useAppStore((state) => state.events);
   const selectedEventId = useAppStore((state) => state.selectedEventId);
@@ -222,7 +224,7 @@ export function CalendarGrid({
           className="pointer-events-none fixed z-50 rounded-full bg-ink px-2.5 py-1 text-xs font-medium text-white tabular-nums shadow-lg"
           style={{ left: draft.pointer.x + 14, top: draft.pointer.y + 14 }}
         >
-          {formatTimeRange(draft.times)} · {formatDuration(durationMinutes(draft.times))}
+          {formatTimeRange(draft.times, timeFormat)} · {formatDuration(durationMinutes(draft.times))}
         </div>
       )}
     </div>
