@@ -40,7 +40,7 @@
 | 016 | [NSIS 安裝檔與 README](016-nsis-installer.md) | M | 000（S-02 已於 2026-11-05 決定：選 A） | 建置成功；**M-01 暫緩**（專案擁有者 2026-11-05 決定晚點再回頭，安裝檔在私有 draft release） |
 | 017 | [免安裝 .zip 組裝腳本](017-portable-zip.md) | S | 015、016 | 實作完成（M-02 人工驗收待專案擁有者） |
 | 018 | [離線靜態檢查](018-offline-static-check.md) | S | 無 | 實作完成（僅 NFR-03b 的前端部分；M-06 正式流程未執行；**預跑發現 WebView2 對外連線，NFR-03c 未達成**，後續見 024） |
-| 019 | [排版隨內容與視窗調整](019-adaptive-layout.md) | M | 003、011、012 | 等待前置票 |
+| 019 | [排版隨內容與視窗調整](019-adaptive-layout.md) | M | 003、011、012 | 實作完成（自動檢查通過；M-04 人工驗收待專案擁有者） |
 | 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | **Q-05 決定**、`DESIGN.md` 規則修訂 | **未就緒** |
 | 021 | [面板持續時間可用小時＋分鐘或分鐘輸入](021-duration-hours-minutes.md) | S | 004、SRS R-3 修訂 | **未就緒** |
 | 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |

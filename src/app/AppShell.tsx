@@ -22,8 +22,11 @@ export function AppShell() {
         <TemplatePalette />
         <main className="relative flex min-w-0 flex-1 flex-col pr-3 pb-3">
           <CalendarToolbar />
-          <CalendarGrid scrollerRef={scrollerRef} columnsRef={columnsRef} ghost={drag.ghost} />
-          <Inspector />
+          {/* 面板錨定在日曆區而非整個 main：工具列在窄視窗折行時，面板不會蓋住它（NFR-07）。 */}
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <CalendarGrid scrollerRef={scrollerRef} columnsRef={columnsRef} ghost={drag.ghost} />
+            <Inspector />
+          </div>
         </main>
       </div>
       <TemplateDragOverlay template={drag.activeTemplate} ballRef={drag.overlayBallRef} point={drag.manualPoint} />

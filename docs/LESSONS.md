@@ -82,6 +82,8 @@
 - **官方模擬缺少 WebView2 的環境變數不會讓登錄變空**（2026-11-04，票 014）：`WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 指向空資料夾時，登錄 `pv` 仍是真實版本，只讀登錄的偵測抓不到，App 照舊 panic。偵測要先看該變數（資料夾內有 `msedgewebview2.exe` 才算存在）。規格寫「依登錄偵測」又要求用這個變數驗收，兩者在實測前互相矛盾。
 - **README 與票寫的 D 槽路徑不一定存在**（2026-11-04，票 014）：這台電腦只有 C 槽，Rust 在 `C:\Users\student\.cargo`。開工先 `Get-PSDrive` 與 `Get-Command`，用既有工具，不要照抄票上的路徑。
 - **用 UI Automation 可以替 `MessageBoxW` 做自動化驗收**（2026-11-04，票 014）：`Start-Process` 啟動後以 `System.Windows.Automation` 依行程 ID 找視窗、讀文字、對「確定」呼叫 `InvokePattern`，再讀 `ExitCode`。第一次按下後 5 秒沒結束，第二次重跑就結束（結束碼 1），原因未查明，疑為時序。
+- **幾何型 e2e 偵測器要先排除刻意的剪裁**（2026-11-05，票 019）：`sr-only` 元素與以 `opacity:0` 疊在圓形標籤上的原生顏色輸入都會讓「scrollWidth > clientWidth」誤報。先印出元素與尺寸確認紅燈原因，再調偵測器。flex 子項（`li`）沒有 `min-w-0` 時，內層 `truncate` 不會生效，會把容器撐寬、被祖先 `overflow-hidden` 直接切掉。
+- **浮層的絕對位置要錨定在它不該蓋住的區域之外**（2026-11-05，票 019）：面板固定 `top-14` 在工具列單行時沒事，900px 折成兩行就蓋住控制項。
 
 ## 已升級成規則
 

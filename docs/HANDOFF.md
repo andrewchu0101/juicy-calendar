@@ -4,8 +4,8 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-04（票 010 完成並已 commit，push 結果見下方「分支／HEAD」；`AGENTS.md` 新增第 16 條路徑規則） |
-| 目前目標 | 依 `issues/` 的工作票逐張實作（票 001～008 已完成、009 自動測試完成待人工驗收；Brief、PRD、SRS 已確認，SAD、SDS、測試計畫為草稿待審查）；票 010 完成；下一步 011（翻譯日曆與工具列）、012、013、014 |
+| 更新時間 | 2026-11-05（票 019 完成並 commit／push；M-04 人工驗收待做） |
+| 目前目標 | 依 `issues/` 的工作票逐張實作；票 019（排版）自動檢查完成。已完成或實作完成：000～019 中除 020、021（未就緒）、022、023、024（可開始）之外的票，細節見 `issues/README.md` 索引。下一步可選：022（e2e 間歇失敗）、023（工具列語言選單）、024（NFR-03 調查）；人工驗收待辦：M-04、M-05、M-02、M-01（暫緩） |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
 | 分支／HEAD | `main` ／ 票 010 的 `feat(i18n)` commit 與其後的 handoff commit（`git log -3` 查雜湊）；push 後與 `origin/main` 同步（以 `git status` 核對，不要只信這一行） |
 | 工作樹 | 乾淨（票 010 與文件 commit 後 `git status` 無變更）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
@@ -23,6 +23,8 @@
 
 - 票 009（2026-11-04，未 commit）：新增 `src-tauri/src/workspace_lock.rs`（`acquire` 用 `File::try_lock`，`.juicy.lock` 不截斷）；`lib.rs` 的 `activate_in` 先取鎖再 `remember`，同資料夾（正規化後）不重鎖；`fs_safe::new_workspace_dir` 忽略 `.juicy.lock`。Rust 改釘 1.90.0（`rust-toolchain.toml`、`Cargo.toml` rust-version 1.90；本機已裝 1.90.0，1.99.1 仍在）。`test:rust` 15 passed、`typecheck`／`lint` Passed、`npm test` 123 passed。**人工驗收未做**（兩個真實 App 行程；不能用真實 `last-workspace.txt`，需另想隔離做法）；`JUICY_SMOKE_WORKSPACE` 路徑未取鎖（是否補鎖待專案擁有者決定，補了會影響 `test:desktop`）；`test:e2e`、`test:desktop` 本票未跑。
 - 票 010（2026-11-04，已 commit）：新增 `src/i18n/`（`detectLanguage`、`dictionary`、`i18n` store 含 `initLanguage`／`setLanguage`／`translate`、`useT`）；`WorkspaceBackend` 加 `readAppSettings`／`writeAppSettings`／`systemInfo`（瀏覽器版用 `localStorage` 與 `navigator`，Tauri 版呼叫新命令）；Rust 新增 `app_settings.rs`、`platform_win.rs`（`system_locale`，unsafe 只在此）並在 `lib.rs` 註冊 `app_settings_read`／`app_settings_write`／`system_info`；歡迎畫面有語言選單、完整翻譯、儲存失敗的紅底錯誤。`typecheck`、`lint` Passed；`npm test` 181 passed；`test:rust` 23 passed；`test:e2e` 44 passed；`test:desktop` Passed。偏差與未驗證見 `issues/010-i18n-foundation.md` 末段與追溯表 AC-03.2 列。**未驗證**：桌面版實際寫入 `%APPDATA%\app.juicycalendar.timeblock\app-settings.json`（需同意）；日曆畫面沒有語言選單；`serde_json` 搬到正式依賴（已同意）。
+
+- 票 019 排版（2026-11-05，未 commit）：新增 `e2e/layout.spec.ts`（6 項）；改 `TemplatePalette.tsx`（`li` 加 `w-full min-w-0`）、`AppShell.tsx`（日曆區加 `relative` 容器）、`Inspector.tsx`（面板與展開鈕改 `top-2 right-4`）。`typecheck`／`lint` Passed、`npm test` 340 passed、`test:e2e` 59 passed。截圖在 `docs/evidence/`。**未驗證**：M-04 人工；Windows WebView2 的實際字體。細節見 `issues/019-adaptive-layout.md` 末段。
 
 - 票 018 離線靜態檢查（2026-11-05，未 commit）：新增 src/offline/offline.test.ts（19 項，TC-15）與 src/test-support/cspCheck.ts、networkCalls.ts；CSP 只允許 ipc，src 沒有對外呼叫；變異檢查已做並還原；M-06 監看流程寫進 docs/06-test-plan.md（PowerShell 內建指令，未正式執行）。**重大發現**：預跑 5 次嘗試、3 次有效，WebView2 的 msedgewebview2.exe 在 App 啟動後約 3 秒內對非本機位址的 443 連線（不是我們的程式碼）。NFR-03 已在 SRS 拆成 03a（功能可離線）、03b（App 自有程式與依賴不主動連線，前端部分已過）、03c（包含 WebView2 的整個行程樹零連線，**未達成**，不得宣稱完全不連網）；後續調查見票 024，結論由專案擁有者決定（SRS U-13）。測試一律正常關閉 App，強制結束會留下孤兒 WebView2 行程。細節見 issues/018-offline-static-check.md 末段。
 

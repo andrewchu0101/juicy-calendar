@@ -295,7 +295,7 @@ $null = $proc.CloseMainWindow()
 | M-01 | 乾淨的 Windows：執行安裝檔 → 啟動 → 建立工作區 → 完成 TC-01 的流程 → 解除安裝。預期：App 被移除，工作區資料夾與其中檔案仍在；README 的步驟可照做。Windows 10 1803 若沒有環境，標「未驗證」 | AC-03.1、FR-08、NFR-05 | 未執行 |
 | M-02 | 免安裝版解壓到任意資料夾 → 執行 → 建立區塊並切換語言 → 把整個資料夾複製到另一處或另一台電腦 → 執行。預期：區塊與語言設定相同；工作區檔案在執行檔旁的 `data` | AC-03.4、FR-11 | 未執行 |
 | M-03 | 在日曆空白處按住左鍵 450 ms 叫出 radial 選單，把游標移到球上，再開啟系統的減少動態效果。預期：效果出現與消失、減少動態時不播放、球身純色 | AC-01.4、FR-04 | 受阻（Q-05 樣式未決） |
-| M-04 | 把視窗縮到最小（900×560），名稱用 30 個全形字，兩種語言各一次。預期：文字不溢出、不遮蓋其他元件 | NFR-07 | 未執行 |
+| M-04 | 把視窗縮到最小（900×560），名稱用 30 個全形字，兩種語言各一次。預期：文字不溢出、不遮蓋其他元件 | NFR-07 | 未執行（自動輔助 `e2e/layout.spec.ts` 已通過，不取代人工） |
 | M-05 | 把 Windows 的時間格式在 12 與 24 小時之間切換（結束後還原），檢查區塊、右側面板、時間軸。預期：全部一致；若面板的原生時間欄位與其他不一致，記為已知限制 | AC-03.3、FR-10 | 未執行；**需專案擁有者操作，會改系統設定** |
 | M-06 | 使用 App 期間監看它的網路連線。預期：零連線。監看方法與步驟見下方「M-06 監看流程」；預跑結果見「M-06 預跑紀錄」 | NFR-03c（也交叉檢查 03b） | 未執行 |
 | M-07 | 以官方環境變數把 WebView2 指向空資料夾來模擬缺少。預期：顯示說明視窗（語言依系統）、結束碼為 1、Tauri 沒有啟動 | FR-08、U-12 | 代理以 UI Automation 自動化執行一次（2026-11-04，Windows 10 Pro 10.0.19045，中文系統語系，debug 版）：環境變數指向空資料夾 → 出現說明視窗（標題「Juicy Calendar 缺少 WebView2」、繁體中文內文含官方網址）→ 按「確定」後結束碼 1；未設環境變數時無說明視窗、程序持續執行、主視窗 `Juicy Calendar` 出現。**專案擁有者於 2026-11-04 親自確認**：說明視窗出現且內容正確（螢幕截圖已看過，沒有 Tauri 主視窗），並按下「確定」；結束碼 1 以上述自動化為證，擁有者未另報數值。**英文版視窗與 release 版（無主控台）：未執行** |
@@ -336,7 +336,7 @@ $null = $proc.CloseMainWindow()
 | NFR-03b | TC-15 | 票 018（2026-11-05，Windows 11、Node 24.22.0）：TC-15 的前端部分通過（`src/offline/offline.test.ts` 19 項；掃描器與設定測試先紅後綠，真實設定與原始碼掃描為特徵化）；變異檢查：把 `https://evil.example` 暫時加進 `tauri.conf.json` 的 `connect-src` → 2 項轉紅，在 `src` 暫時加入 `fetch('https://evil.example/track')` → 1 項轉紅並指出檔案與行號，都已還原。`npm test` 29 檔 340 passed、`typecheck`、`lint` Passed | **僅部分達成**：Rust 程式、Cargo 與 npm 依賴、Tauri 外掛權限尚未查（票 024）；掃描有已知限制（間接呼叫、第三方套件、執行期組出的網址） |
 | NFR-03c | M-06 | **未達成**。M-06 正式流程已寫成可重做，仍是未執行；預跑 3 次有效，皆在啟動後約 3 秒內看到 WebView2 瀏覽器行程（`msedgewebview2.exe`）對非本機位址的 443 連線（見「M-06 預跑紀錄」） | 待專案擁有者決定（SRS U-13、票 024）；調查前不得把 WebView2 流量視為可忽略，也不得宣稱「完全不連網」 |
 | NFR-06 | 無 | — | **缺口**：待量測，不設 TC |
-| NFR-07 | M-04 | 未執行 | |
+| NFR-07 | M-04、`e2e/layout.spec.ts` | 票 019（2026-11-05，Windows 11、Node 24.22.0、WebKit）：`layout.spec.ts` 6 項通過（先紅後綠：模板列 30 字名稱被切掉、面板蓋住工具列；短區塊截斷為特徵化＋突變檢查）；`typecheck`、`lint` Passed；`npm test` 29 檔 340 passed；`test:e2e` 59 passed。截圖 `docs/evidence/019-*.png` | **M-04 人工未執行**；自動檢查只看幾何，不判斷美觀；WebKit 字體與 Windows WebView2 可能不同 |
 | G-03（基準線，票 000） | `typecheck`、`lint`、`npm test`、`test:rust`、`test:desktop` | 2026-11-04，Windows 11、node 24.22.0、Rust 1.99.1：`typecheck` Passed；`lint` Passed；`npm test` 48 passed／0 failed；`test:rust` 5 passed／0 failed；`test:desktop`（bash 腳本，Git Bash）Passed，輸出 `Desktop smoke test passed`（建立工作區、拖放一顆球得 10:30–12:30、重開後 `blocksOnLaunch: 1`，路徑穿越類寫入全被拒絕）。`npm run desktop` 視窗出現、Vite 回 HTTP 200 | 人工「建立工作區、關閉、重開還原」尚待人工驗收；`test:e2e` 不在此票範圍，仍不穩定 |
 | G-03（基準線，票 000，第二台電腦） | `typecheck`、`lint`、`npm test`、`test:rust`、`test:desktop`、`npm run desktop` | 2026-11-04，Windows 10 Pro 10.0.19045、node v26.13.0、Rust 1.90.0、HEAD `6592827`：`typecheck` Passed；`lint` Passed；`npm test` 181 passed／0 failed；`test:rust` 23 passed／0 failed；`test:desktop` Passed（輸出 `Desktop smoke test passed`，拖放得 10:30–12:30、重開後 `blocksOnLaunch: 1`、越界寫入全被拒絕）。`npm run desktop` 視窗出現且 Responding、`http://localhost:1421/` 回 HTTP 200 | 人工「建立工作區、關閉、重開還原」：專案擁有者回報已驗收完成（2026-11-04，無截圖，依回報記錄）；Vite 只監聽 `::1`；`tauri dev` 對 `target` 內 exe／pdb 有 `EBUSY` 檔案監看警告（不影響啟動）；`test:e2e` 不在此票範圍 |
 

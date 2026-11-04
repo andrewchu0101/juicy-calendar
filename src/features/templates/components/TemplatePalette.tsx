@@ -10,7 +10,7 @@ export function TemplateBall({ template, onEdit }: { template: Template; onEdit:
   const t = useT();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: template.id });
   return (
-    <li className="group relative flex flex-col items-center gap-1">
+    <li className="group relative flex w-full min-w-0 flex-col items-center gap-1">
       <div
         ref={setNodeRef}
         data-testid="template-ball"
