@@ -4,11 +4,11 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-04（票 008 完成，未 commit；票 007 已 push） |
+| 更新時間 | 2026-11-04（票 008 完成並已 commit，未 push；稍晚票 010 完成後一起 push） |
 | 目前目標 | 把一次性 demo 接手成「依 template 流程開發」的專案；下一步補文件（Brief → PRD → SRS …） |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
-| 分支／HEAD | `main` ／ 票 006 的 commit 在 `ddd3551`（票 005）之上；無遠端，未 push |
-| 工作樹 | 全部為未追蹤檔案（尚未 commit）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
+| 分支／HEAD | `main` ／ `9589e5e`（票 008），領先 `origin/main` 1 個 commit，未 push |
+| 工作樹 | 乾淨（2026-11-04 票 008 commit 後 `git status` 無變更）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
 
 ### 已完成
 - 複製 template 骨架，併入 demo 原始碼（排除 `.git`、`node_modules`、`dist`、`real-test`、`src-tauri/target`）。
@@ -35,6 +35,8 @@
 
 - 票 007（2026-11-04，已 commit 並 push）：`issues`、`openError`、`saveError` 由字串改為結構。`WorkspaceOpenError` 帶 `code`（`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`、`WORKSPACE_TOO_NEW` 含 `version`）；`issues` 為 `FILE_SKIPPED {file, detail}`／`SETTINGS_RESET`；store 的 `openError`（另有 `WORKSPACE_LOCKED`、`NOT_A_WORKSPACE`、`OPEN_FAILED` 含 `detail`）與 `saveError`（`SAVE_FAILED`）存代碼。新增 `src/services/notices/notices.ts`：型別與**唯一**英文對照表（票 012 取代它），`Notices`、`WelcomeScreen` 依代碼顯示，`BackendError.message` 改讀此表。測試：`openErrors.test.ts`（TC-08 三情境含雜湊不變、`FILE_SKIPPED`、`SETTINGS_RESET`）、`workspaceSession.test.ts`、`saveError.test.ts`、`notices.test.ts`。`typecheck`、`lint` Passed；`npm test` 109/109；`test:e2e` 單次 34/34（含 magnet，本次未失敗，未跑 `--repeat-each`，不代表已修）。**偏差**：`saveError`、`OPEN_FAILED` 畫面不再附加診斷句；`WorkspaceOpenError.message` 仍是英文（非畫面文字）；`FILE_SKIPPED` 的「長度或名稱」原因目前歸在 `invalid content`。**未驗證**：真實磁碟與 Tauri 桌面版、`test:rust`（未動 Rust）、NFR-01 連續 3 次 e2e、人工驗收。追溯：`docs/06-test-plan.md` 第 224 列已回填；票 007 驗收條件已勾選（含偏差註記）。
 
+- 票 008（2026-11-04，已 commit `9589e5e`，未 push）：`eventSchema` 加長度 ≤ `EVENT_MAX_MINUTES` 與名稱規則，`templateSchema` 加名稱規則（皆引用 `limits.ts`／`validateTitle`）；`skipReason` 改用 zod 的訊息，通知原因可區分。新增 `loadRules.test.ts`（TC-07，七種壞檔 × 載入與編輯後，共 14 項；(g) 模板名稱 31 字經專案擁有者同意列入）。紅燈 3 失敗／11 通過，綠燈後 `npm test` 123/123、`typecheck`、`lint` Passed；`test:e2e` 第 1 次 33/34（既有間歇項 `overlapping events…`，單獨重跑通過），重跑 34/34。**未驗證**：Rust 真實磁碟載入、桌面版手動開啟版本 2 樣本資料夾。
+
 ### 進行中
 - 無。
 
@@ -48,7 +50,7 @@
 ### 下一步（最多三項）
 1. 用 `/diagnosing-bugs` 查 9 個 e2e 失敗的原因（先分環境／測試／實作）。
 2. 試 `npm run desktop`（Edge WebView 156 已在本機）。
-3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿；待決 S-01、S-02、Q-05、NFR-01 的重複次數 N）；拆票已完成（`issues/` 共 21 張，`issues/README.md` 有索引與依賴圖）；**下一個 session 做票 008**（`issues/008-load-rules-stricter.md`，前置 007 已完成）；其他可開始的票：018、022，每張票另開新對話，用 `/implement` 與 `/tdd`。Brief、PRD、SRS 已確認，三張流程圖已產出於 `diagrams/`。
+3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿；待決 S-01、S-02、Q-05、NFR-01 的重複次數 N）；拆票已完成（`issues/` 共 21 張，`issues/README.md` 有索引與依賴圖）；票 008 已完成，下一張依 `issues/README.md` 建議順序為 009／010；其他可開始的票：018、022，每張票另開新對話，用 `/implement` 與 `/tdd`。Brief、PRD、SRS 已確認，三張流程圖已產出於 `diagrams/`。
 
 ### 狀態核對
 
@@ -57,8 +59,8 @@
 | 已實作 | 部分 | demo 功能已在；本輪沒有改任何功能碼 |
 | 自動測試 | 部分 Passed | 見上；e2e 9 項 Failed；desktop-smoke Not Run |
 | 人工驗收 | Manual Pending | 從未人工驗收桌面版 |
-| 已 commit | 否 | 新資料夾沒有 git |
-| 已 push | 否 | |
+| 已 commit | 是（到票 008，`9589e5e`） | |
+| 已 push | 到票 007 | 票 008 的 commit 尚未 push，等票 010 一起 |
 
 ### 接手者要先知道
 - 跑 e2e 前要在該程序設 `PLAYWRIGHT_BROWSERS_PATH=D:\DevTools\playwright-browsers`；沒設會找 C 槽、報 `Executable doesn't exist`（已驗證）。安裝同理：`npx playwright install webkit` 前先設。
