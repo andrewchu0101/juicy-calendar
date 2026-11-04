@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppStore } from '../../stores/appStore';
 import { BackendError } from '../persistence/backendError';
-import { selectWorkspace } from './workspaceSession';
+import { restoreLastWorkspace, selectWorkspace } from './workspaceSession';
 
 // 假的 backend：檔案放記憶體，select／restore 由各測試決定。不開啟任何真實資料夾。
 const fake = vi.hoisted(() => {
@@ -34,6 +34,17 @@ describe('開啟錯誤以代碼存入 store (TC-08, FR-06, FR-07, AC-02.2)', () 
     await selectWorkspace('open');
 
     expect(useAppStore.getState().openError).toEqual({ code: 'WORKSPACE_LOCKED' });
+  });
+
+  // TC-10、FR-11、ADR-05 條件①：免安裝版 data 無法使用時，畫面顯示明確錯誤，不改存別處。
+  it('免安裝版 data 無法使用：啟動還原的 openError 是 PORTABLE_DATA_UNAVAILABLE，且不帶 detail', async () => {
+    fake.restore.mockRejectedValue(new BackendError('PORTABLE_DATA_UNAVAILABLE', 'C:/secret/path'));
+
+    await restoreLastWorkspace();
+
+    const state = useAppStore.getState();
+    expect(state.openError).toEqual({ code: 'PORTABLE_DATA_UNAVAILABLE' });
+    expect(state.booted).toBe(true);
   });
 
   it('workspace.json 版本為 3：openError 是 WORKSPACE_TOO_NEW 並帶版本號，沒有進入主畫面', async () => {

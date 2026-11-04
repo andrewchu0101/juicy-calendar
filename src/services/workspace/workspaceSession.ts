@@ -26,7 +26,9 @@ function toOpenError(error: unknown): OpenErrorState {
     return error.version === undefined ? { code: error.code } : { code: error.code, version: error.version };
   }
   if (error instanceof BackendError) {
-    if (error.code === 'WORKSPACE_LOCKED' || error.code === 'NOT_A_WORKSPACE') return { code: error.code };
+    if (error.code === 'WORKSPACE_LOCKED' || error.code === 'NOT_A_WORKSPACE' || error.code === 'PORTABLE_DATA_UNAVAILABLE') {
+      return { code: error.code };
+    }
     return { code: 'OPEN_FAILED', detail: error.detail ?? error.code };
   }
   return { code: 'OPEN_FAILED', detail: error instanceof Error ? error.message : String(error) };

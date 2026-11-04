@@ -27,6 +27,8 @@ const en = {
   'notice.open.workspaceLocked': 'This workspace is already open in another window.',
   'notice.open.notAWorkspace': 'This folder is not a workspace: it has no workspace.json.',
   'notice.open.openFailed': 'Could not open the workspace.',
+  'notice.open.portableDataUnavailable':
+    'The data folder next to the app could not be created or written to. Move the whole app folder somewhere writable and open it again.',
   'notice.issue.fileSkipped': 'Skipped {file}: not a valid file. It was left untouched.',
   'notice.issue.settingsReset': 'settings.json was damaged. Defaults are in use; the old file is saved as settings.corrupt.json.',
   'notice.saveFailed': 'Changes could not be saved and will be retried.',
@@ -93,6 +95,7 @@ const zhTW: Dictionary = {
   'notice.open.workspaceLocked': '此工作區已在另一個視窗開啟，請先關閉那個視窗。',
   'notice.open.notAWorkspace': '這個資料夾不是工作區：裡面沒有 workspace.json。',
   'notice.open.openFailed': '無法開啟工作區。',
+  'notice.open.portableDataUnavailable': '無法建立或寫入程式旁的 data 資料夾。請把整個程式資料夾移到可以寫入的位置，再重新開啟。',
   'notice.issue.fileSkipped': '已略過 {file}：不是有效的檔案，沒有動到它。',
   'notice.issue.settingsReset': 'settings.json 已損毀，改用預設值；舊檔另存為 settings.corrupt.json。',
   'notice.saveFailed': '變更無法儲存，會再重試。',

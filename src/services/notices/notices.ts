@@ -16,6 +16,7 @@ export type OpenErrorCode =
   | 'WORKSPACE_TOO_NEW'
   | 'WORKSPACE_LOCKED'
   | 'NOT_A_WORKSPACE'
+  | 'PORTABLE_DATA_UNAVAILABLE'
   | 'OPEN_FAILED';
 
 export type OpenErrorState = { code: OpenErrorCode; version?: number; detail?: string };
@@ -35,6 +36,8 @@ export function backendErrorText(language: Language, code: ErrorCode): string {
       return translate(language, 'error.pathNotAllowed');
     case 'IO_ERROR':
       return translate(language, 'error.ioError');
+    case 'PORTABLE_DATA_UNAVAILABLE':
+      return translate(language, 'notice.open.portableDataUnavailable');
   }
 }
 
@@ -51,6 +54,8 @@ export function openErrorText(language: Language, error: OpenErrorState): string
       return translate(language, 'notice.open.workspaceLocked');
     case 'NOT_A_WORKSPACE':
       return translate(language, 'notice.open.notAWorkspace');
+    case 'PORTABLE_DATA_UNAVAILABLE':
+      return translate(language, 'notice.open.portableDataUnavailable');
     case 'OPEN_FAILED':
       return translate(language, 'notice.open.openFailed');
   }

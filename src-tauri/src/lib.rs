@@ -5,10 +5,11 @@ mod app_settings;
 mod error;
 mod fs_safe;
 mod platform_win;
+mod portable;
 mod preflight;
 mod workspace_lock;
 
-use error::IpcError;
+use error::{ErrorCode, IpcError};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::ErrorKind;
@@ -55,21 +56,46 @@ fn remember(file: &Path, root: &Path) -> Result<(), IpcError> {
 }
 
 fn activate(app: &AppHandle, state: &WorkspaceState, root: PathBuf) -> Result<WorkspaceLocation, IpcError> {
-    activate_in(state, &last_workspace_file(app)?, root)
+    // Portable mode never reads or writes last-workspace.txt: the next start returns to `data`.
+    let remembered = match app.state::<PortableData>().0 {
+        Some(_) => None,
+        None => Some(last_workspace_file(app)?),
+    };
+    activate_in(state, remembered.as_deref(), root)
 }
 
-/// Makes `root` the open workspace and remembers it in `last_workspace`.
-fn activate_in(state: &WorkspaceState, last_workspace: &Path, root: PathBuf) -> Result<WorkspaceLocation, IpcError> {
+/// Makes `root` the open workspace and, when `last_workspace` is given, remembers it there.
+fn activate_in(state: &WorkspaceState, last_workspace: Option<&Path>, root: PathBuf) -> Result<WorkspaceLocation, IpcError> {
     // Same folder as the one already open: a second handle would be refused by our own lock.
     if is_open_root(state, &root)? {
         return Ok(location(&root));
     }
     // Lock first: a refused attempt must not touch last-workspace.txt or the workspace already open.
     let lock = workspace_lock::acquire(&root)?;
-    remember(last_workspace, &root)?;
+    if let Some(file) = last_workspace {
+        remember(file, &root)?;
+    }
     let result = location(&root);
     // Replacing the state drops the old guard, which releases the previous workspace's lock.
     *state.0.lock().map_err(IpcError::io)? = Some(OpenWorkspace { root, lock: Some(lock) });
+    Ok(result)
+}
+
+/// Portable mode start-up (API-02, FR-11): opens `data_dir`, creating it when missing. Takes no
+/// `last-workspace.txt` path on purpose: portable mode never reads or writes that file.
+fn restore_portable(state: &WorkspaceState, data_dir: PathBuf) -> Result<WorkspaceLocation, IpcError> {
+    fs::create_dir_all(&data_dir).map_err(IpcError::portable_data_unavailable)?;
+    // Already open: a second handle would be refused by our own lock.
+    if is_open_root(state, &data_dir)? {
+        return Ok(location(&data_dir));
+    }
+    // Taking the lock also proves the folder is writable. A refused lock keeps its own code.
+    let lock = workspace_lock::acquire(&data_dir).map_err(|error| match error.code {
+        ErrorCode::WorkspaceLocked => error,
+        _ => IpcError::portable_data_unavailable(error),
+    })?;
+    let result = location(&data_dir);
+    *state.0.lock().map_err(IpcError::io)? = Some(OpenWorkspace { root: data_dir, lock: Some(lock) });
     Ok(result)
 }
 
@@ -146,6 +172,11 @@ fn workspace_restore(
         return Ok(Some(result));
     }
 
+    // Portable mode: always start in `data`; last-workspace.txt is neither read nor written.
+    if let Some(data_dir) = app.state::<PortableData>().0.clone() {
+        return restore_portable(&state, data_dir).map(Some);
+    }
+
     let file = last_workspace_file(&app)?;
     let saved = match fs::read_to_string(&file) {
         Ok(saved) => saved,
@@ -163,6 +194,9 @@ fn workspace_restore(
 #[tauri::command]
 fn workspace_close(app: AppHandle, state: State<'_, WorkspaceState>) -> Result<(), IpcError> {
     *state.0.lock().map_err(IpcError::io)? = None;
+    if app.state::<PortableData>().0.is_some() {
+        return Ok(());
+    }
     match fs::remove_file(last_workspace_file(&app)?) {
         Err(error) if error.kind() != ErrorKind::NotFound => Err(IpcError::io(error)),
         _ => Ok(()),
@@ -207,7 +241,16 @@ fn workspace_remove(state: State<'_, WorkspaceState>, path: String) -> Result<()
 
 /// Where this computer's app-wide settings live. Decided here; the frontend never sends a path.
 fn app_settings_dir(app: &AppHandle) -> Result<PathBuf, IpcError> {
-    app.path().app_config_dir().map_err(IpcError::io)
+    let config_dir = app.path().app_config_dir().map_err(IpcError::io)?;
+    Ok(settings_dir_for(app.state::<PortableData>().0.as_deref(), config_dir))
+}
+
+/// The folder holding `portable.flag`'s `data` when running portable, otherwise None.
+struct PortableData(Option<PathBuf>);
+
+/// Portable mode keeps the settings in `data` always, even after the user opens another workspace.
+fn settings_dir_for(portable_data: Option<&Path>, config_dir: PathBuf) -> PathBuf {
+    portable_data.map(Path::to_path_buf).unwrap_or(config_dir)
 }
 
 #[derive(Serialize)]
@@ -274,6 +317,89 @@ mod tests {
         dir.canonicalize().unwrap()
     }
 
+    // TC-10（portable 還原）｜FR-11、AC-03.4、API-02：免安裝版 data 不存在 → 建立並開啟，回傳
+    // initialized=false（前端走既有初始化流程），目前根目錄為 data，且持有單一寫入者鎖。
+    #[test]
+    fn portable_restore_creates_a_missing_data_folder_and_opens_it_locked() {
+        let base = temp_dir("portable-create");
+        let data = base.join("data");
+        let state = WorkspaceState::default();
+
+        let location = restore_portable(&state, data.clone()).expect("portable restore");
+
+        let root = current_root(&state);
+        let second_writer = workspace_lock::acquire(&data).map(|_| ()).map_err(|e| e.code);
+        let created = data.is_dir();
+        fs::remove_dir_all(&base).unwrap_or(());
+        assert!(created, "data must be created");
+        assert!(!location.initialized);
+        assert_eq!(root.unwrap(), data);
+        assert_eq!(second_writer, Err(ErrorCode::WorkspaceLocked));
+    }
+
+    // TC-10（portable 還原）｜FR-07、FR-11：data 已是目前開啟的工作區時再還原一次（例如重新載入畫面），
+    // 回傳目前位置，不被自己的鎖擋住。
+    #[test]
+    fn portable_restore_twice_does_not_lock_itself_out() {
+        let base = temp_dir("portable-twice");
+        let data = base.join("data");
+        let state = WorkspaceState::default();
+        let first = restore_portable(&state, data.clone()).expect("first restore");
+
+        let again = restore_portable(&state, data.clone());
+
+        fs::remove_dir_all(&base).unwrap_or(());
+        assert_eq!(again.map(|l| l.path).map_err(|e| e.code), Ok(first.path));
+    }
+
+    // TC-10（portable 還原）｜FR-11、ADR-05 條件①：data 無法建立 → PORTABLE_DATA_UNAVAILABLE，
+    // 不改存別處、不留下開啟中的工作區。
+    #[test]
+    fn portable_restore_reports_an_unavailable_data_folder_and_opens_nothing() {
+        let base = temp_dir("portable-blocked");
+        let data = base.join("data");
+        fs::write(&data, "a file squatting on the folder name").unwrap();
+        let state = WorkspaceState::default();
+
+        let error = restore_portable(&state, data.clone()).unwrap_err();
+
+        let nothing_open = current_root(&state).unwrap_err().code;
+        let entries = fs::read_dir(&base).unwrap().count();
+        fs::remove_dir_all(&base).unwrap_or(());
+        assert_eq!(error.code, ErrorCode::PortableDataUnavailable);
+        assert_eq!(nothing_open, ErrorCode::NoWorkspaceOpen);
+        assert_eq!(entries, 1, "nothing may be written anywhere else");
+    }
+
+    // TC-10（portable 設定位置）｜FR-11、FR-09、ADR-05 條件：免安裝版的 App 設定存在 data；安裝版維持 app_config_dir。
+    #[test]
+    fn portable_settings_live_in_data_and_installed_settings_in_the_config_dir() {
+        let data = PathBuf::from("exe/data");
+        let config = PathBuf::from("appdata/config");
+
+        assert_eq!(settings_dir_for(Some(&data), config.clone()), data);
+        assert_eq!(settings_dir_for(None, config.clone()), config);
+    }
+
+    // TC-10（portable 切換）｜FR-11、ADR-05：免安裝版手動切到別的工作區照常開啟並持鎖，但不寫任何
+    // last-workspace.txt（下次啟動回到 data）。
+    #[test]
+    fn portable_manual_switch_opens_the_workspace_without_remembering_it() {
+        let base = temp_dir("portable-switch");
+        let other = base.join("other");
+        fs::create_dir_all(&other).unwrap();
+        let state = WorkspaceState::default();
+
+        let switched = activate_in(&state, None, other.clone());
+
+        let root = current_root(&state);
+        let remembered_somewhere = other.join("last-workspace.txt").exists() || base.join("last-workspace.txt").exists();
+        fs::remove_dir_all(&base).unwrap_or(());
+        assert_eq!(switched.map(|l| l.path).map_err(|e| e.code), Ok(other.to_string_lossy().into_owned()));
+        assert_eq!(root.unwrap(), other);
+        assert!(!remembered_somewhere, "portable mode must not write last-workspace.txt");
+    }
+
     // TC-09（第二條）｜FR-07、AC-02.3：同一行程再選目前已開啟的資料夾，回傳目前位置，不被自己擋住。
     #[test]
     fn reselecting_the_open_workspace_returns_its_location_without_locking_itself_out() {
@@ -283,9 +409,9 @@ mod tests {
         fs::write(a.join("workspace.json"), "{}").unwrap();
         let remembered = base.join("last-workspace.txt");
         let state = WorkspaceState::default();
-        let first = activate_in(&state, &remembered, a.clone()).expect("first open");
+        let first = activate_in(&state, Some(&remembered), a.clone()).expect("first open");
 
-        let again = activate_in(&state, &remembered, a.clone());
+        let again = activate_in(&state, Some(&remembered), a.clone());
 
         let still_open = current_root(&state);
         let (first_path, again_path) = (first.path, again.as_ref().map(|l| l.path.clone()));
@@ -304,9 +430,9 @@ mod tests {
         fs::create_dir_all(&a).unwrap();
         let remembered = base.join("last-workspace.txt");
         let state = WorkspaceState::default();
-        activate_in(&state, &remembered, a.clone()).expect("first open");
+        activate_in(&state, Some(&remembered), a.clone()).expect("first open");
 
-        let again = activate_in(&state, &remembered, base.join("A"));
+        let again = activate_in(&state, Some(&remembered), base.join("A"));
 
         let code = again.map(|_| ()).map_err(|e| e.code);
         fs::remove_dir_all(&base).unwrap_or(());
@@ -323,12 +449,12 @@ mod tests {
         fs::create_dir_all(&b).unwrap();
         let remembered = base.join("last-workspace.txt");
         let state = WorkspaceState::default();
-        activate_in(&state, &remembered, a.clone()).expect("first workspace opens");
+        activate_in(&state, Some(&remembered), a.clone()).expect("first workspace opens");
         let remembered_before = fs::read(&remembered).unwrap();
 
         // Stands in for "another window already has b open".
         let _other_window = workspace_lock::acquire(&b).expect("test takes b's lock");
-        let error = activate_in(&state, &remembered, b.clone()).unwrap_err();
+        let error = activate_in(&state, Some(&remembered), b.clone()).unwrap_err();
 
         let still_open = current_root(&state).unwrap();
         let remembered_after = fs::read(&remembered).unwrap();
@@ -368,8 +494,15 @@ pub fn run() {
     #[cfg(windows)]
     preflight::exit_if_webview2_missing();
 
+    // Portable mode is decided once, from the folder the executable sits in (ADR-05).
+    let portable_data = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(Path::to_path_buf))
+        .and_then(|dir| portable::detect(&dir));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(PortableData(portable_data))
         .manage(WorkspaceState::default())
         .invoke_handler(tauri::generate_handler![
             workspace_select,

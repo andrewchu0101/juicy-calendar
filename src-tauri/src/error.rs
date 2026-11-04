@@ -14,6 +14,9 @@ pub enum ErrorCode {
     NoWorkspaceOpen,
     PathNotAllowed,
     IoError,
+    /// Portable mode only: the `data` folder next to the executable cannot be created or written.
+    /// Never falls back to another folder (ADR-05).
+    PortableDataUnavailable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -29,6 +32,10 @@ impl IpcError {
 }
 
 impl IpcError {
+    pub fn portable_data_unavailable(detail: impl fmt::Display) -> Self {
+        IpcError { code: ErrorCode::PortableDataUnavailable, detail: Some(detail.to_string()) }
+    }
+
     pub fn not_a_workspace() -> Self {
         IpcError { code: ErrorCode::NotAWorkspace, detail: None }
     }
@@ -65,6 +72,7 @@ mod tests {
             (ErrorCode::NoWorkspaceOpen, "NO_WORKSPACE_OPEN"),
             (ErrorCode::PathNotAllowed, "PATH_NOT_ALLOWED"),
             (ErrorCode::IoError, "IO_ERROR"),
+            (ErrorCode::PortableDataUnavailable, "PORTABLE_DATA_UNAVAILABLE"),
         ];
         for (code, expected) in cases {
             let value = serde_json::to_value(IpcError { code, detail: None }).unwrap();

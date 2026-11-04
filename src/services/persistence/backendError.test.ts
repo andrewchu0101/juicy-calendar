@@ -3,7 +3,7 @@ import { BackendError, toBackendError } from './backendError';
 
 describe('toBackendError', () => {
   // TC-08（代碼部分）、TC-10｜SDS 錯誤格式：Rust 的 {code, detail} 轉成帶代碼的錯誤。
-  it.each(['WORKSPACE_LOCKED', 'NOT_A_WORKSPACE', 'NO_WORKSPACE_OPEN', 'PATH_NOT_ALLOWED', 'IO_ERROR'] as const)(
+  it.each(['WORKSPACE_LOCKED', 'NOT_A_WORKSPACE', 'NO_WORKSPACE_OPEN', 'PATH_NOT_ALLOWED', 'IO_ERROR', 'PORTABLE_DATA_UNAVAILABLE'] as const)(
     'keeps the code and detail of a %s payload',
     (code) => {
       const error = toBackendError({ code, detail: 'diagnostic text' });
@@ -27,7 +27,7 @@ describe('toBackendError', () => {
 
   // TC-11｜FR-09、票 012、AGENTS.md 規則 11：message 只是診斷用的代碼，不是畫面句子，也不含 detail；
   // 畫面文字一律由字典依代碼產生（見 notices.test.ts）。
-  it.each(['WORKSPACE_LOCKED', 'NOT_A_WORKSPACE', 'NO_WORKSPACE_OPEN', 'PATH_NOT_ALLOWED', 'IO_ERROR'] as const)(
+  it.each(['WORKSPACE_LOCKED', 'NOT_A_WORKSPACE', 'NO_WORKSPACE_OPEN', 'PATH_NOT_ALLOWED', 'IO_ERROR', 'PORTABLE_DATA_UNAVAILABLE'] as const)(
     'message of %s is the bare code and never the detail',
     (code) => {
       const error = toBackendError({ code, detail: 'C:/secret/path' });

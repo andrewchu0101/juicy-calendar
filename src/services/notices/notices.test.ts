@@ -67,9 +67,27 @@ describe('後端錯誤代碼的文字 (TC-11, FR-09)', () => {
     ['NO_WORKSPACE_OPEN', 'No workspace is open', '目前沒有開啟的工作區。'],
     ['PATH_NOT_ALLOWED', 'Path is not allowed', '不允許這個路徑。'],
     ['IO_ERROR', 'The file operation failed.', '檔案操作失敗。'],
+    [
+      'PORTABLE_DATA_UNAVAILABLE',
+      'The data folder next to the app could not be created or written to. Move the whole app folder somewhere writable and open it again.',
+      '無法建立或寫入程式旁的 data 資料夾。請把整個程式資料夾移到可以寫入的位置，再重新開啟。',
+    ],
   ] as const)('%s', (code, en, zh) => {
     expect(backendErrorText('en', code)).toBe(en);
     expect(backendErrorText('zh-TW', code)).toBe(zh);
   });
 });
 
+
+// TC-11｜FR-09、FR-11、ADR-05 條件①：免安裝版 data 無法建立或寫入時的明確錯誤（兩種語言；句子為提案，待審閱）。
+describe('免安裝版 data 無法使用的開啟錯誤 (TC-11, FR-11)', () => {
+  it('兩種語言都有文字，且不顯示 detail', () => {
+    const error = { code: 'PORTABLE_DATA_UNAVAILABLE', detail: 'C:/secret/path denied' } as const;
+    expect(openErrorText('en', error)).toBe(
+      'The data folder next to the app could not be created or written to. Move the whole app folder somewhere writable and open it again.',
+    );
+    expect(openErrorText('zh-TW', error)).toBe(
+      '無法建立或寫入程式旁的 data 資料夾。請把整個程式資料夾移到可以寫入的位置，再重新開啟。',
+    );
+  });
+});
