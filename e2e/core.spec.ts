@@ -601,3 +601,32 @@ test('[TC-03][U-11,FR-02] 模板編輯器的名稱：31 字不能儲存，30 字
   await save.click();
   await expect(page.getByTestId('template-ball')).toHaveCount(7);
 });
+
+async function createMondayEvent(page: Page) {
+  await createAt(page, 0, 10, 30);
+  const event = await onlyEvent(page);
+  expect(event).toMatchObject({ startAt: '2026-11-02T15:30:00.000Z', endAt: '2026-11-02T17:30:00.000Z' });
+  return event;
+}
+
+test('[TC-05][FR-02,U-04] dragging the bottom edge far away stops at 10080 elapsed minutes', async ({ page }) => {
+  const before = await createMondayEvent(page);
+  const block = await box(page.getByTestId('event-block'));
+  const x = block.x + block.width / 2;
+  await dragFromTo(page, { x, y: block.y + block.height - 2 }, { x, y: block.y + block.height - 2 + 14_000 });
+  const longest = await onlyEvent(page);
+  expect(longest.startAt).toBe(before.startAt);
+  expect(longest.endAt).toBe('2026-11-09T15:30:00.000Z');
+  expect(minutes(longest)).toBe(10_080);
+});
+
+test('[TC-05][FR-02,U-04] dragging the top edge far away stops at 10080 elapsed minutes', async ({ page }) => {
+  await createMondayEvent(page);
+  const block = await box(page.getByTestId('event-block'));
+  const x = block.x + block.width / 2;
+  await dragFromTo(page, { x, y: block.y + 2 }, { x, y: block.y + 2 - 14_000 });
+  const earliest = await onlyEvent(page);
+  expect(earliest.endAt).toBe('2026-11-02T17:30:00.000Z');
+  expect(earliest.startAt).toBe('2026-10-26T17:30:00.000Z');
+  expect(minutes(earliest)).toBe(10_080);
+});

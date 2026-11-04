@@ -54,6 +54,8 @@
 - **推送前先確認遠端的可見度與授權**（2026-11-04）：目標 repo 預設是公開且沒有授權條款，推送等於公開內容。先用 `gh repo view --json visibility,licenseInfo` 查，必要時先改成私人。
 - **Escape 取消拖曳後，放置預覽殘留（產品競態，已修）**（2026-11-04，票 004a）：TC-02 單獨連跑 20 次全過，但 `--repeat-each=40 --workers=8` 失敗 6～9 次，失敗時 `drop-ghost` 永遠留著（不是變慢）。探針（暫時在 `useTemplateDrag` 的 `finish`／`move` 記錄順序）：15 次失敗**全部**是 `escape → finish → move`，24 次通過的都沒有 `finish` 之後的 `move`。原因：取消後 dnd-kit 延遲送出的 `onDragMove` 讓 `move` 重新設回 `pointerRef` 並重畫預覽。修法：`activeRef` 旗標，`finish` 後的 `move` 直接忽略。修正後同條件 40/40、120/120 通過。教訓：間歇失敗在單獨執行時不會出現，要用 `--repeat-each` 加多 worker 製造負載才重現。
 - **magnet 測試另有間歇失敗（未修，原因為推測）**（2026-11-04）：`magnet attracts near half-hours…` 在 `--repeat-each=40 --workers=8` 失敗約 1/40，收到 `Mon 09:56` 而非 `Mon 10:26`，差剛好 30 分鐘＝30 px。有無 004a 的修正都會發生，所以與它無關。**推測**（未驗證）：`dragBall` 放開前只等 `drop-ghost` 可見，但中途點（`y - 30`）就已出現預覽，放開時 `onDragEnd` 的位移還停在中途點。若成立，`dragBall` 要等預覽移到最終位置才放開。待另開任務。
+- **e2e 還有其他間歇失敗（未修）**（2026-11-04，票 005）：完整 `test:e2e` 連跑 3 次為 33／33／34 passed，失敗各為 `overlapping events…`、`weekly and daily views…`；`-g overlapping --repeat-each=10 --workers=4` 失敗 1/10。這些測試不碰縮放邊緣，與票 005 無關；是否同為 `dragBall` 放開時機（見上一條推測）未驗證。已另開票 022 處理。
+- **拖曳到 7 天上限的 e2e 不必真的拖滿**（2026-11-04，票 005）：縮放允許超出格線（`allowOverflow`），把指標移到 ±14000 px 即可，不需邊緣自動捲動。
 - **dnd-kit 之外，輸入框的 `maxLength` 不能拿來限制 30 字**（2026-11-04，票 003）：`maxLength` 以 UTF-16 單位計數，`👨‍👩‍👧` 一個字元佔 8 個單位，會誤擋合法輸入。名稱規則只靠 `validateTitle`（`Intl.Segmenter`）。
 - **demo 的 `node_modules` 是 macOS 裝的**：在 Windows 不能執行，新資料夾要重新 `npm ci`。
 - **Rust 不在 PATH**：每個要用 Rust 的程序都要先設 `RUSTUP_HOME`、`CARGO_HOME` 並加 PATH。

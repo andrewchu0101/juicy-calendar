@@ -1,6 +1,6 @@
 import { addDays, format } from 'date-fns';
 
-import { EVENT_MIN_MINUTES, NAME_MAX_CHARS, NEW_EVENT_MINUTES } from './limits';
+import { EVENT_MAX_MINUTES, EVENT_MIN_MINUTES, NAME_MAX_CHARS, NEW_EVENT_MINUTES } from './limits';
 
 export type TimedEvent = { startAt: string; endAt: string };
 export type EventTimes = TimedEvent;
@@ -30,14 +30,16 @@ export function moveEvent(event: TimedEvent, pointerTime: Date, grabOffsetMs: nu
 export function resizeStart(event: TimedEvent, pointerTime: Date): EventTimes {
   const end = new Date(event.endAt);
   const latest = end.getTime() - EVENT_MIN_MINUTES * MS_PER_MINUTE;
-  return times(new Date(Math.min(pointerTime.getTime(), latest)), end);
+  const earliest = end.getTime() - EVENT_MAX_MINUTES * MS_PER_MINUTE;
+  return times(new Date(Math.min(Math.max(pointerTime.getTime(), earliest), latest)), end);
 }
 
 /** Bottom edge: the start stays fixed. */
 export function resizeEnd(event: TimedEvent, pointerTime: Date): EventTimes {
   const start = new Date(event.startAt);
   const earliest = start.getTime() + EVENT_MIN_MINUTES * MS_PER_MINUTE;
-  return times(start, new Date(Math.max(pointerTime.getTime(), earliest)));
+  const latest = start.getTime() + EVENT_MAX_MINUTES * MS_PER_MINUTE;
+  return times(start, new Date(Math.min(Math.max(pointerTime.getTime(), earliest), latest)));
 }
 
 function atLocal(date: Date, time: string): Date | null {

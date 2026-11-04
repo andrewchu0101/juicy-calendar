@@ -29,6 +29,8 @@
 
 - 票 004a（2026-11-04，未 commit，插入任務）：修正 Escape 取消拖曳後放置預覽殘留的競態（`useTemplateDrag.ts` 加 `activeRef`，取消後遲到的 `move` 忽略），並把 TC-02 e2e 補強（雜湊、球可再次拖曳）。證據與數字見 LESSONS、追溯表。`typecheck`、`lint` Passed；`npm test` 69/69；TC-02 負載下 120/120。**完整 e2e 連續 3 次仍不一致**：第 2 次 magnet 測試失敗（既有，有無修正都約 1/40，與本修正無關，未處理）。
 
+- 票 005（2026-11-04，未 commit）：`resizeStart`／`resizeEnd` 加 `EVENT_MAX_MINUTES`（經過時間）上限，改動僅 `engine/mutations.ts`；新增 `resizeBounds.test.ts`（TC-05 單元 4 項）與 `e2e/core.spec.ts` 2 項 TC-05 e2e（含變異檢查）。`typecheck`、`lint` Passed；`npm test` 73/73。完整 e2e 3 次 33／33／34 passed，各有 1 項不相關間歇失敗（overlapping、weekly/daily，見 LESSONS）。發現面板持續分鐘欄無 7 天上限，歸票 004；新增票 021（小時＋分鐘輸入，未就緒）、票 022（e2e 間歇失敗，可開始）。同時依實測勾選票 001（除「3 次一致」）、002、003 的驗收條件；004 未勾。
+
 ### 進行中
 - 無。
 

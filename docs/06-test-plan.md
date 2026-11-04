@@ -214,9 +214,10 @@
 
 | 需求 | TC／人工 | 證據、執行日期與結果 | 缺口／缺陷 |
 |---|---|---|---|
-| AC-01.1、FR-01、FR-02 | TC-01、TC-03、TC-05、M-01 | TC-01：2026-11-04，`npm run test:e2e` 連續 3 次皆 Passed（標註於 `e2e/core.spec.ts`）；其餘見下列各列 | M-01、TC-05 未做 |
+| AC-01.1、FR-01、FR-02 | TC-01、TC-03、TC-05、M-01 | TC-01：2026-11-04，`npm run test:e2e` 連續 3 次皆 Passed（標註於 `e2e/core.spec.ts`）；其餘見下列各列 | M-01 未做；TC-05 見下列 FR-02 邊緣上下限列 |
 | AC-01.2 | TC-02 | 2026-11-04，3 次皆 Passed（舊版，只驗「沒有事件」）。2026-11-04（票 004a）補強為核對事件檔清單與每檔 SHA-256（兩種拒絕情境），並驗證之後球仍可拖曳；`npx playwright test -g TC-02 --repeat-each=40 --workers=8`：修正前 6/40 失敗（Escape 後 `drop-ghost` 殘留），修正後 40/40、`--repeat-each=120` 120/120 通過；完整 e2e 連續 3 次為 32／31（magnet 測試 1 次失敗）／32 passed | 碎片回饋「短時間內消失」仍未斷言；完整 e2e 3 次清單**不一致**（magnet 間歇失敗，見 LESSONS），NFR-01 尚未達成 |
 | AC-01.3、U-11 | TC-03 | 2026-11-04（票 003），Windows 11、Node 24.22.0、記憶體版 backend／WebKit e2e：單元 `validateTitle.test.ts` 11 項、store `nameLimit.test.ts` 9 項；完整 `npm test` 69 passed／0 failed；`typecheck`、`lint` Passed；`npm run test:e2e` 32 passed（含 3 項新 TC-03 e2e：雙擊命名、面板名稱、模板編輯器）。先紅後綠：單元紅燈 3 失敗（31 字被接受，專案擁有者已確認）；store 紅燈 9 失敗（store 不驗證名稱）；e2e 以暫時把 `NAME_MAX_CHARS` 改成 1000 做變異檢查，3 項皆因「31 字被接受」失敗，之後還原 | 拒絕時的寫入佇列長度 0 以「記憶體 backend 的 `write` 呼叫數為 0」驗證；e2e 的磁碟雜湊為瀏覽器版 localStorage，非真實磁碟。e2e 曾有 1 次 TC-02 間歇失敗（見 LESSONS） |
+| FR-02 邊緣上下限、U-04（拖曳） | TC-05 | 2026-11-04（票 005），Windows 11、Node 24.22.0、TZ America/New_York：單元 `src/features/calendar/engine/resizeBounds.test.ts` 4 項；紅燈 2 失敗／2 通過（1 分鐘下限本來就有，7 天上限缺，實際收到 `2027-03-01T00:00:00Z`、`2026-01-01T00:00:00Z`），綠燈 4/4。e2e `e2e/core.spec.ts` 2 項 TC-05（下緣、上緣拖到 ±14000 px）通過；變異檢查（暫把 `EVENT_MAX_MINUTES` 改成 100000000）兩項紅燈，已還原。完整 `npm test` 73/73；`typecheck`、`lint` Passed | 面板持續分鐘欄**仍無 7 天上限**（屬票 004／TC-04）；桌面版 Tauri 手動拖曳未驗收（改以 e2e）；完整 e2e 3 次為 33／33／34 passed，各有 1 項不相關的間歇失敗 |
 | AC-01.4、FR-04 | M-03 | 未執行 | **缺口**：受阻於 Q-05 |
 | FR-03 | TC-04 | 未執行 | |
 | AC-02.1、FR-05 | TC-06 | 2026-11-04，`npx vitest run src/services/persistence/reopen.test.ts` 1/1 Passed；完整 `npm test` 49/49 Passed（Windows 11、Node 24.22.0、記憶體版 backend、假時鐘 2026-11-02 12:00 EST）。先紅後綠：紅燈原因為空 fixture（`This folder has no workspace.json.`） | 重開驗證用記憶體版 backend，**未驗證**真實磁碟寫入；`.juicy.lock` 等屬 TC-09／10 |

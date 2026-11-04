@@ -26,7 +26,7 @@
 | 003 | [名稱不得超過 30 字，常數集中](003-name-limit-30.md) | M | 001 | 等待前置票 |
 | 004 | [面板時間與持續分鐘的新規則](004-panel-time-rules.md) | M | 003 | 等待前置票 |
 | 004a | [TC-02 間歇失敗（Escape 後預覽殘留）](004a-tc02-escape-ghost.md) | S | 無 | 完成（插入任務） |
-| 005 | [拖曳邊緣的 1 分鐘到 7 天上下限](005-resize-bounds.md) | S | 003 | 等待前置票 |
+| 005 | [拖曳邊緣的 1 分鐘到 7 天上下限](005-resize-bounds.md) | S | 003 | 完成 |
 | 006 | [IPC 錯誤改為代碼與診斷文字](006-ipc-error-codes.md) | M | 無 | 可開始 |
 | 007 | [通知與開啟錯誤以代碼呈現](007-structured-notices.md) | M | 006 | 等待前置票 |
 | 008 | [載入規則變嚴：過長事件與過長名稱視為壞檔](008-load-rules-stricter.md) | M | 002、003、007 | 等待前置票 |
@@ -42,6 +42,8 @@
 | 018 | [離線靜態檢查](018-offline-static-check.md) | S | 無 | 可開始 |
 | 019 | [排版隨內容與視窗調整](019-adaptive-layout.md) | M | 003、011、012 | 等待前置票 |
 | 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | **Q-05 決定**、`DESIGN.md` 規則修訂 | **未就緒** |
+| 021 | [面板持續時間可用小時＋分鐘或分鐘輸入](021-duration-hours-minutes.md) | S | 004、SRS R-3 修訂 | **未就緒** |
+| 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |
 
 **待專案擁有者決定**：S-01（以 `portable.flag` 判斷免安裝模式，見 `docs/04-sad.md` ADR-05）、S-02（`tauri build` 下載 NSIS 工具的寫入位置，預期在 C 槽，見 SDS 打包契約）、Q-05（radial hover 樣式）。
 
