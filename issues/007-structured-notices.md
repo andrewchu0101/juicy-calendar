@@ -14,6 +14,10 @@
 
 ## 驗收條件
 
+- [ ] **【開始任務前先檢查】** 已知的 e2e 間歇失敗：`magnet attracts near half-hours…`（`e2e/core.spec.ts`）在 `npx playwright test -g "magnet attracts" --repeat-each=40 --workers=8` 約 1/40 失敗，收到 `Mon 09:56` 而非 `Mon 10:26`（差 30 px），**有無票 004a 的修正都會發生**，與本票無關（`docs/LESSONS.md`）。開工前先確認它是否已修：
+  - 已修（LESSONS 或 HANDOFF 有紀錄，且上述指令 40/40 通過）→ 直接開工。
+  - 未修 → **先停下來問專案擁有者**是否要先修。若決定先做本票，之後跑 `test:e2e` 遇到此測試失敗，先單獨重跑並用上述指令確認，歸類為既有問題，**不要當成本票造成的迴歸**，也不要為了讓它通過而放寬斷言。
+  - 影響：測試計畫退出條件 4（NFR-01，連續 3 次 e2e 通過清單一致）在修好前無法標達成。
 - [ ] `WorkspaceOpenError` 攜帶代碼：`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`、`WORKSPACE_TOO_NEW`（含版本號）、`WORKSPACE_LOCKED`、`NOT_A_WORKSPACE`、`OPEN_FAILED`（含診斷）。
 - [ ] 通知代碼：`FILE_SKIPPED`（含檔案路徑與原因）、`SETTINGS_RESET`。
 - [ ] TC-08：`workspace.json` 版本為 3、缺少、無法解析，分別得到 `WORKSPACE_TOO_NEW`、`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`，不進入主畫面，資料夾除行程鎖定標記 `.juicy.lock` 外清單與雜湊不變。

@@ -4,7 +4,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-04（票 001 完成，未 commit） |
+| 更新時間 | 2026-11-04（票 003 完成，未 commit） |
 | 目前目標 | 把一次性 demo 接手成「依 template 流程開發」的專案；下一步補文件（Brief → PRD → SRS …） |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
 | 分支／HEAD | `main` ／ 尚無 commit（已 `git init`，無遠端） |
@@ -24,6 +24,10 @@
 - 票 001（2026-11-04）：`e2e/core.spec.ts` 的 `dragBall` 改為放開前等待拖曳狀態與放置預覽；TC-01／TC-02 已標註。`test:e2e` 連續 3 次皆 29/29 通過（修復前 22／9／16）；`typecheck`、`lint`、`npm test`（48）Passed。未改產品程式與斷言。`dragFromTo`（移動／調整）未改，但 3 次皆綠。
 
 - 票 002（2026-11-04，未 commit）：新增 `src/test-support/workspaceFixture.ts`（測試專用 fixture 建構器：格式版本 2、6 模板、可附加事件與壞檔）與 `src/services/persistence/reopen.test.ts`（TC-06、AC-02.1、FR-05）。`typecheck`、`lint` Passed；`npm test` 49/49 Passed；`npm run build` 的 `dist` 檔名與大小與先前完全相同、無 fixture 內容。未改產品程式。未跑 test:rust、test:e2e（與本票無關）。
+
+- 票 003（2026-11-04，未 commit）：新增 `src/features/calendar/engine/limits.ts`（`NAME_MAX_CHARS` 30、`EVENT_MIN_MINUTES` 1、`EVENT_MAX_MINUTES` 10080、`NEW_EVENT_MINUTES` 120 的唯一來源，`MIN_EVENT_MINUTES` 改名為 `EVENT_MIN_MINUTES`）；引擎新增 `validateTitle`（`Intl.Segmenter` 計 grapheme）；`appStore.updateEvent`／`saveTemplate` 改為在 store 驗證並回傳 boolean（拒絕時資料不變、不進佇列）；`EventBlock`、`Inspector`、`TemplateEditor` 接上同一條規則。測試：`validateTitle.test.ts`（11）、`stores/nameLimit.test.ts`（9）、e2e 3 項。`typecheck`、`lint` Passed；`npm test` 69/69；`test:e2e` 32/32（另有 1 次 TC-02 間歇失敗）。未跑 `test:rust`（未改 Rust）。`EVENT_MAX_MINUTES` 目前只定義、尚未被使用（票 004、005 才套用上下限）。
+
+- 票 004a（2026-11-04，未 commit，插入任務）：修正 Escape 取消拖曳後放置預覽殘留的競態（`useTemplateDrag.ts` 加 `activeRef`，取消後遲到的 `move` 忽略），並把 TC-02 e2e 補強（雜湊、球可再次拖曳）。證據與數字見 LESSONS、追溯表。`typecheck`、`lint` Passed；`npm test` 69/69；TC-02 負載下 120/120。**完整 e2e 連續 3 次仍不一致**：第 2 次 magnet 測試失敗（既有，有無修正都約 1/40，與本修正無關，未處理）。
 
 ### 進行中
 - 無。

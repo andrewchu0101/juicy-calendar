@@ -34,8 +34,9 @@ function TitleEditor({ event }: { event: CalendarEvent }) {
     input?.select();
     // Saves on every exit (Enter, blur, or a press elsewhere) unless Escape cancelled it.
     return () => {
-      const title = input?.value.trim();
-      if (!cancelled.current && title && title !== initialTitle) {
+      const title = input?.value;
+      // 名稱規則由 store 的 updateEvent 判定；被拒絕時事件不變，畫面回到原名稱。
+      if (!cancelled.current && title !== undefined && title !== initialTitle) {
         useAppStore.getState().updateEvent(eventId, { title });
       }
     };

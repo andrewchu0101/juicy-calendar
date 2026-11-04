@@ -1,7 +1,6 @@
 import { addDays, format } from 'date-fns';
 
-export const NEW_EVENT_MINUTES = 120;
-export const MIN_EVENT_MINUTES = 1;
+import { EVENT_MIN_MINUTES, NAME_MAX_CHARS, NEW_EVENT_MINUTES } from './limits';
 
 export type TimedEvent = { startAt: string; endAt: string };
 export type EventTimes = TimedEvent;
@@ -30,14 +29,14 @@ export function moveEvent(event: TimedEvent, pointerTime: Date, grabOffsetMs: nu
 /** Top edge: the end stays fixed. */
 export function resizeStart(event: TimedEvent, pointerTime: Date): EventTimes {
   const end = new Date(event.endAt);
-  const latest = end.getTime() - MIN_EVENT_MINUTES * MS_PER_MINUTE;
+  const latest = end.getTime() - EVENT_MIN_MINUTES * MS_PER_MINUTE;
   return times(new Date(Math.min(pointerTime.getTime(), latest)), end);
 }
 
 /** Bottom edge: the start stays fixed. */
 export function resizeEnd(event: TimedEvent, pointerTime: Date): EventTimes {
   const start = new Date(event.startAt);
-  const earliest = start.getTime() + MIN_EVENT_MINUTES * MS_PER_MINUTE;
+  const earliest = start.getTime() + EVENT_MIN_MINUTES * MS_PER_MINUTE;
   return times(start, new Date(Math.max(pointerTime.getTime(), earliest)));
 }
 
@@ -94,9 +93,23 @@ export function withEndTime(event: TimedEvent, time: string): EventTimes | null 
 
 /** Inspector: changes the duration, keeping the start. */
 export function withDuration(event: TimedEvent, minutes: number): EventTimes | null {
-  if (!Number.isFinite(minutes) || minutes < MIN_EVENT_MINUTES) return null;
+  if (!Number.isFinite(minutes) || minutes < EVENT_MIN_MINUTES) return null;
   const start = new Date(event.startAt);
   return times(start, new Date(start.getTime() + Math.round(minutes) * MS_PER_MINUTE));
+}
+
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+/** 名稱規則（SRS R-3）：去前後空白後非空，且不超過 NAME_MAX_CHARS 個使用者看到的字元。不合法回傳 null。 */
+export function validateTitle(raw: string): string | null {
+  const title = raw.trim();
+  if (title === '') return null;
+  let count = 0;
+  for (const _ of graphemes.segment(title)) {
+    count += 1;
+    if (count > NAME_MAX_CHARS) return null;
+  }
+  return title;
 }
 
 export function formatDuration(minutes: number): string {

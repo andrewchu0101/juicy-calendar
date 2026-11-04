@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /** Fixed clock: Monday, Nov 2, 2026. */
@@ -105,8 +106,11 @@ test('[TC-01][AC-01.1,FR-01,FR-02,NFR-01] dropping a ball creates a 120-minute e
 });
 
 test('[TC-02][AC-01.2,FR-01,NFR-01] dropping outside the calendar or pressing Escape creates nothing', async ({ page }) => {
+  const before = await eventFileHashes(page);
+  expect(before).toEqual({});
+
   await dragBall(page, 0, { x: 50, y: 700 });
-  expect(await storedEvents(page)).toHaveLength(0);
+  expect(await eventFileHashes(page)).toEqual(before);
 
   const ball = await box(page.getByTestId('template-ball').first());
   const target = await point(page, 1, 10);
@@ -117,7 +121,11 @@ test('[TC-02][AC-01.2,FR-01,NFR-01] dropping outside the calendar or pressing Es
   await page.keyboard.press('Escape');
   await page.mouse.up();
   await expect(page.getByTestId('drop-ghost')).toHaveCount(0);
-  expect(await storedEvents(page)).toHaveLength(0);
+  expect(await eventFileHashes(page)).toEqual(before);
+
+  // 球仍可再次拖曳
+  await createAt(page, 0, 10);
+  expect(await storedEvents(page)).toHaveLength(1);
 });
 
 test('balls are one flat colour with no gradient or inset effect', async ({ page }) => {
@@ -523,4 +531,73 @@ test('past dates mute event colours as the local day changes without altering sa
   await createAt(page, 1, 10);
   const today = page.getByTestId('day-column').nth(1).getByTestId('event-block');
   await expect(today).toHaveCSS('background-color', original);
+});
+
+/** 事件檔清單與每檔的 SHA-256（TC-03、TC-02 的「資料沒變」判定）。 */
+async function eventFileHashes(page: Page): Promise<Record<string, string>> {
+  await page.waitForTimeout(250);
+  const files = await page.evaluate(() =>
+    Object.fromEntries(
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith('juicy-calendar:file:events/'))
+        .map((key) => [key, localStorage.getItem(key)!]),
+    ),
+  );
+  return Object.fromEntries(Object.entries(files).map(([key, text]) => [key, createHash('sha256').update(text).digest('hex')]));
+}
+
+test('[TC-03][AC-01.3,FR-02,R-3] 雙擊命名：清空或超過 30 字按 Enter 被拒絕，畫面與事件檔都不變', async ({ page }) => {
+  await createAt(page, 0, 10, 30);
+  await page.getByTestId('event-block').dblclick();
+  await page.getByTestId('event-title-input').fill('寫 PRD');
+  await page.getByTestId('event-title-input').press('Enter');
+  await expect(page.getByTestId('event-title')).toHaveText('寫 PRD');
+  const before = await eventFileHashes(page);
+  expect(Object.keys(before)).toHaveLength(1);
+
+  for (const bad of ['', '   ', '字'.repeat(31)]) {
+    await page.getByTestId('event-block').dblclick();
+    await page.getByTestId('event-title-input').fill(bad);
+    await page.getByTestId('event-title-input').press('Enter');
+    await expect(page.getByTestId('event-title')).toHaveText('寫 PRD');
+    expect(await eventFileHashes(page)).toEqual(before);
+  }
+
+  await page.getByTestId('event-block').dblclick();
+  await page.getByTestId('event-title-input').fill('字'.repeat(30));
+  await page.getByTestId('event-title-input').press('Enter');
+  await expect(page.getByTestId('event-title')).toHaveText('字'.repeat(30));
+});
+
+test('[TC-03][AC-01.3,FR-02,R-3] 右側面板的名稱：同一條規則，被拒絕時欄位還原', async ({ page }) => {
+  await createAt(page, 0, 10);
+  await page.getByTestId('event-block').click();
+  const before = await eventFileHashes(page);
+  const input = page.getByTestId('inspector-title');
+
+  for (const bad of ['', '字'.repeat(31)]) {
+    await input.fill(bad);
+    await input.press('Enter');
+    await expect(input).toHaveValue('Coding');
+    await expect(page.getByTestId('event-title')).toHaveText('Coding');
+    expect(await eventFileHashes(page)).toEqual(before);
+  }
+
+  await input.fill('  寫 PRD  ');
+  await input.press('Enter');
+  await expect(input).toHaveValue('寫 PRD');
+  await expect(page.getByTestId('event-title')).toHaveText('寫 PRD');
+});
+
+test('[TC-03][U-11,FR-02] 模板編輯器的名稱：31 字不能儲存，30 字可以', async ({ page }) => {
+  await page.getByTestId('add-template').click();
+  const save = page.getByRole('button', { name: 'Save' });
+  await page.getByLabel('Template name').fill('字'.repeat(31));
+  await expect(save).toBeDisabled();
+  await page.getByLabel('Template name').fill('   ');
+  await expect(save).toBeDisabled();
+  await page.getByLabel('Template name').fill('字'.repeat(30));
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect(page.getByTestId('template-ball')).toHaveCount(7);
 });

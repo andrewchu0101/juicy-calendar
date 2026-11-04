@@ -23,6 +23,8 @@ export function useTemplateDrag(scrollerRef: ElementRef, columnsRef: ElementRef)
   const [burst, setBurst] = useState<Splash | null>(null);
   const [splash, setSplash] = useState<Splash | null>(null);
   const leftWindowRef = useRef(false);
+  /** dnd-kit 會在取消之後才送出延遲的 onDragMove；以此旗標忽略它，避免預覽殘留。 */
+  const activeRef = useRef(false);
   const overlayBallRef = useRef<HTMLDivElement>(null);
   const pointerRef = useRef<Point | null>(null);
   const lastPointRef = useRef<Point | null>(null);
@@ -59,6 +61,7 @@ export function useTemplateDrag(scrollerRef: ElementRef, columnsRef: ElementRef)
   useEffect(() => stopLoop, []);
 
   const finish = () => {
+    activeRef.current = false;
     stopLoop();
     pointerRef.current = null;
     lastPointRef.current = null;
@@ -69,6 +72,7 @@ export function useTemplateDrag(scrollerRef: ElementRef, columnsRef: ElementRef)
 
   const start = (templateId: string, point: Point) => {
     leftWindowRef.current = false;
+    activeRef.current = true;
     setActiveId(templateId);
     // Closes the floating inspector, so the whole calendar is available as a drop target.
     useAppStore.getState().select(null);
@@ -92,6 +96,7 @@ export function useTemplateDrag(scrollerRef: ElementRef, columnsRef: ElementRef)
   };
 
   const move = (templateId: string, point: Point) => {
+    if (!activeRef.current) return;
     const last = lastPointRef.current ?? point;
     pointerRef.current = point;
     lastPointRef.current = point;

@@ -89,11 +89,7 @@ function InspectorPanel({ event }: { event: CalendarEvent }) {
   const deleteEvent = useAppStore((state) => state.deleteEvent);
   const updateSettings = useAppStore((state) => state.updateSettings);
 
-  const applyTimes = (times: EventTimes | null) => {
-    if (!times) return false;
-    updateEvent(event.id, times);
-    return true;
-  };
+  const applyTimes = (times: EventTimes | null) => (times ? updateEvent(event.id, times) : false);
   const start = new Date(event.startAt);
   const end = new Date(event.endAt);
   const duration = durationMinutes(event);
@@ -124,11 +120,7 @@ function InspectorPanel({ event }: { event: CalendarEvent }) {
           aria-label="Name"
           data-testid="inspector-title"
           value={event.title}
-          onCommit={(title) => {
-            if (!title.trim()) return false;
-            updateEvent(event.id, { title: title.trim() });
-            return true;
-          }}
+          onCommit={(title) => updateEvent(event.id, { title }) && title.trim() !== event.title}
         />
       </Field>
       <Field label="Date">

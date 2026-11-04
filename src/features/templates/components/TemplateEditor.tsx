@@ -3,6 +3,7 @@ import { ColorPicker } from '../../../components/ColorPicker';
 import { useAppStore } from '../../../stores/appStore';
 import type { Template } from '../../../types';
 import { PALETTE } from '../../../utils/color';
+import { validateTitle } from '../../calendar/engine';
 
 export function TemplateEditor({ template, onClose }: { template?: Template; onClose: () => void }) {
   const saveTemplate = useAppStore((state) => state.saveTemplate);
@@ -13,13 +14,12 @@ export function TemplateEditor({ template, onClose }: { template?: Template; onC
   const [confirming, setConfirming] = useState(false);
 
   const parsedDuration = Number(duration);
-  const valid = name.trim().length > 0 && parsedDuration > 0;
+  const valid = validateTitle(name) !== null && parsedDuration > 0;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!valid) return;
-    saveTemplate({ id: template?.id, name: name.trim(), color, defaultDuration: parsedDuration });
-    onClose();
+    if (saveTemplate({ id: template?.id, name, color, defaultDuration: parsedDuration })) onClose();
   };
 
   return (

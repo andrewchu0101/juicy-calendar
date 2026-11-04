@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { newEventTimes, shiftAnchor, type EventTimes } from '../features/calendar/engine';
+import { newEventTimes, shiftAnchor, validateTitle, type EventTimes } from '../features/calendar/engine';
 import { DEFAULT_SETTINGS } from '../services/persistence/schemas';
 import type { WorkspaceData } from '../services/persistence/repository';
 import type { CalendarEvent, Settings, Template } from '../types';
@@ -38,7 +38,8 @@ export type AppState = {
   reset(): void;
 
   createEventFromTemplate(templateId: string, start: Date): string | null;
-  updateEvent(id: string, patch: EventPatch | EventTimes): void;
+  /** 回傳 false 表示被拒絕（找不到事件或名稱不合法），此時資料完全不變。 */
+  updateEvent(id: string, patch: EventPatch | EventTimes): boolean;
   deleteEvent(id: string): void;
   undo(): void;
   redo(): void;
@@ -46,7 +47,8 @@ export type AppState = {
   setEditing(id: string | null): void;
   clearDropped(): void;
 
-  saveTemplate(template: Omit<Template, 'id' | 'order'> & { id?: string }): void;
+  /** 回傳 false 表示名稱不合法而被拒絕，此時資料完全不變。 */
+  saveTemplate(template: Omit<Template, 'id' | 'order'> & { id?: string }): boolean;
   deleteTemplate(id: string): void;
 
   updateSettings(patch: Partial<Settings>): void;
@@ -148,11 +150,18 @@ export const useAppStore = create<AppState>((set, get) => {
       return event.id;
     },
 
-    updateEvent: (id, patch) => {
+    updateEvent: (id, rawPatch) => {
       const event = get().events[id];
-      if (!event) return;
+      if (!event) return false;
+      let patch = rawPatch;
+      if ('title' in rawPatch && rawPatch.title !== undefined) {
+        const title = validateTitle(rawPatch.title);
+        if (title === null) return false;
+        patch = { ...rawPatch, title };
+      }
       const changed = (Object.keys(patch) as (keyof typeof patch)[]).some((key) => event[key] !== patch[key]);
       if (changed) commit({ ...get().events, [id]: { ...event, ...patch } });
+      return true;
     },
 
     deleteEvent: (id) => {
@@ -186,7 +195,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
     clearDropped: () => set({ droppedEventId: null }),
 
-    saveTemplate: ({ id, ...fields }) => {
+    saveTemplate: ({ id, ...rawFields }) => {
+      const name = validateTitle(rawFields.name);
+      if (name === null) return false;
+      const fields = { ...rawFields, name };
       const { templates } = get();
       const existing = id ? templates[id] : undefined;
       const template: Template = existing
@@ -197,6 +209,7 @@ export const useAppStore = create<AppState>((set, get) => {
             order: Math.max(-1, ...Object.values(templates).map((item) => item.order)) + 1,
           };
       set({ templates: { ...templates, [template.id]: template } });
+      return true;
     },
 
     deleteTemplate: (id) => {

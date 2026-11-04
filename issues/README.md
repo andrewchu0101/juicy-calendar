@@ -25,6 +25,7 @@
 | 002 | [測試 fixture 建構器與重開後一致](002-fixtures-and-reopen.md) | S | 無 | 可開始 |
 | 003 | [名稱不得超過 30 字，常數集中](003-name-limit-30.md) | M | 001 | 等待前置票 |
 | 004 | [面板時間與持續分鐘的新規則](004-panel-time-rules.md) | M | 003 | 等待前置票 |
+| 004a | [TC-02 間歇失敗（Escape 後預覽殘留）](004a-tc02-escape-ghost.md) | S | 無 | 完成（插入任務） |
 | 005 | [拖曳邊緣的 1 分鐘到 7 天上下限](005-resize-bounds.md) | S | 003 | 等待前置票 |
 | 006 | [IPC 錯誤改為代碼與診斷文字](006-ipc-error-codes.md) | M | 無 | 可開始 |
 | 007 | [通知與開啟錯誤以代碼呈現](007-structured-notices.md) | M | 006 | 等待前置票 |
