@@ -63,6 +63,12 @@ async function dragBall(page: Page, index: number, target: { x: number; y: numbe
   await page.mouse.down();
   await page.mouse.move(target.x, target.y - 30, { steps: 6 });
   await page.mouse.move(target.x, target.y, { steps: 3 });
+  // Release only after the drag state is committed (NFR-01). Releasing earlier makes onDragEnd see no active item.
+  await expect(page.locator('.ball-dragging-source')).toHaveCount(1);
+  const grid = await box(page.getByTestId('calendar-columns'));
+  const inside =
+    target.x >= grid.x && target.x <= grid.x + grid.width && target.y >= grid.y && target.y <= grid.y + grid.height;
+  if (inside) await expect(page.getByTestId('drop-ghost')).toBeVisible();
   await page.mouse.up();
 }
 
@@ -87,7 +93,7 @@ async function dragFromTo(page: Page, from: { x: number; y: number }, to: { x: n
 
 test.beforeEach(async ({ page }) => open(page));
 
-test('dropping a ball creates a 120-minute event at the exact position, and keeps the ball', async ({ page }) => {
+test('[TC-01][AC-01.1,FR-01,FR-02,NFR-01] dropping a ball creates a 120-minute event at the exact position, and keeps the ball', async ({ page }) => {
   await createAt(page, 0, 10, 30);
   const event = await onlyEvent(page);
   expect(localTime(event.startAt)).toBe('Mon 10:30');
@@ -98,7 +104,7 @@ test('dropping a ball creates a 120-minute event at the exact position, and keep
   await expect(page.getByTestId('event-time')).toHaveText('10:30–12:30');
 });
 
-test('dropping outside the calendar or pressing Escape creates nothing', async ({ page }) => {
+test('[TC-02][AC-01.2,FR-01,NFR-01] dropping outside the calendar or pressing Escape creates nothing', async ({ page }) => {
   await dragBall(page, 0, { x: 50, y: 700 });
   expect(await storedEvents(page)).toHaveLength(0);
 

@@ -4,7 +4,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-03 |
+| 更新時間 | 2026-11-04（票 001 完成，未 commit） |
 | 目前目標 | 把一次性 demo 接手成「依 template 流程開發」的專案；下一步補文件（Brief → PRD → SRS …） |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
 | 分支／HEAD | `main` ／ 尚無 commit（已 `git init`，無遠端） |
@@ -20,6 +20,8 @@
   - `npm run test:rust` Passed（5 tests）
   - `bash .maintain/check.sh` Passed（5 項）
   - `npm run test:e2e` **不穩定**：同一份程式碼三次結果 20 passed/9 failed、9 passed/20 failed、`--workers=1` 6 passed/23 failed（見阻塞）
+
+- 票 001（2026-11-04）：`e2e/core.spec.ts` 的 `dragBall` 改為放開前等待拖曳狀態與放置預覽；TC-01／TC-02 已標註。`test:e2e` 連續 3 次皆 29/29 通過（修復前 22／9／16）；`typecheck`、`lint`、`npm test`（48）Passed。未改產品程式與斷言。`dragFromTo`（移動／調整）未改，但 3 次皆綠。
 
 ### 進行中
 - 無。
