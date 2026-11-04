@@ -44,6 +44,9 @@
 
 - 票 008（2026-11-04，已 commit `9589e5e`，未 push）：`eventSchema` 加長度 ≤ `EVENT_MAX_MINUTES` 與名稱規則，`templateSchema` 加名稱規則（皆引用 `limits.ts`／`validateTitle`）；`skipReason` 改用 zod 的訊息，通知原因可區分。新增 `loadRules.test.ts`（TC-07，七種壞檔 × 載入與編輯後，共 14 項；(g) 模板名稱 31 字經專案擁有者同意列入）。紅燈 3 失敗／11 通過，綠燈後 `npm test` 123/123、`typecheck`、`lint` Passed；`test:e2e` 第 1 次 33/34（既有間歇項 `overlapping events…`，單獨重跑通過），重跑 34/34。**未驗證**：Rust 真實磁碟載入、桌面版手動開啟版本 2 樣本資料夾。
 
+- 票 011（2026-11-04，第二台電腦，未 commit）：翻譯日曆與工具列。新增 `src/i18n/dateFormat.ts`（`formatDate`，`date-fns` 的 `zh-TW`／`en-US` 語系）、`rangeLabel.ts`（標題由 `CalendarToolbar` 搬出，中文寫法 `2026年11月9日 – 15日` 等已由專案擁有者確認）、`hiddenEventsTitle.ts`（`+N` 徽章說明，英文單複數）；字典新增 15 個鍵；`CalendarToolbar`／`CalendarGrid`／`EventBlock` 的固定文字、`aria-label`、`title` 改由字典與這些函式提供。`typecheck`、`lint`、`build` Passed；`npm test` 222 passed；`test:e2e` 連續 2 次 47 passed。**偏差與決定**：(1) 日曆畫面沒有語言選單，AC「切換語言立即反映」只驗證到「歡迎畫面選語言→進日曆」，選單另開**票 023**（專案擁有者同意）；(2) 中文字串（上一個期間、下一個期間、今天、時間軸起點／終點、30 分鐘吸附、縮放、檢視、週、日、開啟星期X、有 N 個事件在可見時段之外、事件名稱）為我的提案，**待審閱**；(3) 中文跨年週寫成 `12月28日 – 2027年1月3日`（依英文只標結束年的原則推出，專案擁有者只確認了單日、同月、跨月）；(4) `TemplatePalette`（球列）與 `00:00` 時間軸標籤不在本票（分別歸 012、013）。**未驗證**：桌面版中文介面人工操作；`test:rust`、`test:desktop`（本票未動 Rust）。
+- 環境（2026-11-04，第二台電腦）：`C:/DevTools/jq` 已由專案擁有者同意加入**使用者 PATH**（登錄 `HKCU/Environment`，原值備份在暫存區）；Rust 仍不在 PATH。新開的終端機與重啟的 Claude Code 才會讀到。以新 PATH 在 Git Bash 實測 `bash .maintain/check.sh`，`test-guard-git.sh`、`test-guard-secrets.sh` 實際執行並通過。注意：PowerShell 裡的 `bash` 會先找到 WSL 啟動器（`C:/Windows/system32/bash.exe`），那個看不到 jq；hook 要在 Git Bash 下執行才有效。
+
 ### 進行中
 - 無。
 
@@ -52,6 +55,7 @@
   - 判斷：測試端的時序問題。人類操作放開前通常超過 50 ms，不受影響。
   - 修法（已實作，票 001）：`dragBall` 放開前等待拖曳狀態與放置預覽；`test:e2e` 連續 3 次皆 29/29。之後仍有少數**不相關**的間歇失敗（`overlapping events…`、`weekly and daily views…`、magnet 約 1/40），**待票 022 處理**；NFR-01 在 022 完成前不算達成。
 - 票 000 結果（2026-11-04，Windows 11）：`typecheck`、`lint`、`npm test`（48）、`test:rust`（5）皆 Passed；`npm run test:desktop` 在 Windows（Git Bash）**Passed**（建立工作區、拖放後 10:30–12:30、關閉後重開事件仍在、越界寫入被拒）；`npm run desktop` 視窗出現，Vite `http://localhost:1420` 回 200。人工操作驗收（建立工作區、關閉、重開還原）**Manual Pending**。追溯：`docs/06-test-plan.md` G-03 列。未修改任何產品程式。
+- 票 000 在第二台電腦重跑（2026-11-04，Windows 10 Pro 10.0.19045；工作目錄 `C:/Users/student/Project/juicy-calendar`，HEAD `6592827`，工作樹乾淨）：node v26.13.0、npm 11.20.0、Rust 1.90.0（`C:/DevTools/rust`，只用程序層級環境變數，未改 PATH）、jq 1.8.2。`typecheck`、`lint` Passed；`npm test` 19 files／181 passed；`test:rust` 23 passed；`test:desktop`（Git Bash）Passed（6 顆球、拖放後 10:30–12:30、重開後 `blocksOnLaunch: 1`、路徑穿越類寫入全被拒絕）。`npm run desktop`：視窗「Juicy Calendar」出現且 Responding；Vite `http://localhost:1421/` 回 HTTP 200。觀察：Vite 只監聽 `::1`，`127.0.0.1:1421` 拒絕連線（webview 用 `localhost` 正常）；`tauri dev` 的檔案監看對 `src-tauri/target/debug/deps` 的 exe／pdb 印出 `EBUSY` 警告，不影響啟動。人工「建立工作區、關閉、重開還原」：專案擁有者表示**已人工驗收完成**（2026-11-04，第二台電腦，由專案擁有者操作；我沒有親眼看到操作過程，也沒有截圖，依其回報記錄）。票 000 的狀態刻意維持「可開始」，專案擁有者換工作區時會優先再跑一次。驗收後已關閉視窗，`juicy-calendar` 行程與埠 1421 皆已結束。`test:e2e` 不在此票範圍（同日另測 43 passed／1 failed，失敗為票 022 已知的 `overlapping events…`，單獨重跑 3 次皆通過）。未修改任何產品程式。
 - Playwright WebKit 已重裝到 `D:\DevTools\playwright-browsers`（實體檔案，175 MB），C 槽 `ms-playwright` 已刪除（那是 2026-11-03 我自己裝的）。
 
 ### 下一步（最多三項）

@@ -32,7 +32,7 @@
 | 008 | [載入規則變嚴：過長事件與過長名稱視為壞檔](008-load-rules-stricter.md) | M | 002、003、007 | 完成 |
 | 009 | [單一寫入者：第二個視窗被擋](009-single-writer-lock.md) | L | 006、007 | 完成（人工驗收未做） |
 | 010 | [多語系基礎：語言選單、偵測與設定持久](010-i18n-foundation.md) | L | 006、007 | 等待前置票 |
-| 011 | [翻譯日曆與工具列](011-translate-calendar.md) | M | 010 | 等待前置票 |
+| 011 | [翻譯日曆與工具列](011-translate-calendar.md) | M | 010 | 完成（人工驗收未做；日曆畫面的切換驗證由票 023 承接） |
 | 012 | [翻譯面板、模板編輯器、通知與錯誤](012-translate-panel-notices.md) | M | 007、010 | 等待前置票 |
 | 013 | [時間格式跟隨 Windows](013-time-format-windows.md) | M | 010 | 等待前置票 |
 | 014 | [缺少 WebView2 時顯示說明](014-webview2-preflight.md) | M | 010 | 等待前置票 |
@@ -44,6 +44,7 @@
 | 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | **Q-05 決定**、`DESIGN.md` 規則修訂 | **未就緒** |
 | 021 | [面板持續時間可用小時＋分鐘或分鐘輸入](021-duration-hours-minutes.md) | S | 004、SRS R-3 修訂 | **未就緒** |
 | 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |
+| 023 | [工具列語言選單](023-toolbar-language-menu.md) | S | 010、011 | 可開始 |
 
 **待專案擁有者決定**：S-01（以 `portable.flag` 判斷免安裝模式，見 `docs/04-sad.md` ADR-05）、S-02（`tauri build` 下載 NSIS 工具的寫入位置，預期在 C 槽，見 SDS 打包契約）、Q-05（radial hover 樣式）。
 
