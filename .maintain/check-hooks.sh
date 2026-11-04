@@ -21,4 +21,10 @@ for s in guard-git.sh guard-secrets.sh; do
   grep -q "$s" .codex/hooks.json || { echo "Codex 沒登記  $s"; found=1; }
 done
 
+# git pre-commit（控制字元檢查，AGENTS.md 第 16 條）：檔案要在，且這個 clone 要啟用。
+# core.hooksPath 存在本機 .git/config，不會隨 repo 版控，每個 clone 要設一次。
+[ -f .githooks/pre-commit ] || { echo "缺腳本  .githooks/pre-commit"; found=1; }
+[ -f .githooks/test-pre-commit.sh ] || { echo "缺回歸規格  .githooks/test-pre-commit.sh"; found=1; }
+[ "$(git config --get core.hooksPath)" = ".githooks" ] || { echo "pre-commit 沒啟用：執行  git config core.hooksPath .githooks"; found=1; }
+
 exit $found

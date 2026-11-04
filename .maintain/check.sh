@@ -6,6 +6,7 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
 fail=0
 run() { local n=$1; shift; local o; if o=$("$@" 2>&1); then printf '✓ %s\n' "$n"; else printf '✗ %s\n' "$n"; printf '%s\n' "$o" | sed 's/^/    /'; fail=1; fi; }
 for s in .maintain/check-*.sh; do [ -f "$s" ] && run "$(basename "$s")" bash "$s"; done
+for t in .githooks/test-*.sh; do [ -f "$t" ] && run "$t" bash "$t"; done
 for t in agent-templates/hooks/test-*.sh; do [ -f "$t" ] && run "$t" bash "$t"; done
 if command -v jq >/dev/null 2>&1; then
   for t in .claude/hooks/test-*.sh; do [ -f "$t" ] && run "$t" bash "$t"; done

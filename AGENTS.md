@@ -20,6 +20,7 @@ npm run typecheck && npm run lint && npm test
 npm run test:rust      # 需要 cargo
 npm run test:e2e       # Playwright（WebKit）
 npm run build
+git config core.hooksPath .githooks   # 啟用 pre-commit（每個 clone 設一次；檢查見 .maintain/check.sh）
 ```
 
 說「完成」之前，必須跑過相關測試指令，並把結果貼出來。
@@ -63,7 +64,7 @@ npm run build
 13. 時間顯示一律用 `formatTime`，不得寫死 `HH:mm`；現在時間用全域 `Date`，測試以假計時器或 Playwright 時鐘固定。
 14. 新規則的測試要先看到原因正確的紅燈再實作；e2e 的拖曳在放開滑鼠前必須等放置預覽出現。
 15. 打包 NSIS 前先問我（可能寫入 C 槽）；測試不得開啟使用者的真實工作區。
-16. Windows 路徑與反斜線：寫進檔案、`!` 指令或腳本的 Windows 路徑一律用正斜線（`D:/Project/...`）。必須用 Python 寫入含反斜線的文字時，用原始字串（Python 的 r 前綴字串，例如 r'D:/x'），寫完檢查檔案裡沒有控制字元（反斜線加 t 會變成 Tab，反斜線加 a 會變成 BEL）。
+16. Windows 路徑與反斜線：寫進檔案、`!` 指令或腳本的 Windows 路徑一律用正斜線（`D:/Project/...`）。必須用 Python 寫入含反斜線的文字時，用原始字串（Python 的 r 前綴字串，例如 r'D:/x'），寫完檢查檔案裡沒有控制字元（反斜線加 t 會變成 Tab，反斜線加 a 會變成 BEL）。`.githooks/pre-commit` 會在 commit 時擋下含控制字元的暫存檔案。
 
 ## 不准做的事
 
