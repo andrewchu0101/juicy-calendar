@@ -1,11 +1,19 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import { toBackendError } from './backendError';
+import type { Language } from '../../i18n/detectLanguage';
+import { BackendError, toBackendError } from './backendError';
+import { appSettingsFileSchema, systemInfoSchema } from './schemas';
 
 export type WorkspaceLocation = {
   path: string;
   /** Whether the folder already contains a workspace.json. */
   initialized: boolean;
 };
+
+/** App-wide settings of this computer (API-05). `language` is null until the user has chosen one. */
+export type AppSettings = { language: Language | null };
+
+/** What the operating system reports (API-06). A value is null when it cannot be read. */
+export type SystemInfo = { locale: string | null; hour12: boolean | null };
 
 /** Everything the app may ask of the file system. Paths are always workspace-relative. */
 export type WorkspaceBackend = {
@@ -16,6 +24,9 @@ export type WorkspaceBackend = {
   read(path: string): Promise<string | null>;
   write(path: string, contents: string): Promise<void>;
   remove(path: string): Promise<void>;
+  readAppSettings(): Promise<AppSettings>;
+  writeAppSettings(settings: { language: Language }): Promise<void>;
+  systemInfo(): Promise<SystemInfo>;
 };
 
 /** Every Tauri failure arrives as `{code, detail}`; callers get a BackendError instead. */
@@ -35,12 +46,33 @@ const tauriBackend: WorkspaceBackend = {
   read: (path) => call('workspace_read', { path }),
   write: (path, contents) => call('workspace_write', { path, contents }),
   remove: (path) => call('workspace_remove', { path }),
+  readAppSettings: async () => {
+    const parsed = appSettingsFileSchema.safeParse(await call('app_settings_read'));
+    return { language: parsed.success ? parsed.data.language : null };
+  },
+  writeAppSettings: (settings) => call('app_settings_write', { settings }),
+  // API-06 never fails: any problem means "unknown", and the caller falls back to the browser.
+  systemInfo: async () => {
+    const reply = await call('system_info').catch(() => undefined);
+    const parsed = systemInfoSchema.safeParse(reply);
+    return parsed.success ? parsed.data : { locale: null, hour12: null };
+  },
 };
 
+function readJson(text: string | null): unknown {
+  if (text === null) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Browser-only stand-in, used by `npm run dev` and the end-to-end tests. */
-function createBrowserBackend(): WorkspaceBackend {
+export function createBrowserBackend(): WorkspaceBackend {
   const prefix = 'juicy-calendar:file:';
   const activeKey = 'juicy-calendar:active';
+  const settingsKey = 'juicy-calendar:app-settings';
   const location = (): WorkspaceLocation => ({
     path: 'Browser Workspace',
     initialized: localStorage.getItem(`${prefix}workspace.json`) !== null,
@@ -59,6 +91,16 @@ function createBrowserBackend(): WorkspaceBackend {
     read: async (path) => localStorage.getItem(prefix + path),
     write: async (path, contents) => localStorage.setItem(prefix + path, contents),
     remove: async (path) => localStorage.removeItem(prefix + path),
+    readAppSettings: async () => {
+      const parsed = appSettingsFileSchema.safeParse(readJson(localStorage.getItem(settingsKey)));
+      return { language: parsed.success ? parsed.data.language : null };
+    },
+    writeAppSettings: async (settings) => {
+      const parsed = appSettingsFileSchema.safeParse(settings);
+      if (!parsed.success) throw new BackendError('IO_ERROR', 'Unsupported language');
+      localStorage.setItem(settingsKey, JSON.stringify(parsed.data));
+    },
+    systemInfo: async () => ({ locale: navigator.languages?.[0] || null, hour12: null }),
   };
 }
 

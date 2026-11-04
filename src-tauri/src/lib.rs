@@ -1,12 +1,14 @@
 //! Native layer. The frontend never sends absolute paths: the workspace root is set here, from the
 //! native folder dialog or the remembered last workspace, and all file access is relative to it.
 
+mod app_settings;
 mod error;
 mod fs_safe;
+mod platform_win;
 mod workspace_lock;
 
 use error::IpcError;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -202,6 +204,43 @@ fn workspace_remove(state: State<'_, WorkspaceState>, path: String) -> Result<()
     }
 }
 
+/// Where this computer's app-wide settings live. Decided here; the frontend never sends a path.
+fn app_settings_dir(app: &AppHandle) -> Result<PathBuf, IpcError> {
+    app.path().app_config_dir().map_err(IpcError::io)
+}
+
+#[derive(Serialize)]
+struct AppSettingsReply {
+    language: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct AppSettingsInput {
+    language: String,
+}
+
+#[tauri::command]
+fn app_settings_read(app: AppHandle) -> Result<AppSettingsReply, IpcError> {
+    Ok(AppSettingsReply { language: app_settings::read(&app_settings_dir(&app)?) })
+}
+
+#[tauri::command]
+fn app_settings_write(app: AppHandle, settings: AppSettingsInput) -> Result<(), IpcError> {
+    app_settings::write(&app_settings_dir(&app)?, &settings.language)
+}
+
+#[derive(Serialize)]
+struct SystemInfo {
+    locale: Option<String>,
+    hour12: Option<bool>,
+}
+
+/// Never fails: a value that cannot be read is reported as null. `hour12` is ticket 013's job.
+#[tauri::command]
+fn system_info() -> SystemInfo {
+    SystemInfo { locale: platform_win::system_locale(), hour12: None }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -335,6 +374,9 @@ pub fn run() {
             workspace_read,
             workspace_write,
             workspace_remove,
+            app_settings_read,
+            app_settings_write,
+            system_info,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]

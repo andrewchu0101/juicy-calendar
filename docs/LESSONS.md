@@ -57,6 +57,9 @@
 - **e2e 還有其他間歇失敗（未修）**（2026-11-04，票 005）：完整 `test:e2e` 連跑 3 次為 33／33／34 passed，失敗各為 `overlapping events…`、`weekly and daily views…`；`-g overlapping --repeat-each=10 --workers=4` 失敗 1/10。這些測試不碰縮放邊緣，與票 005 無關；是否同為 `dragBall` 放開時機（見上一條推測）未驗證。已另開票 022 處理。 票 008 的 e2e 又出現一次 `overlapping events…`（收到 `Mon 10:30` 而非 `Mon 11:00`），單獨重跑與整套重跑皆通過。
 - **拖曳到 7 天上限的 e2e 不必真的拖滿**（2026-11-04，票 005）：縮放允許超出格線（`allowOverflow`），把指標移到 ±14000 px 即可，不需邊緣自動捲動。
 - **dnd-kit 之外，輸入框的 `maxLength` 不能拿來限制 30 字**（2026-11-04，票 003）：`maxLength` 以 UTF-16 單位計數，`👨‍👩‍👧` 一個字元佔 8 個單位，會誤擋合法輸入。名稱規則只靠 `validateTitle`（`Intl.Segmenter`）。
+- **`beforeEach(() => mock.mockReset())` 會製造假的失敗**（2026-11-04，票 010）：箭頭函式回傳了 mock 本身，vitest 把回傳的函式當成清理函式，測試結束後又呼叫一次，`mockRejectedValue` 的 rejection 沒人處理，於是看似實作錯誤的 3 項失敗其實是測試寫法問題。`beforeEach` 一律用區塊 `{ ... }`，不要直接回傳 mock。紅燈要確認「是斷言失敗」，不是「未處理的 rejection」。
+- **先前說「骨架階段就會過的測試」要補突變檢查**（2026-11-04，票 010）：`initLanguage` 吞掉讀設定錯誤這個行為，我先實作、事後才發現沒有測試；突變（不吞錯）全部測試仍過。補測試後才變紅。實作時每加一個 `try/catch` 或降級分支，就要有一個測試會因它而變紅。
+- **Python 腳本寫入 TypeScript 時，反斜線會被吃掉或多出來**（2026-11-04，票 010）：假路徑 `C:\secret\path` 寫進檔案後變成 `C:\secret\path`，被 eslint `no-useless-escape` 擋下。測試用的假路徑改用正斜線（這是路徑跳脫問題的第三次出現，建議升級成 `AGENTS.md` 規則，待專案擁有者決定）。
 - **demo 的 `node_modules` 是 macOS 裝的**：在 Windows 不能執行，新資料夾要重新 `npm ci`。
 - **Rust 不在 PATH**：每個要用 Rust 的程序都要先設 `RUSTUP_HOME`、`CARGO_HOME` 並加 PATH。
 - **agent 的技能清單看不到，不代表沒裝**（2026-11-04）：有些技能設定成只有使用者能啟動（`disable-model-invocation`）。判斷有沒有裝，要看 `~/.claude/skills/`。

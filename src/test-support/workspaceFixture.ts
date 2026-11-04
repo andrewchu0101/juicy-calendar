@@ -4,7 +4,7 @@
  * Values are written out on purpose instead of calling the product's seed code, so expectations
  * stay independent of the implementation.
  */
-import type { WorkspaceBackend } from '../services/persistence/backend';
+import type { AppSettings, WorkspaceBackend } from '../services/persistence/backend';
 
 /** Fixed clock: Monday 2026-11-02 12:00 EST, time zone America/New_York. */
 export const FIXTURE_NOW_ISO = '2026-11-02T17:00:00.000Z';
@@ -53,6 +53,7 @@ export function buildWorkspaceFixture(options: FixtureOptions = {}): WorkspaceFi
   for (const event of options.events ?? []) files.set(`events/${event.id}.json`, json(event));
   for (const [path, contents] of Object.entries(options.rawFiles ?? {})) files.set(path, contents);
 
+  let language: AppSettings['language'] = null;
   const backend: WorkspaceBackend = {
     select: async () => null,
     restore: async () => null,
@@ -62,6 +63,9 @@ export function buildWorkspaceFixture(options: FixtureOptions = {}): WorkspaceFi
     read: async (path) => files.get(path) ?? null,
     write: async (path, contents) => void files.set(path, contents),
     remove: async (path) => void files.delete(path),
+    readAppSettings: async () => ({ language }),
+    writeAppSettings: async (settings) => void (language = settings.language),
+    systemInfo: async () => ({ locale: null, hour12: null }),
   };
   return { backend, files };
 }

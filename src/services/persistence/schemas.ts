@@ -58,3 +58,13 @@ export const DEFAULT_SETTINGS: Settings = {
   inspectorCollapsed: false,
   magnetEnabled: true,
 };
+
+/** App-wide settings of this computer (API-05). Anything else on disk is treated as "not set". */
+export const languageSchema = z.enum(['zh-TW', 'en']);
+export const appSettingsFileSchema = z.object({ language: languageSchema });
+
+/** API-06: each field degrades to null on its own, so one bad value does not hide the other. */
+export const systemInfoSchema = z.object({
+  locale: z.string().nullable().catch(null),
+  hour12: z.boolean().nullable().catch(null),
+});

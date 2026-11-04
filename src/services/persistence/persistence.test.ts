@@ -16,6 +16,10 @@ function memoryBackend(seed: Record<string, string> = {}) {
     read: async (path) => files.get(path) ?? null,
     write: async (path, contents) => void files.set(path, contents),
     remove: async (path) => void files.delete(path),
+    // 介面新增（票 010）；這個測試不使用 App 設定。
+    readAppSettings: async () => ({ language: null }),
+    writeAppSettings: async () => undefined,
+    systemInfo: async () => ({ locale: null, hour12: null }),
   };
   return { files, backend };
 }
