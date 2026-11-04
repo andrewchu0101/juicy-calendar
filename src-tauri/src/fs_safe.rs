@@ -1,6 +1,7 @@
 //! Path validation and atomic file I/O. Knows nothing about calendars, only about which relative
 //! paths may exist inside a workspace and how to write them safely.
 
+use crate::error::IpcError;
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -33,24 +34,24 @@ pub fn is_allowed_path(relative: &str) -> bool {
 }
 
 /// Resolves an allowed path under the root, refusing symlinks that lead out of the workspace.
-pub fn resolve(root: &Path, relative: &str) -> Result<PathBuf, String> {
+pub fn resolve(root: &Path, relative: &str) -> Result<PathBuf, IpcError> {
     if !is_allowed_path(relative) {
-        return Err(format!("Path is not allowed: {relative}"));
+        return Err(IpcError::path_not_allowed(relative));
     }
     let target = root.join(relative);
-    let canonical_root = root.canonicalize().map_err(|e| e.to_string())?;
+    let canonical_root = root.canonicalize().map_err(IpcError::io)?;
 
     if let Some(parent) = target.parent() {
         if parent.exists() {
-            let canonical_parent = parent.canonicalize().map_err(|e| e.to_string())?;
+            let canonical_parent = parent.canonicalize().map_err(IpcError::io)?;
             if !canonical_parent.starts_with(&canonical_root) {
-                return Err(format!("Path leaves the workspace: {relative}"));
+                return Err(IpcError::path_not_allowed(relative));
             }
         }
     }
     if let Ok(metadata) = fs::symlink_metadata(&target) {
         if metadata.file_type().is_symlink() {
-            return Err(format!("Refusing to follow a symlink: {relative}"));
+            return Err(IpcError::path_not_allowed(relative));
         }
     }
     Ok(target)
@@ -132,6 +133,7 @@ pub fn new_workspace_dir(picked: &Path) -> io::Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::ErrorCode;
 
     struct TempDir(PathBuf);
 
@@ -234,6 +236,23 @@ mod tests {
         assert_eq!(first, dir.0.join("MyTimeBlock"));
         let second = new_workspace_dir(&dir.0).unwrap();
         assert_eq!(second, dir.0.join("MyTimeBlock-2"));
+    }
+
+    // TC-10（路徑拒絕）｜NFR-02、SDS 錯誤代碼表：不在允許清單的路徑一律 PATH_NOT_ALLOWED。
+    #[test]
+    fn resolve_rejects_paths_outside_the_allow_list_with_path_not_allowed() {
+        let dir = TempDir::new("reject");
+        for bad in [
+            "../x.json",
+            "events/../../x.json",
+            ".juicy.lock",
+            "app-settings.json",
+            "/etc/passwd",
+            "C:\\Windows\\win.ini",
+        ] {
+            let error = resolve(&dir.0, bad).unwrap_err();
+            assert_eq!(error.code, ErrorCode::PathNotAllowed, "{bad}");
+        }
     }
 
     #[cfg(unix)]

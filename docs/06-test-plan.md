@@ -221,14 +221,14 @@
 | AC-01.4、FR-04 | M-03 | 未執行 | **缺口**：受阻於 Q-05 |
 | FR-03 | TC-04 | 未執行 | |
 | AC-02.1、FR-05 | TC-06 | 2026-11-04，`npx vitest run src/services/persistence/reopen.test.ts` 1/1 Passed；完整 `npm test` 49/49 Passed（Windows 11、Node 24.22.0、記憶體版 backend、假時鐘 2026-11-02 12:00 EST）。先紅後綠：紅燈原因為空 fixture（`This folder has no workspace.json.`） | 重開驗證用記憶體版 backend，**未驗證**真實磁碟寫入；`.juicy.lock` 等屬 TC-09／10 |
-| AC-02.2、FR-06、NFR-04 | TC-07、TC-08 | 未執行 | |
+| AC-02.2、FR-06、NFR-04 | TC-07、TC-08 | TC-08 **僅代碼部分**（票 006，2026-11-04，Windows 11、Rust 1.99.1）：Rust `opening_a_folder_without_workspace_json_fails_with_not_a_workspace` 通過，並確認資料夾沒有新增檔案；先紅後綠（紅燈 `left: IoError right: NotAWorkspace`）。`WORKSPACE_TOO_NEW`／`NO_WORKSPACE_JSON`／`WORKSPACE_DAMAGED` 與整合測試（雜湊不變）屬後續票，TC-07 未執行 | TC-08 完整整合未執行；`workspace_select` 命令本身（原生對話框）無法單元測試，只測抽出的 `choose_root` |
 | AC-02.3、FR-07 | TC-09 | 未執行 | 雲端同步資料夾與網路磁碟**未涵蓋** |
 | AC-03.1、FR-08、NFR-05 | M-01、M-07 | 未執行 | Windows 10 1803 可能無環境 |
 | AC-03.2、FR-09 | TC-11 | 未執行 | |
 | AC-03.3、FR-10 | TC-12、M-05 | 未執行 | 12 小時制時間範圍寫法未定；原生欄位不一致風險 |
 | AC-03.4、FR-11 | TC-10（偵測）、M-02 | 未執行 | WebView2 快取位置未驗證 |
 | NFR-01 | 實作前置票、退出條件 4 | 2026-11-04，Windows 11、node 24.22.0：修復前 3 次 22／9／16 通過（失敗清單各異）；修復後 3 次皆 29 passed／0 failed，清單一致 | N=3 仍為暫定，待專案擁有者定案 |
-| NFR-02 | TC-10 | 未執行（現有 5 項 Rust 測試 2026-11-03 通過） | |
+| NFR-02 | TC-10 | 票 006（2026-11-04，Windows 11、Node 24.22.0、Rust 1.99.1）：`test:rust` 9 passed（原有 5 項保留，新增 4 項：`serializes_as_code_and_detail_with_screaming_snake_case_codes`（JSON 形狀；變異檢查把 `rename_all` 改 `camelCase` 即紅燈）、`resolve_rejects_paths_outside_the_allow_list_with_path_not_allowed`、`file_commands_without_an_open_workspace_fail_with_no_workspace_open`、`opening_a_folder_without_workspace_json_fails_with_not_a_workspace`）；前端 `backendError.test.ts` 12 項、`tauriBackend.test.ts` 8 項；完整 `npm test` 93/93、`typecheck`、`lint` Passed；`test:desktop` Passed。先紅後綠，各循環紅燈原因均為預期代碼不符 | TC-10 的 `app_settings`、`portable::detect`、`new_workspace_dir` 忽略 `.juicy.lock` 三項**未執行**（後續票）。`serde_json` 經同意加入 dev-dependencies。symlink／跳出工作區改回 `PATH_NOT_ALLOWED` 的測試只能在 unix 跑，Windows 未驗證。煙霧測試只確認「rejected」，未確認代碼 |
 | NFR-03 | M-06 | 未執行 | 監看方法待定 |
 | NFR-06 | 無 | — | **缺口**：待量測，不設 TC |
 | NFR-07 | M-04 | 未執行 | |

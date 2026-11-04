@@ -1,4 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
+import { toBackendError } from './backendError';
 
 export type WorkspaceLocation = {
   path: string;
@@ -17,14 +18,23 @@ export type WorkspaceBackend = {
   remove(path: string): Promise<void>;
 };
 
+/** Every Tauri failure arrives as `{code, detail}`; callers get a BackendError instead. */
+async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  try {
+    return await invoke<T>(command, args);
+  } catch (error) {
+    throw toBackendError(error);
+  }
+}
+
 const tauriBackend: WorkspaceBackend = {
-  select: (mode) => invoke('workspace_select', { mode }),
-  restore: () => invoke('workspace_restore'),
-  close: () => invoke('workspace_close'),
-  list: (dir) => invoke('workspace_list', { dir }),
-  read: (path) => invoke('workspace_read', { path }),
-  write: (path, contents) => invoke('workspace_write', { path, contents }),
-  remove: (path) => invoke('workspace_remove', { path }),
+  select: (mode) => call('workspace_select', { mode }),
+  restore: () => call('workspace_restore'),
+  close: () => call('workspace_close'),
+  list: (dir) => call('workspace_list', { dir }),
+  read: (path) => call('workspace_read', { path }),
+  write: (path, contents) => call('workspace_write', { path, contents }),
+  remove: (path) => call('workspace_remove', { path }),
 };
 
 /** Browser-only stand-in, used by `npm run dev` and the end-to-end tests. */

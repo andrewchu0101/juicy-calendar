@@ -4,10 +4,10 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-04（票 003 完成，未 commit） |
+| 更新時間 | 2026-11-04（票 006 完成並 commit） |
 | 目前目標 | 把一次性 demo 接手成「依 template 流程開發」的專案；下一步補文件（Brief → PRD → SRS …） |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
-| 分支／HEAD | `main` ／ 尚無 commit（已 `git init`，無遠端） |
+| 分支／HEAD | `main` ／ 票 006 的 commit 在 `ddd3551`（票 005）之上；無遠端，未 push |
 | 工作樹 | 全部為未追蹤檔案（尚未 commit）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
 
 ### 已完成
@@ -31,6 +31,8 @@
 
 - 票 005（2026-11-04，未 commit）：`resizeStart`／`resizeEnd` 加 `EVENT_MAX_MINUTES`（經過時間）上限，改動僅 `engine/mutations.ts`；新增 `resizeBounds.test.ts`（TC-05 單元 4 項）與 `e2e/core.spec.ts` 2 項 TC-05 e2e（含變異檢查）。`typecheck`、`lint` Passed；`npm test` 73/73。完整 e2e 3 次 33／33／34 passed，各有 1 項不相關間歇失敗（overlapping、weekly/daily，見 LESSONS）。發現面板持續分鐘欄無 7 天上限，歸票 004；新增票 021（小時＋分鐘輸入，未就緒）、票 022（e2e 間歇失敗，可開始）。同時依實測勾選票 001（除「3 次一致」）、002、003 的驗收條件；004 未勾。
 
+- 票 006（2026-11-04，已 commit，未 push）：Rust 命令錯誤由英文句子改為 `{code, detail}`（新 `src-tauri/src/error.rs`：`ErrorCode`、`IpcError`；`fs_safe::resolve`、`lib.rs` 全部命令改回傳 `IpcError`；`choose_root` 從 `workspace_select` 抽出以便測試）。前端新增 `services/persistence/backendError.ts`（Zod 驗證、`BackendError`），`backend.ts` 的每個 `invoke` 經 `call()` 轉換。`BackendError.message`／`String(error)` 暫為舊英文句子（`detail` 不顯示），票 007 換成集中對照表、票 012 換成字典後移除。`serde_json = "1"` 經同意加入 `[dev-dependencies]`。測試：`typecheck`、`lint` Passed；`npm test` 93/93；`test:rust` 9/9（原有 5 + 新增 4）；`test:desktop` Passed。**偏差**：`IO_ERROR` 畫面文字改為固定句子，不再顯示系統訊息。**未驗證**：symlink／跳出工作區的 `PATH_NOT_ALLOWED` 僅 unix 測得到；`test:desktop` 只確認被拒絕、未確認代碼；`test:e2e` 未跑；人工驗收未做。
+
 ### 進行中
 - 無。
 
@@ -44,7 +46,7 @@
 ### 下一步（最多三項）
 1. 用 `/diagnosing-bugs` 查 9 個 e2e 失敗的原因（先分環境／測試／實作）。
 2. 試 `npm run desktop`（Edge WebView 156 已在本機）。
-3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿；待決 S-01、S-02、Q-05、NFR-01 的重複次數 N）；拆票已完成（`issues/` 共 21 張，`issues/README.md` 有索引與依賴圖）；可立即開始的票：000、001、002、006、018，每張票另開新對話，用 `/implement` 與 `/tdd`。Brief、PRD、SRS 已確認，三張流程圖已產出於 `diagrams/`。
+3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿；待決 S-01、S-02、Q-05、NFR-01 的重複次數 N）；拆票已完成（`issues/` 共 21 張，`issues/README.md` 有索引與依賴圖）；可立即開始的票：018、022（006 已完成；007 的前置已滿足），每張票另開新對話，用 `/implement` 與 `/tdd`。Brief、PRD、SRS 已確認，三張流程圖已產出於 `diagrams/`。
 
 ### 狀態核對
 
