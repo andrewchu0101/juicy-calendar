@@ -5,7 +5,7 @@
 | 項目 | 內容 |
 |---|---|
 | 更新時間 | 2026-11-04（票 008 完成並已 commit，未 push；稍晚票 010 完成後一起 push） |
-| 目前目標 | 把一次性 demo 接手成「依 template 流程開發」的專案；下一步補文件（Brief → PRD → SRS …） |
+| 目前目標 | 依 `issues/` 的工作票逐張實作（票 001～008 已完成；Brief、PRD、SRS 已確認，SAD、SDS、測試計畫為草稿待審查）；下一步 009／010 |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
 | 分支／HEAD | `main` ／ `9589e5e`（票 008），領先 `origin/main` 1 個 commit，未 push |
 | 工作樹 | 乾淨（2026-11-04 票 008 commit 後 `git status` 無變更）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
@@ -41,23 +41,23 @@
 - 無。
 
 ### 阻塞
-- **e2e 不穩定的原因已查出（2026-11-04，尚未修）**：`e2e/core.spec.ts` 的 `dragBall` 在最後一次 `mouse.move` 後立刻 `mouse.up()`。dnd-kit 的拖曳啟動要等 React 狀態提交，約 100 ms 後 `ball-dragging-source` 才出現；`mouse.up()` 若早於此，`onDragEnd` 拿不到 active，就不會建立事件。證據：獨立腳本每組 5 次，放開前等 0 ms → 0/5 建立事件；等 50／200／500 ms → 皆 5/5。完整測試時各測試的耗時與機器負載不同，所以失敗數每次都不一樣（9／20／23）。已排除：沒有殘留 server、`isPrimary`／`button` 正常、沒有 blur／resize／visibilitychange 取消、沒有 console 錯誤、載入後多等 3 秒無改善。
-  - 判斷：測試端的時序問題。人類操作放開前通常超過 50 ms，不受影響；但快速甩動加上慢速機器是否會漏建事件，尚待人確認。
-  - 建議修法（待你同意）：在 `dragBall` 的最後一次移動後，等到 `drop-ghost` 出現（`expect(page.getByTestId('drop-ghost')).toBeVisible()`）再 `mouse.up()`。這是確定性等待，不是加 sleep，也不放寬任何斷言。
+- **（已解決，票 001，2026-11-04）e2e 不穩定的原因與修法**：`e2e/core.spec.ts` 的 `dragBall` 在最後一次 `mouse.move` 後立刻 `mouse.up()`。dnd-kit 的拖曳啟動要等 React 狀態提交，約 100 ms 後 `ball-dragging-source` 才出現；`mouse.up()` 若早於此，`onDragEnd` 拿不到 active，就不會建立事件。證據：獨立腳本每組 5 次，放開前等 0 ms → 0/5 建立事件；等 50／200／500 ms → 皆 5/5。完整測試時各測試的耗時與機器負載不同，所以失敗數每次都不一樣（9／20／23）。已排除：沒有殘留 server、`isPrimary`／`button` 正常、沒有 blur／resize／visibilitychange 取消、沒有 console 錯誤、載入後多等 3 秒無改善。
+  - 判斷：測試端的時序問題。人類操作放開前通常超過 50 ms，不受影響。
+  - 修法（已實作，票 001）：`dragBall` 放開前等待拖曳狀態與放置預覽；`test:e2e` 連續 3 次皆 29/29。之後仍有少數**不相關**的間歇失敗（`overlapping events…`、`weekly and daily views…`、magnet 約 1/40），**待票 022 處理**；NFR-01 在 022 完成前不算達成。
 - 票 000 結果（2026-11-04，Windows 11）：`typecheck`、`lint`、`npm test`（48）、`test:rust`（5）皆 Passed；`npm run test:desktop` 在 Windows（Git Bash）**Passed**（建立工作區、拖放後 10:30–12:30、關閉後重開事件仍在、越界寫入被拒）；`npm run desktop` 視窗出現，Vite `http://localhost:1420` 回 200。人工操作驗收（建立工作區、關閉、重開還原）**Manual Pending**。追溯：`docs/06-test-plan.md` G-03 列。未修改任何產品程式。
 - Playwright WebKit 已重裝到 `D:\DevTools\playwright-browsers`（實體檔案，175 MB），C 槽 `ms-playwright` 已刪除（那是 2026-11-03 我自己裝的）。
 
 ### 下一步（最多三項）
-1. 用 `/diagnosing-bugs` 查 9 個 e2e 失敗的原因（先分環境／測試／實作）。
-2. 試 `npm run desktop`（Edge WebView 156 已在本機）。
-3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿；待決 S-01、S-02、Q-05、NFR-01 的重複次數 N）；拆票已完成（`issues/` 共 21 張，`issues/README.md` 有索引與依賴圖）；票 008 已完成，下一張依 `issues/README.md` 建議順序為 009／010；其他可開始的票：018、022，每張票另開新對話，用 `/implement` 與 `/tdd`。Brief、PRD、SRS 已確認，三張流程圖已產出於 `diagrams/`。
+1. 票 022：用 `/diagnosing-bugs` 查 e2e 間歇失敗（`overlapping events…`、`weekly and daily views…`、magnet），讓 NFR-01 成立。
+2. 票 009／010（建議順序見 `issues/README.md`）；其他可開始的票：018。每張票另開新對話，用 `/implement` 與 `/tdd`。
+3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿）；待決項：S-01（票 015）、S-02（票 016）、Q-05（票 020）、NFR-01 的重複次數 N（待人定；票 022 的驗收依賴它）。
 
 ### 狀態核對
 
 | 面向 | 狀態 | 說明 |
 |---|---|---|
-| 已實作 | 部分 | demo 功能已在；本輪沒有改任何功能碼 |
-| 自動測試 | 部分 Passed | 見上；e2e 9 項 Failed；desktop-smoke Not Run |
+| 已實作 | 部分 | 票 001～008 已實作（見上）；其餘票未做 |
+| 自動測試 | 部分 Passed | 2026-11-04：`npm test` 123/123、`typecheck`、`lint` Passed；`test:e2e` 單次 33/34、重跑 34/34（間歇失敗待票 022）；`test:rust` 與 `test:desktop` 為票 000／006 時的結果（Passed），票 008 後未重跑 |
 | 人工驗收 | Manual Pending | 從未人工驗收桌面版 |
 | 已 commit | 是（到票 008，`9589e5e`） | |
 | 已 push | 到票 007 | 票 008 的 commit 尚未 push，等票 010 一起 |
@@ -66,4 +66,4 @@
 - 跑 e2e 前要在該程序設 `PLAYWRIGHT_BROWSERS_PATH=D:\DevTools\playwright-browsers`；沒設會找 C 槽、報 `Executable doesn't exist`（已驗證）。安裝同理：`npx playwright install webkit` 前先設。
 - `PRODUCT.md`／`DESIGN.md`／`ARCHITECTURE.md` 是 demo 作者的描述，不是人確認過的規格。
 - Rust 不在 PATH。執行 `test:rust`／`desktop` 前，在該程序設：`RUSTUP_HOME=D:\DevTools\rust\rustup`、`CARGO_HOME=D:\DevTools\rust\cargo`、PATH 加 `D:\DevTools\rust\cargo\bin`。
-- README 仍寫「只跑過 macOS」，尚未更新。
+- README 仍寫「只跑過 macOS」，尚未更新（**待票 016**，該票含 README）。
