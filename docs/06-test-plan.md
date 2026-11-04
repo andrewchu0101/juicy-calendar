@@ -56,6 +56,7 @@
 | TC-12 | R5；AC-03.3、FR-10 時間格式化 | 單元 |
 | TC-13 | FR-08、U-12 啟動前檢查（WebView2 偵測與說明語言） | Rust 單元 |
 | TC-14 | FR-11、AC-03.4 免安裝 .zip 組裝腳本（版面、說明檔、可重複執行、zip 內容、缺少執行檔、預設位置） | Node 單元（vitest，暫存資料夾） |
+| TC-15 | NFR-03b 靜態檢查（CSP 白名單、前端原始碼無網路呼叫；不含 Rust、依賴與 WebView2） | 單元（vitest，讀真實設定與原始碼） |
 
 ### TC-01｜放球、調整、命名（AC-01.1、FR-01、FR-02）
 
@@ -200,6 +201,17 @@
 
 壓縮使用 Windows 內建的 bsdtar（`System32/tar.exe -a`），不新增套件。
 
+### TC-15｜靜態網路檢查（NFR-03b，票 018；新增）
+
+層級：單元（`src/offline/offline.test.ts`，掃描器在 `src/test-support/cspCheck.ts`、`networkCalls.ts`）。**靜態檢查只看設定與原始碼怎麼寫，不能證明實際沒有連線**；實際監看由人工 M-06 負責。
+
+1. CSP 檢查器（變異檢查）：`connect-src` 加入 `https://evil.example` → 回報該來源與所在指令；`'self'`、`ipc:`、`http://ipc.localhost`、`data:`、`'unsafe-inline'` 不誤報；`*`、`https:`、`wss:`、裸網域、拼錯的關鍵字都算外部（白名單，不是黑名單）。
+2. 真實 `src-tauri/tauri.conf.json`：任何指令都沒有外部來源；`connect-src` 恰好只有 `ipc:` 與 `http://ipc.localhost`；`default-src` 為 `'self'`。
+3. 原始碼掃描器（變異檢查，用專案已有的 `typescript` 解析，不新增套件）：抓 `fetch`、`window`／`globalThis`／`self` 的 `fetch`、`XMLHttpRequest`、`WebSocket`、`EventSource`、`navigator.sendBeacon`、指向網址或無法判斷的 `import()`，以及字串、樣板字串、JSX 屬性裡的 http(s)／ws(s)／ftp 位址；本機檔案的 `import('./x')`、SVG 命名空間 `http://www.w3.org/…`、`localhost`、`ipc.localhost`、`127.0.0.1`、註解裡的網址不誤報；同一處不重複回報。HTML 與 CSS（`<script src>`、`<link href>`、`@import`、`url(…)`）另有掃描器。
+4. 真實原始碼：`src` 底下非測試的 `.ts`／`.tsx`、`index.html`、`src` 的 `.css` 沒有任何發現；並斷言掃描的檔案數大於 30 且含 `app/main.tsx`，避免空掃描假通過。
+
+**掃描限制**（寫在測試裡）：看不到間接呼叫（`window['fe'+'tch']`、別名、`eval`）、第三方套件發出的連線、執行期組出來的網址；**看不到 Rust 端**（Cargo 依賴、`capabilities` 權限）；看不到 WebView 執行階段本身的連線（見 M-06 的試跑觀察）。
+
 ### TC-13｜啟動前檢查（FR-08、U-12，API-07）
 
 層級：Rust 單元（純函式，不碰登錄、視窗或行程）。登錄讀取、`MessageBoxW` 與結束碼 1 屬原生行為，由人工 M-07 驗證。
@@ -219,6 +231,61 @@
 
 - 兩種語言的說明文字都含官方下載網址（實作時再確認網址）。
 
+## M-06 監看流程（NFR-03，票 018 定案；**尚未正式執行**）
+
+工具：Windows 內建的 PowerShell（`Get-NetTCPConnection`、`Get-CimInstance`），不需要安裝任何東西、不需要系統管理員。
+
+1. **準備**：關閉所有 Juicy Calendar；確認沒有殘留的 WebView2 行程（下面第一個指令應印出 0，檢查時排除腳本自己）。測試用全新解壓的免安裝版或乾淨機器上的安裝版。
+2. **啟動並取樣**：把下面整段貼進 PowerShell，改掉 `$Exe`。腳本會啟動 App，每 3 秒取樣一次 App 及其所有子行程（含 `msedgewebview2.exe`）的 TCP 連線，記下每一個**不是本機**的遠端位址，最後正常關閉 App。
+3. **操作**：取樣期間（至少 5 分鐘，把 `$Seconds` 調成 300 以上）依序做：建立工作區、拖球建立區塊、雙擊命名、拖移、調整長度、切換語言、復原與重做、關閉工作區再開啟。
+4. **判定**：「不是本機的遠端位址」一筆都沒有 → 通過；有任何一筆 → 失敗，記下遠端位址、連接埠、行程名稱與出現的時間。
+
+```powershell
+# 0) 殘留檢查（應為 0；上一次關閉後 WebView2 行程要幾秒才會完全退出，不是 0 就等 10 秒再查）
+@(Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and ($_.CommandLine -match 'app.juicycalendar.timeblock' -or $_.Name -eq 'juicy-calendar.exe') }).Count
+
+# 1) 啟動、取樣、正常關閉
+$Exe = 'D:/path/to/juicy-calendar.exe'   # 改成要測的執行檔
+$Seconds = 300
+function Get-Tree($id) { $id; $all | Where-Object ParentProcessId -eq $id | ForEach-Object { Get-Tree $_.ProcessId } }
+$proc = Start-Process -FilePath $Exe -WorkingDirectory (Split-Path $Exe) -PassThru
+$seen = @{}
+for ($t = 3; $t -le $Seconds; $t += 3) {
+  Start-Sleep -Seconds 3
+  $all = Get-CimInstance Win32_Process
+  $ids = @(Get-Tree $proc.Id)
+  Get-NetTCPConnection -OwningProcess $ids -ErrorAction SilentlyContinue |
+    Where-Object { $_.RemoteAddress -notin '127.0.0.1', '::1', '0.0.0.0', '::' } | ForEach-Object {
+      $name = ($all | Where-Object ProcessId -eq $_.OwningProcess).Name
+      $key = "$($_.RemoteAddress):$($_.RemotePort) $name"
+      if (-not $seen.ContainsKey($key)) { $seen[$key] = $t; "+${t}s $key ($($_.State))" }
+    }
+}
+"distinct non-local remote endpoints: $($seen.Count)"
+$null = $proc.CloseMainWindow()
+```
+
+**限制（誠實寫明）**：每 3 秒取樣一次，只看已建立或等待中的 TCP，會漏掉兩次取樣之間就結束的短連線；看不到 UDP 與 DNS 查詢。要更確定時，另以系統管理員身分用 `pktmon`（Windows 內建封包監看）或「資源監視器」的網路頁籤交叉確認（這兩個我**沒有試跑**）。強制結束 App（`Stop-Process`）會留下孤兒的 WebView2 行程並占住資料夾，下次啟動會失敗；一律用正常關閉。
+
+**預跑結果摘要**：流程可執行，但預跑已觀察到非本機連線，見下方「M-06 預跑紀錄」。NFR-03c 目前**未達成**，正式 M-06 照現狀跑會失敗。
+
+### M-06 預跑紀錄（2026-11-05；**不是正式 M-06**，正式流程仍為「未執行」）
+
+環境：Windows 11（10.0.26200）、WebView2 Runtime **156.0.4314.58**（取自行程命令列路徑）、App 為 0.1.0 的 release 執行檔，由免安裝 .zip 解壓到全新資料夾執行（`--no-bundle` 建置），已有一個工作區 `data`。取樣方式：PowerShell `Get-NetTCPConnection` 看 App 行程樹的 TCP；沒有做 UDP 與 DNS 的觀察。共 **5 次嘗試：3 次有效、2 次無效**（我先前口頭說「4 次」是錯的，以此表為準）。
+
+| # | 約略時間 | 做法 | 結果 | 有效 |
+|---|---|---|---|---|
+| 1 | 01:35 | 啟動後約 6 秒取樣一次；之後用 `kill` 強制結束 | 行程樹 7 個行程；TCP 共 4 筆，非本機 2 筆，皆為 `2603:1046:c11:802::2:443`（Established）；擁有者行程為 `msedgewebview2.exe`（PID 26080，命令列含 `--embedded-browser-webview=1`，其父行程是 App） | 有效；強制結束留下 3 個孤兒 WebView2 行程（之後用 PID 結束） |
+| 2 | 01:36 | 取樣腳本（列出行程與連線） | App 啟動失敗：`WebView2 error 0x800700AA「請求的資源正在使用中」`（推測被第 1 次的孤兒行程占住資料夾） | 無效，沒有取樣 |
+| 3 | 01:36 至 01:37 | 取樣腳本 30 秒 | 取樣開始前 App 已退出（原因推測同第 2 次，未查證），0 筆 | 無效，不能當作「零連線」 |
+| 4 | 01:37 | 取樣腳本 30 秒，結束時正常關閉 | 3 秒時出現 `2603:1046:c11:802::2:443`（Established，`msedgewebview2.exe`）；30 秒內共 1 個不同的非本機端點；正常關閉後殘留行程 0 | 有效 |
+| 5 | 01:38 | 從本文件的腳本原樣抽出執行 12 秒 | 3 秒時出現 `2603:1046:c11:805::2:443`（Established，`msedgewebview2.exe`）；共 1 個端點 | 有效 |
+
+觀察與不能下的結論：
+- 3 次有效預跑都在 App 啟動後約 3 秒內看到 `msedgewebview2.exe` 的 443 連線；遠端位址是 `…:802::2` 兩次、`…:805::2` 一次，**前綴相同但不是同一個位址**。
+- 不能說這些連線是什麼：位址的擁有者、用途（例如元件更新、服務查詢、遙測、憑證檢查）我都**沒有查證**；也**不能**因為它不是我們的程式碼就視為可忽略。
+- 取樣間隔 3 到 6 秒，只看 TCP，可能漏掉更短的連線；沒看 UDP 與 DNS；沒有在乾淨機器與安裝版上做；時間欄是依事後的時間錨點估計。
+
 ## 人工驗收與缺陷處理
 
 以下全部目前為「**未執行**」。失敗時記錄：重現步驟、預期與實際、影響、修復後要重跑的 TC；受阻或未執行都保留原狀態，不改寫成通過。證據放在 `docs/evidence/`（執行時建立，截圖與備註以 TC／M 編號命名）。
@@ -230,7 +297,7 @@
 | M-03 | 在日曆空白處按住左鍵 450 ms 叫出 radial 選單，把游標移到球上，再開啟系統的減少動態效果。預期：效果出現與消失、減少動態時不播放、球身純色 | AC-01.4、FR-04 | 受阻（Q-05 樣式未決） |
 | M-04 | 把視窗縮到最小（900×560），名稱用 30 個全形字，兩種語言各一次。預期：文字不溢出、不遮蓋其他元件 | NFR-07 | 未執行 |
 | M-05 | 把 Windows 的時間格式在 12 與 24 小時之間切換（結束後還原），檢查區塊、右側面板、時間軸。預期：全部一致；若面板的原生時間欄位與其他不一致，記為已知限制 | AC-03.3、FR-10 | 未執行；**需專案擁有者操作，會改系統設定** |
-| M-06 | 使用 App 期間監看它的網路連線。預期：零連線。監看方法待定 | NFR-03 | 未執行 |
+| M-06 | 使用 App 期間監看它的網路連線。預期：零連線。監看方法與步驟見下方「M-06 監看流程」；預跑結果見「M-06 預跑紀錄」 | NFR-03c（也交叉檢查 03b） | 未執行 |
 | M-07 | 以官方環境變數把 WebView2 指向空資料夾來模擬缺少。預期：顯示說明視窗（語言依系統）、結束碼為 1、Tauri 沒有啟動 | FR-08、U-12 | 代理以 UI Automation 自動化執行一次（2026-11-04，Windows 10 Pro 10.0.19045，中文系統語系，debug 版）：環境變數指向空資料夾 → 出現說明視窗（標題「Juicy Calendar 缺少 WebView2」、繁體中文內文含官方網址）→ 按「確定」後結束碼 1；未設環境變數時無說明視窗、程序持續執行、主視窗 `Juicy Calendar` 出現。**專案擁有者於 2026-11-04 親自確認**：說明視窗出現且內容正確（螢幕截圖已看過，沒有 Tauri 主視窗），並按下「確定」；結束碼 1 以上述自動化為證，擁有者未另報數值。**英文版視窗與 release 版（無主控台）：未執行** |
 
 ## 進入／退出條件
@@ -265,7 +332,9 @@
 | AC-03.4、FR-11 | TC-10（偵測）、TC-14（zip 組裝）、M-02 | 票 017（2026-11-05，Windows 11、Node 24.22.0）：TC-14 七項（`scripts/make-portable-zip.test.ts`）先紅後綠，紅燈原因：空殼沒建版面（`ENOENT … juicy-calendar-portable`）、佔位說明檔缺 `繁體中文`／`English`、`leftover.txt` 殘留、zip 不存在、拋出原始 `ENOENT` 而非「先建置」說明、預設位置回傳根目錄；其中「訊息順序」一項測試不動、改實作的訊息。`npm test` 28 檔 321 passed、`typecheck`、`lint`、`test:rust` 43 passed。實機：`npx tauri build --no-bundle`（1m05s，沒下載工具）後執行 `node scripts/make-portable-zip.mjs` 產出 2.95 MB 的 zip（條目含空的 `data/`）；解壓到全新資料夾後啟動 release 版，8 秒內旁邊建出 `data`（`workspace.json`、6 個模板、`settings.json`、`.juicy.lock`），`%APPDATA%` 沒被建立；**M-02 仍是 Manual Pending**。另見票 015：票 015（2026-11-05，Windows 11、Rust 1.90.0、`npm run test:rust` 43 passed／0 failed；`npm test` 314 passed；`typecheck`、`lint` Passed）。TC-10：`portable::tests`（有 flag→`<目錄>/data`；沒有 flag 即使有 `data` 資料夾→`None`）；`lib.rs` 的 `portable_restore_*`（建立缺少的 `data`、持鎖、`initialized=false`；再還原不被自己的鎖擋住；`data` 被檔案占用→`PORTABLE_DATA_UNAVAILABLE` 且不開啟任何工作區）、`portable_settings_live_in_data…`、`portable_manual_switch_opens_the_workspace_without_remembering_it`；前端 `notices`、`backendError`、`workspaceSession` 測試。**實機（debug 執行檔，非 release）**：執行檔旁放 `portable.flag` → 第一次啟動建立 `data` 與 6 個模板、直接進日曆、`app-settings.json` 在 `data`、`%APPDATA%\app.juicycalendar.timeblock` 沒有被建立；整個資料夾複製到另一處執行，語言 `en` 與工作區跟著走。**M-02 仍是 Manual Pending**（沒有解壓 .zip、沒有另一台電腦、沒有手動建立區塊）；WebView2 快取位置未驗證 | WebView2 快取位置、release 版 M-02 人工流程、乾淨機器上的 .zip、README.txt 文字審閱均**未驗證** |
 | NFR-01 | 實作前置票、退出條件 4 | 2026-11-04，Windows 11、node 24.22.0：修復前 3 次 22／9／16 通過（失敗清單各異）；修復後 3 次皆 29 passed／0 failed，清單一致 | N=3 仍為暫定，待專案擁有者定案 |
 | NFR-02 | TC-10 | 票 006（2026-11-04，Windows 11、Node 24.22.0、Rust 1.99.1）：`test:rust` 9 passed（原有 5 項保留，新增 4 項：`serializes_as_code_and_detail_with_screaming_snake_case_codes`（JSON 形狀；變異檢查把 `rename_all` 改 `camelCase` 即紅燈）、`resolve_rejects_paths_outside_the_allow_list_with_path_not_allowed`、`file_commands_without_an_open_workspace_fail_with_no_workspace_open`、`opening_a_folder_without_workspace_json_fails_with_not_a_workspace`）；前端 `backendError.test.ts` 12 項、`tauriBackend.test.ts` 8 項；完整 `npm test` 93/93、`typecheck`、`lint` Passed；`test:desktop` Passed。先紅後綠，各循環紅燈原因均為預期代碼不符 | TC-10 的 `app_settings` 已於票 010 執行（見 AC-03.2 列）；`portable::detect` **未執行**（票 015）；`new_workspace_dir` 忽略 `.juicy.lock` 已於票 009 執行。`serde_json` 經同意加入 dev-dependencies。symlink／跳出工作區改回 `PATH_NOT_ALLOWED` 的測試只能在 unix 跑，Windows 未驗證。煙霧測試只確認「rejected」，未確認代碼 |
-| NFR-03 | M-06 | 未執行 | 監看方法待定 |
+| NFR-03a | 斷網實測（尚無對應 TC／人工項目） | **未驗證**：沒有在斷網環境實測所有功能 | 需要時在票 024 一併補一個斷網的人工項目 |
+| NFR-03b | TC-15 | 票 018（2026-11-05，Windows 11、Node 24.22.0）：TC-15 的前端部分通過（`src/offline/offline.test.ts` 19 項；掃描器與設定測試先紅後綠，真實設定與原始碼掃描為特徵化）；變異檢查：把 `https://evil.example` 暫時加進 `tauri.conf.json` 的 `connect-src` → 2 項轉紅，在 `src` 暫時加入 `fetch('https://evil.example/track')` → 1 項轉紅並指出檔案與行號，都已還原。`npm test` 29 檔 340 passed、`typecheck`、`lint` Passed | **僅部分達成**：Rust 程式、Cargo 與 npm 依賴、Tauri 外掛權限尚未查（票 024）；掃描有已知限制（間接呼叫、第三方套件、執行期組出的網址） |
+| NFR-03c | M-06 | **未達成**。M-06 正式流程已寫成可重做，仍是未執行；預跑 3 次有效，皆在啟動後約 3 秒內看到 WebView2 瀏覽器行程（`msedgewebview2.exe`）對非本機位址的 443 連線（見「M-06 預跑紀錄」） | 待專案擁有者決定（SRS U-13、票 024）；調查前不得把 WebView2 流量視為可忽略，也不得宣稱「完全不連網」 |
 | NFR-06 | 無 | — | **缺口**：待量測，不設 TC |
 | NFR-07 | M-04 | 未執行 | |
 | G-03（基準線，票 000） | `typecheck`、`lint`、`npm test`、`test:rust`、`test:desktop` | 2026-11-04，Windows 11、node 24.22.0、Rust 1.99.1：`typecheck` Passed；`lint` Passed；`npm test` 48 passed／0 failed；`test:rust` 5 passed／0 failed；`test:desktop`（bash 腳本，Git Bash）Passed，輸出 `Desktop smoke test passed`（建立工作區、拖放一顆球得 10:30–12:30、重開後 `blocksOnLaunch: 1`，路徑穿越類寫入全被拒絕）。`npm run desktop` 視窗出現、Vite 回 HTTP 200 | 人工「建立工作區、關閉、重開還原」尚待人工驗收；`test:e2e` 不在此票範圍，仍不穩定 |
