@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:1420',
+    baseURL: 'http://localhost:1421',
     // WebKit is the engine Tauri uses on macOS.
     browserName: 'webkit',
     viewport: { width: 1400, height: 900 },
@@ -14,7 +14,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:1420',
+    url: 'http://localhost:1421',
     reuseExistingServer: true,
   },
 });

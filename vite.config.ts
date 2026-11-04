@@ -5,6 +5,6 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
-  server: { port: 1420, strictPort: true },
+  server: { port: 1421, strictPort: true },
   build: { target: 'safari15', outDir: 'dist' },
 });

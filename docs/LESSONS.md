@@ -60,6 +60,7 @@
 - **`beforeEach(() => mock.mockReset())` 會製造假的失敗**（2026-11-04，票 010）：箭頭函式回傳了 mock 本身，vitest 把回傳的函式當成清理函式，測試結束後又呼叫一次，`mockRejectedValue` 的 rejection 沒人處理，於是看似實作錯誤的 3 項失敗其實是測試寫法問題。`beforeEach` 一律用區塊 `{ ... }`，不要直接回傳 mock。紅燈要確認「是斷言失敗」，不是「未處理的 rejection」。
 - **先前說「骨架階段就會過的測試」要補突變檢查**（2026-11-04，票 010）：`initLanguage` 吞掉讀設定錯誤這個行為，我先實作、事後才發現沒有測試；突變（不吞錯）全部測試仍過。補測試後才變紅。實作時每加一個 `try/catch` 或降級分支，就要有一個測試會因它而變紅。
 - **Python 腳本寫入 TypeScript 時，反斜線會被吃掉或多出來**（2026-11-04，票 010）：假路徑 `C:\secret\path` 寫進檔案後變成 `C:\secret\path`，被 eslint `no-useless-escape` 擋下。測試用的假路徑改用正斜線（這是路徑跳脫問題的第三次出現，建議升級成 `AGENTS.md` 規則，待專案擁有者決定）。
+- **複製 demo 後，Tauri `identifier` 與開發埠必須改掉**（2026-11-04，票 010 之後）：兩者相同會共用 `%APPDATA%\<識別碼>` 的 `last-workspace.txt`、`app-settings.json`，也共用 `localhost:1420` 的 `localStorage`，且 `strictPort` 讓兩邊不能同時 `npm run dev`。分叉專案的第一步就該改這兩個值。
 - **demo 的 `node_modules` 是 macOS 裝的**：在 Windows 不能執行，新資料夾要重新 `npm ci`。
 - **Rust 不在 PATH**：每個要用 Rust 的程序都要先設 `RUSTUP_HOME`、`CARGO_HOME` 並加 PATH。
 - **agent 的技能清單看不到，不代表沒裝**（2026-11-04）：有些技能設定成只有使用者能啟動（`disable-model-invocation`）。判斷有沒有裝，要看 `~/.claude/skills/`。

@@ -14,7 +14,7 @@
 
 ```bash
 npm install            # 安裝
-npm run dev            # 瀏覽器模式 http://localhost:1420（localStorage backend）
+npm run dev            # 瀏覽器模式 http://localhost:1421（localStorage backend）
 npm run desktop        # Tauri 桌面版（需要 Rust，見 CLAUDE.md 第 8 節）
 npm run typecheck && npm run lint && npm test
 npm run test:rust      # 需要 cargo

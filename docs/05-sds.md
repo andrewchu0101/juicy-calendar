@@ -28,7 +28,7 @@
 ├── templates/<id>.json       現況
 ├── events/<id>.json          現況
 └── .juicy.lock               新增，空檔案，只用於檔案鎖，不進前端允許清單
-<App 設定資料夾>/              （安裝版：%APPDATA%\app.juicycalendar.desktop；免安裝版：<執行檔旁>/data）
+<App 設定資料夾>/              （安裝版：%APPDATA%\app.juicycalendar.timeblock；免安裝版：<執行檔旁>/data）
 ├── last-workspace.txt        現況（免安裝版不使用）
 └── app-settings.json         新增
 ```

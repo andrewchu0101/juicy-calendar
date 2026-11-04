@@ -94,7 +94,7 @@ flowchart TB
 
 ### ADR-02｜語言設定存在 App 設定資料夾（專案擁有者已核准）
 
-決定：安裝版把語言設定存在 `app_config_dir` 下的 `app-settings.json`，與現有的 `last-workspace.txt` 同一處（Windows 為 `%APPDATA%\app.juicycalendar.desktop\`）。免安裝版固定存在執行檔旁 `data` 資料夾內，才能整個資料夾帶走。
+決定：安裝版把語言設定存在 `app_config_dir` 下的 `app-settings.json`，與現有的 `last-workspace.txt` 同一處（Windows 為 `%APPDATA%\app.juicycalendar.timeblock\`）。免安裝版固定存在執行檔旁 `data` 資料夾內，才能整個資料夾帶走。
 
 考慮過：使用者的「文件」資料夾（你先前的想法）：需要新增一個 Rust 可存取的位置；許多 Windows 使用者的「文件」會被 OneDrive 同步，兩台電腦的語言設定可能互相覆蓋；且 App 層級的狀態會分散在兩處。已向你說明，你選擇 App 設定資料夾。
 

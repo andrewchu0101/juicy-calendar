@@ -16,7 +16,7 @@ npm run desktop        # run the desktop app in development
 npm run desktop:build  # build src-tauri/target/release/bundle/macos/Juicy Calendar.app
 ```
 
-`npm run dev` runs the UI alone at http://localhost:1420, storing data in `localStorage` instead of a folder.
+`npm run dev` runs the UI alone at http://localhost:1421, storing data in `localStorage` instead of a folder.
 
 ## Using it
 
