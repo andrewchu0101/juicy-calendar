@@ -153,7 +153,7 @@
 | MVP 範圍與不做事項 | 不做：帳號、雲端同步、協作、待辦勾選、AI 排程、外部日曆（來自 `PRODUCT.md`，待確認） |
 | 驗收條件 | 待確認（等 `docs/02-prd.md`） |
 | 目標平台與正式驗收環境 | 桌面（Tauri）；demo 只在 macOS 跑過，Windows 驗收環境待確認 |
-| 語言、Runtime 與版本範圍 | TypeScript 6、Node 20+（本機 24.22.0）、Rust stable（本機 1.99.1，2026-11-03） |
+| 語言、Runtime 與版本範圍 | TypeScript 6、Node 20+（本機 24.22.0）、Rust 1.90.0（`rust-toolchain.toml` 釘選；`Cargo.toml` rust-version 1.90，因 tauri 2 依賴要求；本機 1.90.0 裝在 `D:\DevTools\rust\rustup`，2026-11-04） |
 | 框架與主要依賴 | React 19、Zustand、Zod、dnd-kit、date-fns、Tailwind 4、Vite 8、Tauri 2、Vitest、Playwright |
 | 套件管理器與鎖定檔 | npm（`package-lock.json`）、Cargo（`src-tauri/Cargo.lock`） |
 | 原始碼、測試與資源目錄 | `src/`（含同目錄 `*.test.ts`）、`src-tauri/src/`、`e2e/`、`scripts/` |

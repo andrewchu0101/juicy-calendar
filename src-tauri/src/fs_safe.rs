@@ -112,7 +112,12 @@ pub fn list_entity_files(dir: &Path) -> io::Result<Vec<String>> {
 /// For a new workspace: the folder itself if empty, otherwise a fresh subfolder.
 /// Never reuses a folder that holds other files.
 pub fn new_workspace_dir(picked: &Path) -> io::Result<PathBuf> {
-    if fs::read_dir(picked)?.next().is_none() {
+    // The lock file is a process marker left by an earlier open; it does not make a folder "used".
+    let mut others = fs::read_dir(picked)?.filter(|entry| match entry {
+        Ok(entry) => entry.file_name() != crate::workspace_lock::LOCK_FILE,
+        Err(_) => true,
+    });
+    if others.next().is_none() {
         return Ok(picked.to_path_buf());
     }
     for attempt in 1.. {
@@ -236,6 +241,19 @@ mod tests {
         assert_eq!(first, dir.0.join("MyTimeBlock"));
         let second = new_workspace_dir(&dir.0).unwrap();
         assert_eq!(second, dir.0.join("MyTimeBlock-2"));
+    }
+
+    // TC-10（new_workspace_dir）｜FR-07、SDS fs_safe：只含 .juicy.lock 的資料夾視為空，可直接使用；
+    // 再多一個其他檔案就不是空的。
+    #[test]
+    fn a_folder_holding_only_the_lock_file_counts_as_empty() {
+        let dir = TempDir::new("lock-only");
+        fs::write(dir.0.join(".juicy.lock"), "").unwrap();
+        assert_eq!(new_workspace_dir(&dir.0).unwrap(), dir.0);
+        assert!(!dir.0.join("MyTimeBlock").exists(), "no subfolder should be created");
+
+        fs::write(dir.0.join("thesis.docx"), "x").unwrap();
+        assert_eq!(new_workspace_dir(&dir.0).unwrap(), dir.0.join("MyTimeBlock"));
     }
 
     // TC-10（路徑拒絕）｜NFR-02、SDS 錯誤代碼表：不在允許清單的路徑一律 PATH_NOT_ALLOWED。

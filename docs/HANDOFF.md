@@ -4,11 +4,11 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-04（票 008 完成並已 commit，未 push；稍晚票 010 完成後一起 push） |
-| 目前目標 | 依 `issues/` 的工作票逐張實作（票 001～008 已完成；Brief、PRD、SRS 已確認，SAD、SDS、測試計畫為草稿待審查）；下一步 009／010 |
+| 更新時間 | 2026-11-04（票 009 完成並已 commit，未 push；票 010 接著做，完成後一起 push） |
+| 目前目標 | 依 `issues/` 的工作票逐張實作（票 001～008 已完成、009 自動測試完成待人工驗收；Brief、PRD、SRS 已確認，SAD、SDS、測試計畫為草稿待審查）；下一步 010 |
 | 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
-| 分支／HEAD | `main` ／ `9589e5e`（票 008），領先 `origin/main` 1 個 commit，未 push |
-| 工作樹 | 乾淨（2026-11-04 票 008 commit 後 `git status` 無變更）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
+| 分支／HEAD | `main` ／ 票 009 的 commit（`git log -1` 查雜湊；其前一筆 `ea67b6a`），領先 `origin/main`，未 push |
+| 工作樹 | 乾淨（票 009 commit 後 `git status` 無變更）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
 
 ### 已完成
 - 複製 template 骨架，併入 demo 原始碼（排除 `.git`、`node_modules`、`dist`、`real-test`、`src-tauri/target`）。
@@ -21,6 +21,7 @@
   - `bash .maintain/check.sh` Passed（5 項）
   - `npm run test:e2e` **不穩定**：同一份程式碼三次結果 20 passed/9 failed、9 passed/20 failed、`--workers=1` 6 passed/23 failed（見阻塞）
 
+- 票 009（2026-11-04，未 commit）：新增 `src-tauri/src/workspace_lock.rs`（`acquire` 用 `File::try_lock`，`.juicy.lock` 不截斷）；`lib.rs` 的 `activate_in` 先取鎖再 `remember`，同資料夾（正規化後）不重鎖；`fs_safe::new_workspace_dir` 忽略 `.juicy.lock`。Rust 改釘 1.90.0（`rust-toolchain.toml`、`Cargo.toml` rust-version 1.90；本機已裝 1.90.0，1.99.1 仍在）。`test:rust` 15 passed、`typecheck`／`lint` Passed、`npm test` 123 passed。**人工驗收未做**（兩個真實 App 行程；不能用真實 `last-workspace.txt`，需另想隔離做法）；`JUICY_SMOKE_WORKSPACE` 路徑未取鎖（是否補鎖待專案擁有者決定，補了會影響 `test:desktop`）；`test:e2e`、`test:desktop` 本票未跑。
 - 票 001（2026-11-04）：`e2e/core.spec.ts` 的 `dragBall` 改為放開前等待拖曳狀態與放置預覽；TC-01／TC-02 已標註。`test:e2e` 連續 3 次皆 29/29 通過（修復前 22／9／16）；`typecheck`、`lint`、`npm test`（48）Passed。未改產品程式與斷言。`dragFromTo`（移動／調整）未改，但 3 次皆綠。
 
 - 票 002（2026-11-04，未 commit）：新增 `src/test-support/workspaceFixture.ts`（測試專用 fixture 建構器：格式版本 2、6 模板、可附加事件與壞檔）與 `src/services/persistence/reopen.test.ts`（TC-06、AC-02.1、FR-05）。`typecheck`、`lint` Passed；`npm test` 49/49 Passed；`npm run build` 的 `dist` 檔名與大小與先前完全相同、無 fixture 內容。未改產品程式。未跑 test:rust、test:e2e（與本票無關）。

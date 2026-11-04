@@ -3,6 +3,7 @@
 
 mod error;
 mod fs_safe;
+mod workspace_lock;
 
 use error::IpcError;
 use serde::Serialize;
@@ -13,10 +14,18 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
-#[derive(Default)]
-struct WorkspaceState(Mutex<Option<PathBuf>>);
+/// The workspace this process has open. `lock` keeps the single-writer lock for as long as the
+/// workspace is open (None only for the debug smoke-test path).
+struct OpenWorkspace {
+    root: PathBuf,
+    #[allow(dead_code)]
+    lock: Option<workspace_lock::LockGuard>,
+}
 
-#[derive(Serialize)]
+#[derive(Default)]
+struct WorkspaceState(Mutex<Option<OpenWorkspace>>);
+
+#[derive(Debug, Serialize)]
 struct WorkspaceLocation {
     path: String,
     initialized: bool,
@@ -38,16 +47,38 @@ fn last_workspace_file(app: &AppHandle) -> Result<PathBuf, IpcError> {
     Ok(dir.join("last-workspace.txt"))
 }
 
-fn remember(app: &AppHandle, root: &Path) -> Result<(), IpcError> {
-    fs_safe::atomic_write(&last_workspace_file(app)?, &root.to_string_lossy())
-        .map_err(IpcError::io)
+fn remember(file: &Path, root: &Path) -> Result<(), IpcError> {
+    fs_safe::atomic_write(file, &root.to_string_lossy()).map_err(IpcError::io)
 }
 
 fn activate(app: &AppHandle, state: &WorkspaceState, root: PathBuf) -> Result<WorkspaceLocation, IpcError> {
-    remember(app, &root)?;
+    activate_in(state, &last_workspace_file(app)?, root)
+}
+
+/// Makes `root` the open workspace and remembers it in `last_workspace`.
+fn activate_in(state: &WorkspaceState, last_workspace: &Path, root: PathBuf) -> Result<WorkspaceLocation, IpcError> {
+    // Same folder as the one already open: a second handle would be refused by our own lock.
+    if is_open_root(state, &root)? {
+        return Ok(location(&root));
+    }
+    // Lock first: a refused attempt must not touch last-workspace.txt or the workspace already open.
+    let lock = workspace_lock::acquire(&root)?;
+    remember(last_workspace, &root)?;
     let result = location(&root);
-    *state.0.lock().map_err(IpcError::io)? = Some(root);
+    // Replacing the state drops the old guard, which releases the previous workspace's lock.
+    *state.0.lock().map_err(IpcError::io)? = Some(OpenWorkspace { root, lock: Some(lock) });
     Ok(result)
+}
+
+/// True when `root` is the folder this process already has open (compared after normalising).
+fn is_open_root(state: &WorkspaceState, root: &Path) -> Result<bool, IpcError> {
+    let guard = state.0.lock().map_err(IpcError::io)?;
+    let Some(open) = guard.as_ref() else { return Ok(false) };
+    let same = match (open.root.canonicalize(), root.canonicalize()) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => open.root == root,
+    };
+    Ok(same)
 }
 
 fn current_root(state: &WorkspaceState) -> Result<PathBuf, IpcError> {
@@ -55,7 +86,8 @@ fn current_root(state: &WorkspaceState) -> Result<PathBuf, IpcError> {
         .0
         .lock()
         .map_err(IpcError::io)?
-        .clone()
+        .as_ref()
+        .map(|open| open.root.clone())
         .ok_or_else(IpcError::no_workspace_open)
 }
 
@@ -107,7 +139,7 @@ fn workspace_restore(
         // Not remembered: a test run must not replace the user's real last workspace.
         let root = PathBuf::from(path);
         let result = location(&root);
-        *state.0.lock().map_err(IpcError::io)? = Some(root);
+        *state.0.lock().map_err(IpcError::io)? = Some(OpenWorkspace { root, lock: None });
         return Ok(Some(result));
     }
 
@@ -193,6 +225,78 @@ mod tests {
         fs::remove_dir_all(&dir).unwrap();
         assert_eq!(error.code, ErrorCode::NotAWorkspace);
         assert_eq!(entries, 0);
+    }
+
+    fn temp_dir(label: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("juicy-test-{label}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir.canonicalize().unwrap()
+    }
+
+    // TC-09（第二條）｜FR-07、AC-02.3：同一行程再選目前已開啟的資料夾，回傳目前位置，不被自己擋住。
+    #[test]
+    fn reselecting_the_open_workspace_returns_its_location_without_locking_itself_out() {
+        let base = temp_dir("activate-same");
+        let a = base.join("a");
+        fs::create_dir_all(&a).unwrap();
+        fs::write(a.join("workspace.json"), "{}").unwrap();
+        let remembered = base.join("last-workspace.txt");
+        let state = WorkspaceState::default();
+        let first = activate_in(&state, &remembered, a.clone()).expect("first open");
+
+        let again = activate_in(&state, &remembered, a.clone());
+
+        let still_open = current_root(&state);
+        let (first_path, again_path) = (first.path, again.as_ref().map(|l| l.path.clone()));
+        fs::remove_dir_all(&base).unwrap_or(());
+        assert_eq!(again_path.map_err(|e| e.code), Ok(first_path));
+        assert_eq!(still_open.unwrap(), a);
+    }
+
+    // TC-09（第二條）｜FR-07：同一資料夾以不同寫法（大小寫不同；Windows 檔名不分大小寫）再選，
+    // 仍視為目前已開啟的工作區。
+    #[cfg(windows)]
+    #[test]
+    fn reselecting_the_open_workspace_by_another_spelling_is_still_the_same_folder() {
+        let base = temp_dir("activate-spelling");
+        let a = base.join("a");
+        fs::create_dir_all(&a).unwrap();
+        let remembered = base.join("last-workspace.txt");
+        let state = WorkspaceState::default();
+        activate_in(&state, &remembered, a.clone()).expect("first open");
+
+        let again = activate_in(&state, &remembered, base.join("A"));
+
+        let code = again.map(|_| ()).map_err(|e| e.code);
+        fs::remove_dir_all(&base).unwrap_or(());
+        assert_eq!(code, Ok(()));
+    }
+
+    // TC-09（第三條）｜FR-07、AC-02.3：取鎖失敗時，原本開啟的工作區維持開啟，last-workspace.txt 不變
+    // （取鎖在記住上次工作區之前）。
+    #[test]
+    fn failed_lock_keeps_the_open_workspace_and_the_remembered_one() {
+        let base = temp_dir("activate-fail");
+        let (a, b) = (base.join("a"), base.join("b"));
+        fs::create_dir_all(&a).unwrap();
+        fs::create_dir_all(&b).unwrap();
+        let remembered = base.join("last-workspace.txt");
+        let state = WorkspaceState::default();
+        activate_in(&state, &remembered, a.clone()).expect("first workspace opens");
+        let remembered_before = fs::read(&remembered).unwrap();
+
+        // Stands in for "another window already has b open".
+        let _other_window = workspace_lock::acquire(&b).expect("test takes b's lock");
+        let error = activate_in(&state, &remembered, b.clone()).unwrap_err();
+
+        let still_open = current_root(&state).unwrap();
+        let remembered_after = fs::read(&remembered).unwrap();
+        drop(_other_window);
+        fs::remove_dir_all(&base).unwrap();
+        assert_eq!(error.code, ErrorCode::WorkspaceLocked);
+        assert_eq!(still_open, a, "the original workspace must stay open");
+        assert_eq!(remembered_after, remembered_before, "last-workspace.txt must not change");
     }
 }
 
