@@ -5,6 +5,7 @@ mod app_settings;
 mod error;
 mod fs_safe;
 mod platform_win;
+mod preflight;
 mod workspace_lock;
 
 use error::IpcError;
@@ -363,6 +364,10 @@ mod smoke {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // The missing-runtime failure happens inside Builder::run and cannot be caught, so check first.
+    #[cfg(windows)]
+    preflight::exit_if_webview2_missing();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(WorkspaceState::default())

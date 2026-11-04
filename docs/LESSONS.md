@@ -79,6 +79,9 @@
 - **桌面煙霧測試的斷言依賴機器設定**（2026-11-04，票 013）：`scripts/desktop-smoke.sh` 比對畫面上的時間字串，而字串現在跟著 Windows 的 12/24 小時設定與已儲存的語言（腳本讀的是真實的 `app-settings.json`）。換機器或使用者改過語言就會失敗。驗證流程類斷言應比對資料（時刻、檔案），顯示格式交給單元測試。已修：`desktop-smoke.sh` 改為驗證 `10:30`、`12:30` 兩個時刻依序出現。
 - **e2e 還有一個未歸類的間歇失敗**（2026-11-04，票 013）：完整 `test:e2e` 4 次中有 1 次 `moving stays correct after scrolling the calendar` 失敗（未抓到失敗訊息），單獨 `--repeat-each=40 --workers=8` 40/40 通過。是否屬票 022 的 `dragBall` 放開時機問題未驗證。下次遇到先保留完整輸出。
 - **Python heredoc 內的單引號跳脫會變成三個單引號**（2026-11-04，票 013）：把 Rust 的 `'''` 寫進 Python 三引號字串，檔案裡變成 `'''`，編譯失敗。含單引號的程式碼片段改用 Edit 工具直接改。PowerShell 沒有 `tail`，要取尾端用 `Select-Object -Last`。
+- **官方模擬缺少 WebView2 的環境變數不會讓登錄變空**（2026-11-04，票 014）：`WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 指向空資料夾時，登錄 `pv` 仍是真實版本，只讀登錄的偵測抓不到，App 照舊 panic。偵測要先看該變數（資料夾內有 `msedgewebview2.exe` 才算存在）。規格寫「依登錄偵測」又要求用這個變數驗收，兩者在實測前互相矛盾。
+- **README 與票寫的 D 槽路徑不一定存在**（2026-11-04，票 014）：這台電腦只有 C 槽，Rust 在 `C:\Users\student\.cargo`。開工先 `Get-PSDrive` 與 `Get-Command`，用既有工具，不要照抄票上的路徑。
+- **用 UI Automation 可以替 `MessageBoxW` 做自動化驗收**（2026-11-04，票 014）：`Start-Process` 啟動後以 `System.Windows.Automation` 依行程 ID 找視窗、讀文字、對「確定」呼叫 `InvokePattern`，再讀 `ExitCode`。第一次按下後 5 秒沒結束，第二次重跑就結束（結束碼 1），原因未查明，疑為時序。
 
 ## 已升級成規則
 

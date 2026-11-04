@@ -43,6 +43,34 @@ mod ffi {
     extern "system" {
         pub fn GetLocaleInfoEx(locale_name: *const u16, lc_type: u32, lc_data: *mut u16, cch_data: i32) -> i32;
     }
+    #[link(name = "advapi32")]
+    extern "system" {
+        pub fn RegGetValueW(
+            hkey: isize,
+            sub_key: *const u16,
+            value: *const u16,
+            flags: u32,
+            value_type: *mut u32,
+            data: *mut u16,
+            data_len: *mut u32,
+        ) -> i32;
+    }
+    #[link(name = "user32")]
+    extern "system" {
+        pub fn MessageBoxW(hwnd: isize, text: *const u16, caption: *const u16, kind: u32) -> i32;
+    }
+    pub const HKEY_CURRENT_USER: isize = 0x8000_0001u32 as i32 as isize;
+    pub const HKEY_LOCAL_MACHINE: isize = 0x8000_0002u32 as i32 as isize;
+    /// Only accept a text value (`REG_SZ`).
+    pub const RRF_RT_REG_SZ: u32 = 0x0000_0002;
+    pub const MB_OK: u32 = 0x0000_0000;
+    pub const MB_ICONERROR: u32 = 0x0000_0010;
+    /// The WebView2 Evergreen runtime's client id; its `pv` value is the installed version.
+    pub const WEBVIEW2_CLIENT_KEYS: [(isize, &str); 3] = [
+        (HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"),
+        (HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"),
+        (HKEY_CURRENT_USER, r"Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"),
+    ];
     /// A null locale name means "the current user's default locale".
     pub const LOCALE_NAME_USER_DEFAULT: *const u16 = std::ptr::null();
     pub const LOCALE_SNAME: u32 = 0x0000_005C;
@@ -94,6 +122,62 @@ pub fn system_hour12() -> Option<bool> {
 pub fn system_hour12() -> Option<bool> {
     None
 }
+
+/// UTF-16 with the terminator Windows string parameters need.
+#[cfg(windows)]
+fn wide(text: &str) -> Vec<u16> {
+    text.encode_utf16().chain(std::iter::once(0)).collect()
+}
+
+/// The installed WebView2 runtime version (`pv`), from the first registry location that has one
+/// (64-bit view, 32-bit view, then the current user). `None` when no location has a text value.
+/// Whether that value counts as "installed" is decided by `preflight`, not here.
+#[cfg(windows)]
+pub fn webview2_pv() -> Option<String> {
+    let value_name = wide("pv");
+    for (root, key) in ffi::WEBVIEW2_CLIENT_KEYS {
+        let sub_key = wide(key);
+        let mut buffer = [0u16; 128];
+        let mut byte_len = std::mem::size_of_val(&buffer) as u32;
+        // SAFETY: both names are NUL-terminated; `buffer` is valid for `byte_len` bytes, which is
+        // what is passed; the type pointer may be null when RRF_RT_REG_SZ restricts the type.
+        let status = unsafe {
+            ffi::RegGetValueW(
+                root,
+                sub_key.as_ptr(),
+                value_name.as_ptr(),
+                ffi::RRF_RT_REG_SZ,
+                std::ptr::null_mut(),
+                buffer.as_mut_ptr(),
+                &mut byte_len,
+            )
+        };
+        if status == 0 {
+            if let Some(version) = pattern_from_utf16(&buffer) {
+                return Some(version);
+            }
+        }
+    }
+    None
+}
+
+#[cfg(not(windows))]
+pub fn webview2_pv() -> Option<String> {
+    None
+}
+
+/// Shows a modal error message box and returns after the user closes it. No-op on other platforms.
+#[cfg(windows)]
+pub fn show_message(title: &str, text: &str) {
+    let (title, text) = (wide(title), wide(text));
+    // SAFETY: both strings are NUL-terminated and outlive the call; a null owner window is allowed.
+    unsafe {
+        ffi::MessageBoxW(0, text.as_ptr(), title.as_ptr(), ffi::MB_OK | ffi::MB_ICONERROR);
+    }
+}
+
+#[cfg(not(windows))]
+pub fn show_message(_title: &str, _text: &str) {}
 
 #[cfg(test)]
 mod tests {

@@ -54,6 +54,7 @@
 | TC-10 | R1；NFR-02、FR-09、FR-11 Rust 邊界 | Rust 單元 |
 | TC-11 | R5；AC-03.2、FR-09 語言 | 單元＋e2e |
 | TC-12 | R5；AC-03.3、FR-10 時間格式化 | 單元 |
+| TC-13 | FR-08、U-12 啟動前檢查（WebView2 偵測與說明語言） | Rust 單元 |
 
 ### TC-01｜放球、調整、命名（AC-01.1、FR-01、FR-02）
 
@@ -185,6 +186,25 @@
 
 層級：單元（`formatTime`）。2026-11-02 當地 13:05：24 小時制 → `13:05`；12 小時制英文 → `1:05 PM`；12 小時制繁體 → `下午 1:05`。午夜 00:00 → 24 小時制 `00:00`、英文 `12:00 AM`、繁體 `上午 12:00`；正午 12:00 → 24 小時制 `12:00`、英文 `12:00 PM`、繁體 `下午 12:00`。**午夜與正午的繁體寫法為暫定，不阻塞退出**；時間範圍（例如區塊上的 `10:30–12:30`）在 12 小時制的寫法規格未定，本 TC 不驗，見缺口。
 
+### TC-13｜啟動前檢查（FR-08、U-12，API-07）
+
+層級：Rust 單元（純函式，不碰登錄、視窗或行程）。登錄讀取、`MessageBoxW` 與結束碼 1 屬原生行為，由人工 M-07 驗證。
+
+| 登錄值 `pv` | 預期 |
+|---|---|
+| `156.0.4314.58` | 已安裝 |
+| 空字串 | 未安裝 |
+| `0.0.0.0` | 未安裝 |
+| 值不存在 | 未安裝 |
+
+| 系統語系 | 說明文字 |
+|---|---|
+| `zh-TW`、`zh-HK`、`zh-CN`、`zh` | 繁體中文 |
+| `en-US`、`ja-JP` | 英文 |
+| 取不到（`None`） | 英文（沿用 TC-11 已決） |
+
+- 兩種語言的說明文字都含官方下載網址（實作時再確認網址）。
+
 ## 人工驗收與缺陷處理
 
 以下全部目前為「**未執行**」。失敗時記錄：重現步驟、預期與實際、影響、修復後要重跑的 TC；受阻或未執行都保留原狀態，不改寫成通過。證據放在 `docs/evidence/`（執行時建立，截圖與備註以 TC／M 編號命名）。
@@ -197,13 +217,13 @@
 | M-04 | 把視窗縮到最小（900×560），名稱用 30 個全形字，兩種語言各一次。預期：文字不溢出、不遮蓋其他元件 | NFR-07 | 未執行 |
 | M-05 | 把 Windows 的時間格式在 12 與 24 小時之間切換（結束後還原），檢查區塊、右側面板、時間軸。預期：全部一致；若面板的原生時間欄位與其他不一致，記為已知限制 | AC-03.3、FR-10 | 未執行；**需專案擁有者操作，會改系統設定** |
 | M-06 | 使用 App 期間監看它的網路連線。預期：零連線。監看方法待定 | NFR-03 | 未執行 |
-| M-07 | 以官方環境變數把 WebView2 指向空資料夾來模擬缺少。預期：顯示說明視窗（語言依系統）、結束碼為 1、Tauri 沒有啟動 | FR-08、U-12 | 未執行 |
+| M-07 | 以官方環境變數把 WebView2 指向空資料夾來模擬缺少。預期：顯示說明視窗（語言依系統）、結束碼為 1、Tauri 沒有啟動 | FR-08、U-12 | 代理以 UI Automation 自動化執行一次（2026-11-04，Windows 10 Pro 10.0.19045，中文系統語系，debug 版）：環境變數指向空資料夾 → 出現說明視窗（標題「Juicy Calendar 缺少 WebView2」、繁體中文內文含官方網址）→ 按「確定」後結束碼 1；未設環境變數時無說明視窗、程序持續執行、主視窗 `Juicy Calendar` 出現。**專案擁有者於 2026-11-04 親自確認**：說明視窗出現且內容正確（螢幕截圖已看過，沒有 Tauri 主視窗），並按下「確定」；結束碼 1 以上述自動化為證，擁有者未另報數值。**英文版視窗與 release 版（無主控台）：未執行** |
 
 ## 進入／退出條件
 
 - **進入**：SRS 已確認；SAD 與 SDS 經審查；TC 預期值經專案擁有者確認；環境與資料可重建；第一張實作票（修好拖曳輔助函式）完成。
 - **退出**（全部達成才標交付通過，否則不標）：
-  1. TC-01～TC-12 實際執行並通過；新規則的 TC 都曾看到「原因正確的紅燈」。
+  1. TC-01～TC-13 實際執行並通過；新規則的 TC 都曾看到「原因正確的紅燈」。
   2. M-01、M-02、M-04、M-05 有結果；M-03 在 Q-05 決定前維持「受阻」並明記。
   3. 每條 AC、FR、NFR 在下表有 TC、人工流程或明確缺口。
   4. NFR-01：連續重複執行 e2e，通過與失敗的清單必須一致。重複次數 N **沒有依據**；暫定「至少連續 3 次」，首次實測後由專案擁有者定案。
@@ -223,7 +243,7 @@
 | AC-02.1、FR-05 | TC-06 | 2026-11-04，`npx vitest run src/services/persistence/reopen.test.ts` 1/1 Passed；完整 `npm test` 49/49 Passed（Windows 11、Node 24.22.0、記憶體版 backend、假時鐘 2026-11-02 12:00 EST）。先紅後綠：紅燈原因為空 fixture（`This folder has no workspace.json.`） | 重開驗證用記憶體版 backend，**未驗證**真實磁碟寫入；`.juicy.lock` 等屬 TC-09／10 |
 | AC-02.2、FR-06、NFR-04 | TC-07、TC-08 | TC-08 **僅代碼部分**（票 006，2026-11-04，Windows 11、Rust 1.99.1）：Rust `opening_a_folder_without_workspace_json_fails_with_not_a_workspace` 通過，並確認資料夾沒有新增檔案；先紅後綠（紅燈 `left: IoError right: NotAWorkspace`）。**TC-07（票 008，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend、假時鐘）**：`npx vitest run src/services/persistence/loadRules.test.ts` 14/14 Passed（(a)～(f) 加 (g) 模板名稱 31 字，各測「載入」與「編輯好事件後關閉」）；紅燈 3 失敗／11 通過，(c)(d) 為 `evt_bad` 被當成好事件載入、(g) 為模板數 7 而非 6，(a)(b)(e)(f) 本來就通過（特徵化）；綠燈後完整 `npm test` 123/123、`typecheck`、`lint` Passed。通知原因現在可區分（`invalid JSON`、`file name does not match id`、`name is empty or too long`、`event is longer than the maximum length`）。`npm run test:e2e`（票 008 完成後，同日）：第 1 次 33 passed／1 failed（既有的 `overlapping events…`，收到 `Mon 10:30` 而非 `Mon 11:00`，LESSONS 已記載的間歇失敗，與載入規則無關）；該項單獨重跑 1/1 通過；整套重跑 34/34 通過。**未驗證**：真實磁碟（Rust backend）載入、桌面版手動開啟舊工作區。**TC-08 前端部分與通知代碼（票 007，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend）**：`openErrors.test.ts`（TC-08 三情境，每個都核對資料夾每檔 SHA-256 不變；`FILE_SKIPPED`、`SETTINGS_RESET`）、`workspaceSession.test.ts`（`WORKSPACE_LOCKED`、`WORKSPACE_TOO_NEW` 帶版本號、`OPEN_FAILED` 診斷只放 `detail`）、`saveError.test.ts`、`notices.test.ts`（英文對照表）。完整 `npm test` 109/109、`typecheck`、`lint` Passed；`npm run test:e2e` 單次 34/34 Passed（含 magnet 測試，本次未失敗）。先紅後綠：`WORKSPACE_TOO_NEW`、`FILE_SKIPPED`、`WORKSPACE_LOCKED`、`saveError`、對照表皆見原因正確的紅燈（收到舊字串或缺少 `code`／函式）；`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`、`SETTINGS_RESET`、`WORKSPACE_TOO_NEW` 版本號、`OPEN_FAILED` 診斷因與前一步同一次改動一併完成，改以變異檢查（暫改程式使其出錯，測試因原因正確而失敗，之後還原並確認檔案相同） | TC-08 以記憶體版 backend 驗證，**未驗證**真實磁碟與原生對話框（`workspace_select` 只測抽出的 `choose_root`）；NFR-01 的「連續 3 次 e2e」本票只跑 1 次。**偏差**：①`saveError` 畫面不再附加診斷句（原本會顯示 `String(error)`，等於洩漏 `detail`），因 `writeQueue` 的 `onResult` 簽章有既有測試而未改；②`OPEN_FAILED` 畫面為 `Could not open the workspace.`，不再附加診斷句；③`WorkspaceOpenError.message` 仍是英文句子（日誌與既有 `/newer/` 斷言用，非畫面文字）；④`BackendError.message` 改讀對照表，句子不變 |
 | AC-02.3、FR-07 | TC-09 | 票 009（2026-11-04，Windows 11、Rust 1.90.0、`npm run test:rust` 15 passed／0 failed）。TC-09 雙行程：`workspace_lock::tests::second_process_is_refused_until_the_first_is_killed`（測試執行檔自己當子行程 A；B 被拒得 `WORKSPACE_LOCKED`，`.juicy.lock` 大小為 0 且大小與修改時間不變、檔案清單與其他檔案位元組不變；`kill` A 後 B 取鎖成功）。第二條：`reselecting_the_open_workspace_returns_its_location_without_locking_itself_out`、`..._by_another_spelling_...`（大小寫不同，僅 Windows；突變檢查：比對改成原始路徑相等即紅燈 `Err(WorkspaceLocked)`）。第三條：`failed_lock_keeps_the_open_workspace_and_the_remembered_one`。TC-10：`a_folder_holding_only_the_lock_file_counts_as_empty`；`.juicy.lock` 不在允許清單由既有 `resolve_rejects_paths_outside_the_allow_list_with_path_not_allowed` 證明（原本就通過，無紅燈）。先紅後綠：紅燈原因依序為 `left: Ok(()) right: Err(WorkspaceLocked)`、`unwrap_err` 收到 `Ok`（沒取鎖）、`Err(WorkspaceLocked)` 被自己擋住、`MyTimeBlock` 子資料夾被誤建。另跑 `typecheck`、`lint`、`npm test`（123 passed）皆 Passed | **未驗證**：兩個真實 App 行程指向同一資料夾（人工，會動到真實設定資料夾，待確認）；`workspace_select`／`workspace_restore` 命令本身（含原生對話框）無單元測試，僅測 `activate_in`；除錯用 `JUICY_SMOKE_WORKSPACE` 路徑不取鎖；雲端同步資料夾與網路磁碟**未涵蓋** |
-| AC-03.1、FR-08、NFR-05 | M-01、M-07 | 未執行 | Windows 10 1803 可能無環境 |
+| AC-03.1、FR-08、NFR-05 | M-01、M-07 | M-01 未執行。**FR-08 啟動前檢查（票 014，2026-11-04，Windows 10 Pro 10.0.19045、Rust 1.90.0）**：TC-13 Rust 單元 7 項（`src-tauri/src/preflight.rs`：`pv` 真實版本／缺少、空字串、`0.0.0.0`；環境變數資料夾優先於登錄；`zh`、`zh-TW`、`zh-HK`、`zh-CN`→繁中；`en-US`、`ja-JP`、`zhx`、空字串、`None`→英文；兩種語言文字含缺少說明與官方網址）。先紅後綠，紅燈原因：樁回傳 `false`／`English`／空字串（`assertion failed: webview2_pv_means_installed(Some("156.0.4314.58"))`、`left: English right: TraditionalChinese`、`webview2_available` 兩項失敗）；「其他語系→英文」那項因 `English` 樁已滿足而**沒有紅燈**（特徵化，補上 `zhx` 邊界）。完整：`cargo test` 36 passed／0 failed；`npm run test:rust`、`typecheck`、`lint` Passed；`npm test` 27 檔 309 passed。M-07 自動化部分見下方人工表 | **未驗證**：M-07 的專案擁有者親自確認、英文視窗、release 版（`windows_subsystem`）行為；固定版本執行階段（`WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 指向真實資料夾）只以「有 `msedgewebview2.exe` 就算存在」判斷，未實測；`clippy` 未安裝未跑；Windows 10 1803 可能無環境。**偏差**：SDS API-07 未提環境變數，但 M-07 與驗收條件要求以它模擬，登錄 `pv` 在該情況仍為真實版本，故偵測加入此變數（見票 014 末段） |
 | AC-03.2、FR-09 | TC-11、TC-10（`app_settings`） | 票 010（2026-11-04，Windows 11、Node 24.22.0、Rust 1.90.0、WebKit e2e、`TEMP=D:\DevCache\tmp`）：單元 `detectLanguage.test.ts` 9 項（`zh-TW`／`zh-HK`／`zh-CN`／`zh`→繁中；`en-US`／`ja-JP`／取不到→英文；系統語系優先於 navigator）、`dictionary.test.ts` 3 項（鍵值相同、無空字串、`@ts-expect-error` 缺鍵；突變：刪一鍵 `typecheck` 出現 TS 錯誤）、`i18n.test.ts` 16 項、`browserBackend.test.ts` 12 項、`tauriAppSettings.test.ts` 15 項。Rust `app_settings` 5 項（不存在、6 種損毀／不合法內容→`None` 且位元組不變、寫 `en`／`zh-TW` 讀回、寫 `fr` 被拒且不建檔不改檔、損毀檔只被下一次有效寫入覆寫）、`platform_win` 3 項（`locale_from_utf16` 解析與 6 種無效緩衝區、Windows 回傳語系形狀）。e2e `e2e/language.spec.ts` 10 項（6 組系統語言、儲存的語言優先、損毀值用偵測且位元組不變直到下次切換、切換即時生效且重載後維持、儲存失敗顯示紅底錯誤且不含診斷文字）。完整檢查：`npm run typecheck`、`npm run lint` Passed；`npm test` 19 檔 181 passed／0 failed；`npm run test:rust` 23 passed／0 failed；`npm run test:e2e` 44 passed／0 failed（原有 34 + 新增 10，單次）；`npm run test:desktop` Passed。先紅後綠；突變檢查（都變紅）：`read` 拿掉白名單、瀏覽器版拿掉讀／寫驗證、`systemInfo` 不攔錯、`readAppSettings` 不驗證回傳、`locale_from_utf16` 放寬、`initLanguage` 偷寫檔、`setLanguage` 等存檔才切換、讀設定失敗不攔、成功後不清錯誤、把診斷文字塞進狀態、歡迎畫面不顯示錯誤。 | **Manual Pending**：桌面版實際讀寫 `%APPDATA%\app.juicycalendar.timeblock\app-settings.json`（會寫真實設定資料夾，待同意）；三個 Tauri 命令本身（需要 `AppHandle`）無單元測試，`test:desktop` 只證明 App 能啟動，因為讀設定失敗會被吞掉，不能證明命令成功。**未涵蓋**：Windows 使用者語系與顯示語言不同的機器（只在 `zh-TW` 這台）；非 Windows 的 `platform_win` 分支只編譯、未在該平台執行；日曆畫面內沒有語言選單，工作區開啟後無法切換語言（FR-09「設定可切換」目前只涵蓋歡迎畫面，後續票 011／012 補）；切換後的錯誤通知只在歡迎畫面。**偏差**：見票 010 的偏差註記 |
 | AC-03.2、FR-09（票 011：日曆與工具列） | TC-11 | 票 011（2026-11-04，Windows 10 Pro、Node v26.13.0、Rust 1.90.0、WebKit e2e）：新增單元 `dateFormat.test.ts` 10 項（zh-TW／en 的 `EEE`、`EEEE`、`MMM`、`MMMM`）、`rangeLabel.test.ts` 10 項（單日、同月、跨月、跨年週 × 兩種語言，加空陣列）、`hiddenEventsTitle.test.ts` 5 項（英文單複數）、`dictionary.test.ts` 加 16 項（15 個字串的英文／中文字面值與參數）。紅燈皆為斷言失敗（zh-TW 拿到英文、字典缺鍵拿到鍵名、`1 events`），綠燈後做突變檢查（日期語系固定英文、移除跨年分支）皆變紅。e2e 新增 `e2e/calendar-language.spec.ts` 3 項（英文維持原文字與 title／aria-label；zh-TW 工具列、星期、標題、`+N` 說明、事件名稱輸入框；歡迎畫面選語言後日曆立即套用）；突變（日期欄位固定英文）使 zh-TW 項變紅。完整：`typecheck`、`lint`、`build` Passed；`npm test` 22 files／222 passed；`test:e2e` 連續 2 次皆 47 passed／0 failed | **未驗證**：桌面版（Tauri）中文介面人工操作；日曆畫面上「切換語言立即反映」（沒有選單，歸票 023，目前僅驗證「歡迎畫面選語言後進入日曆」）；`test:rust`、`test:desktop` 本票未動 Rust 未跑；中文字串為提案翻譯待審；跨年週的中文寫法為我依英文原則推出，待確認。時間軸選單的 `00:00` 標籤屬票 013 |
 | AC-03.2、FR-09（票 012：面板、編輯器、球列、通知與錯誤） | TC-11 | 票 012（2026-11-04，Windows 10 Pro、Node v26.13.0、WebKit e2e）：單元 `notices.test.ts` 加到 20 項（六個開啟錯誤、通知、儲存錯誤、五個後端錯誤代碼，各含 en／zh-TW；`WORKSPACE_LOCKED` 中文為 SDS UI-01 原句）、`dictionary.test.ts` 加 28 列字面值與「名稱含 `$&` 原樣插入」、`backendError.test.ts` 的 `message` 改為代碼（5 項，取代 3 項英文句子）、`hardcodedText.test.ts` 3 項（掃描器自我驗證 2 項＋ `src/**/*.tsx` 無寫死文字）。紅燈皆為斷言失敗（中文拿到英文、缺鍵、`message` 是英文句子、掃描列出 34 處寫死文字）；突變（球列「切換」改回寫死、開啟錯誤固定英文）皆變紅。e2e 新增 `e2e/panel-language.spec.ts` 3 項（英文維持原文字；zh-TW 面板、編輯器、球列、通知；損毀的 `workspace.json` 中文說明且檔案不變）。完整：`typecheck`、`lint`、`build` Passed；`npm test` 23 files／272 passed；`test:e2e` 連續 2 次皆 50 passed／0 failed | **未驗證**：桌面版中文介面人工操作；`test:rust`、`test:desktop`（本票未動 Rust）；中文字串為提案翻譯待審。**已知限制**：完整性掃描只看 `.tsx` 內的 JSX 文字、字串屬性與條件運算，不抓變數或 props 傳入的字串，也不抓 `.ts` 模組產生的文字。`NO_WORKSPACE_OPEN`／`PATH_NOT_ALLOWED`／`IO_ERROR` 兩種語言都有文字，但目前沒有畫面直接顯示它們。`formatDuration` 的 `h`／`m` 單位未翻譯（專案擁有者同意不動） |

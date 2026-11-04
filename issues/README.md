@@ -35,7 +35,7 @@
 | 011 | [翻譯日曆與工具列](011-translate-calendar.md) | M | 010 | 完成（人工驗收未做；日曆畫面的切換驗證由票 023 承接） |
 | 012 | [翻譯面板、模板編輯器、通知與錯誤](012-translate-panel-notices.md) | M | 007、010 | 完成（人工驗收未做） |
 | 013 | [時間格式跟隨 Windows](013-time-format-windows.md) | M | 010 | 實作完成（M-05 人工驗收待專案擁有者） |
-| 014 | [缺少 WebView2 時顯示說明](014-webview2-preflight.md) | M | 010 | 等待前置票 |
+| 014 | [缺少 WebView2 時顯示說明](014-webview2-preflight.md) | M | 010 | 完成（英文版與 release 版未驗證） |
 | 015 | [免安裝模式](015-portable-mode.md) | M | 009、010，**S-01 決定** | **未就緒** |
 | 016 | [NSIS 安裝檔與 README](016-nsis-installer.md) | M | 000，**S-02 決定** | **未就緒** |
 | 017 | [免安裝 .zip 組裝腳本](017-portable-zip.md) | S | 015、016 | 等待前置票 |
