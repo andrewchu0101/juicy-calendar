@@ -18,6 +18,39 @@ npm run desktop:build  # build src-tauri/target/release/bundle/macos/Juicy Calen
 
 `npm run dev` runs the UI alone at http://localhost:1421, storing data in `localStorage` instead of a folder.
 
+## Windows
+
+> **Draft.** The Windows installer and the portable .zip are not built yet (tickets 016 and 017), so the
+> installer steps below have not been tried on a clean machine. The portable-mode behaviour is implemented.
+> Requires 64-bit Windows 10 (1803 or later) and the Microsoft Edge WebView2 Runtime.
+
+**Installer (planned)**
+
+1. Run `Juicy Calendar_<version>_x64-setup.exe`. If WebView2 is missing, the installer downloads it from
+   Microsoft, so it needs an internet connection that one time. The app itself never goes online.
+2. The installer is **not code-signed**, so Windows SmartScreen may say "Windows protected your PC". Choose
+   **More info**, then **Run anyway**, but only for a file you got from this project's own releases.
+3. Create or open a workspace from the welcome screen. A workspace is a plain folder of JSON files that you pick.
+4. To uninstall, use Settings, Apps, Installed apps. Your workspace folders are yours and are expected to stay
+   where they are (to be confirmed on a clean machine).
+
+**Keep your workspace out of cloud-sync folders** (OneDrive, Dropbox, Google Drive and similar). The app
+writes files in place and keeps a `.juicy.lock` file while a workspace is open, and a sync client that
+touches those files at the same moment may cause conflicts or stale copies.
+
+**Portable .zip (planned)**
+
+- Extract the .zip anywhere and run the app. The folder contains `portable.flag` next to the executable, and
+  that file is what turns portable mode on. Do not delete it.
+- Every start opens the `data` folder next to the executable, and the app settings (such as language) are kept
+  there too. Copy or move the whole folder to take your blocks and settings with you.
+- If you open another workspace by hand, that folder is **not** part of what moves with the .zip folder, and
+  the next start returns to `data`.
+- If the app cannot create or write `data` (for example a read-only location), it shows an error and does
+  **not** save anywhere else. Move the folder somewhere writable and start it again.
+- Deleting the folder removes the program and the data inside it. WebView2 may leave its own cache elsewhere
+  on that computer; whether that cache can be kept inside `data` has not been verified.
+
 ## Using it
 
 | Do this | To |
