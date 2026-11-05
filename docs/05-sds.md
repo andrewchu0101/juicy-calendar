@@ -191,7 +191,7 @@
 |---|---|---|
 | S-01 | ADR-05：以 `portable.flag` 判斷免安裝模式，是否同意 | **已決定（2026-11-05）**：同意，附三項條件，見 SAD ADR-05 |
 | S-02 | 做安裝檔前，`tauri build` 下載 NSIS 工具的寫入位置（可能在 C 槽，未驗證）是否接受 | **已決定（2026-11-05）**：選 A，`useLocalToolsDir: true`，見票 016 末段 |
-| Q-05 | radial hover 效果樣式（不影響其他契約） | 專案擁有者 |
+| Q-05 | radial hover 效果樣式（不影響其他契約） | **已決（2026-11-05）**，見 PRD AC-01.4 |
 | — | WebView2 官方下載網址、Windows 10 1803 實機行為，於實作與驗證時確認 | 實作者 |
 
 ## FR／NFR 設計落點
@@ -201,7 +201,7 @@
 | FR-01 放球建立／取消 | 引擎 `pointerToTime`、`newEventTimes`；`useTemplateDrag`；`appStore.createEventFromTemplate`；持久化層（現況） | 名稱預設為模板名，受 U-11 的 30 字限制 |
 | FR-02 拖曳邊緣與命名 | 引擎 `resizeStart／End`（加 7 天上限）、`validateTitle`；`EventBlock` | 修改 |
 | FR-03 面板驗證 | 引擎 `withEndTime`、`withDuration`、`validateTitle`；Inspector | 修改：移除自動隔天 |
-| FR-04 radial hover | `RadialPalette` 元件與樣式 | **只有落點，沒有細節**：樣式待 Q-05 |
+| FR-04 radial hover | `RadialPalette` 元件與樣式 | `RadialPalette` 樣式（`index.css` 的 `radial-wobble`）；選中判斷在引擎 `radialStep`（TC-16） |
 | FR-05 儲存與還原 | 持久化層、`fs_safe`、API-01～04 | 現況 |
 | FR-06 載入驗證 | `schemas`、`repository`、通知 | 修改：新增長度與名稱規則、結構化通知 |
 | FR-07 單一寫入者 | `workspace_lock`、`activate()`、API-01／02、UI-01 | 新增 |

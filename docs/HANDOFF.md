@@ -4,11 +4,11 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-05（票 019 完成並 commit／push；M-04 人工驗收待做） |
-| 目前目標 | 依 `issues/` 的工作票逐張實作；票 019（排版）自動檢查完成。已完成或實作完成：000～019 中除 020、021（未就緒）、022、023、024（可開始）之外的票，細節見 `issues/README.md` 索引。下一步可選：022（e2e 間歇失敗）、023（工具列語言選單）、024（NFR-03 調查）；人工驗收待辦：M-04、M-05、M-02、M-01（暫緩） |
-| 工作目錄 | `D:\Project\Fun\juicy-calendar\juicy-calendar` |
-| 分支／HEAD | `main` ／ 票 010 的 `feat(i18n)` commit 與其後的 handoff commit（`git log -3` 查雜湊）；push 後與 `origin/main` 同步（以 `git status` 核對，不要只信這一行） |
-| 工作樹 | 乾淨（票 010 與文件 commit 後 `git status` 無變更）。原 demo 在 `..\juicy-calendar-oneshotted-demo`，未動，仍是 git repo（`main`，24 個未提交修改） |
+| 更新時間 | 2026-11-05（票 020 完成：M-03 由專案擁有者回報通過；新增票 025、026；已 commit，未 push） |
+| 目前目標 | 依 `issues/` 的工作票逐張實作。票 020（radial hover）完成。下一張預計 021，但它被 004 擋住（見「下一步」）；025、026 為新增的未就緒票（等專案擁有者決定）。 |
+| 工作目錄 | 這台電腦（第二台，無 D 槽）：`C:/Users/student/Project/juicy-calendar`；另一台為 `D:/Project/Fun/juicy-calendar/juicy-calendar` |
+| 分支／HEAD | `main` ／ 票 020 的 commit（`git log -1` 查雜湊）；上一個已知 HEAD 為 `7e9a6be`（票 019）。本輪**未 push**，以 `git status` 核對，不要只信這一行 |
+| 工作樹 | commit 後應為乾淨（以 `git status` 核對）。原 demo 在 `../juicy-calendar-oneshotted-demo`，未動 |
 
 ### 已完成
 - 複製 template 骨架，併入 demo 原始碼（排除 `.git`、`node_modules`、`dist`、`real-test`、`src-tauri/target`）。
@@ -59,6 +59,9 @@
 - 已知限制（2026-11-04，專案擁有者在桌面版觀察並同意接受，不處理）：Windows `zh-TW` 12 小時制、App 切成英文時，右側面板開始／結束的原生時間欄位仍顯示 `上午`／`下午`；欄位名稱已是英文。原因是原生欄位的 AM/PM 文字由 WebView2 依 Windows 語系決定（頁面 `lang` 寫死 `en` 也無效），App 字典管不到。歸票 013 的人工驗收 M-05 與票 016 的使用說明；細節與日後選項見 `issues/013-time-format-windows.md`「已知限制」。我沒有親眼看到畫面，現象依專案擁有者回報。
 - 環境（2026-11-04，第二台電腦）：`C:/DevTools/jq` 已由專案擁有者同意加入**使用者 PATH**（登錄 `HKCU/Environment`，原值備份在暫存區）；Rust 仍不在 PATH。新開的終端機與重啟的 Claude Code 才會讀到。以新 PATH 在 Git Bash 實測 `bash .maintain/check.sh`，`test-guard-git.sh`、`test-guard-secrets.sh` 實際執行並通過。注意：PowerShell 裡的 `bash` 會先找到 WSL 啟動器（`C:/Windows/system32/bash.exe`），那個看不到 jq；hook 要在 Git Bash 下執行才有效。
 
+- 票 020 radial hover（2026-11-05，已 commit）：Q-05 決定樣式 A「果凍起伏邊界」（`clip-path` 多邊形、3＋5 瓣、4 秒、hover 球放大 1.3 倍、純色；減少動態時不起伏，改靜態外框）。選中規則改為 hover 只起伏、其他球保留，離開球的固定圓形命中範圍（28 px）才選中並開始拖曳；相鄰球只換 hover、重疊取最近；退回圓環中央（固定半徑 80 px，超出圓環半徑 76 px；球優先）取消 hover、選單保留；hover 沒離開就放開則關閉選單、不建區塊。新增引擎 `radialRing`、`radialStep`、`RADIAL_HIT_RADIUS`、`RADIAL_CENTER_RADIUS`（`engine/pointer.ts`），`useRadialPalette.ts` 改用 `radialStep`。測試 TC-16a～f（單元）與 3 項 e2e（長按選球改為往外離開、放開不選、退回圓心取消）加 1 項變小球 e2e。PRD AC-01.4、SRS FR-04、`DESIGN.md`、測試計畫、SAD／SDS 的 Q-05 已同步。驗證（2026-11-05，Windows 10 Pro 10.0.19045，Node 24.22.0）：`npm test` 346/346、`typecheck`、`lint`、`test:rust` 43/43 Passed；`test:e2e` 連續 3 次皆 62 passed。M-03：專案擁有者回報通過（口頭，未逐項記錄；Tauri 開發模式）。**回歸教訓**：改 `index.css` 時用「整段取代」誤刪 `split-particle`／`split-burst`／`radial-enter` 規則，使用者回報變小球消失；已從 git 還原並新增 e2e（原 TC-02 只數 DOM 元素抓不到）。改 CSS 請用只含目標行的精確取代，並看 `git diff` 的刪除行。
+- 票 025、026（2026-11-05，新增，皆「未就緒」）：025 radial 選單啟動速度（長按 450 ms、進場 220 ms，等專案擁有者定新數值，改動需同步 PRD AC-01.4／SRS FR-04）；026 拖曳選取多個時段（新功能，行為未定，與 NG-03 新事件固定 120 分鐘及空白處長按手勢有衝突，需先問答並修訂 Brief／PRD／SRS）。
+
 ### 進行中
 - 無。
 
@@ -71,9 +74,9 @@
 - Playwright WebKit 已重裝到 `D:\DevTools\playwright-browsers`（實體檔案，175 MB），C 槽 `ms-playwright` 已刪除（那是 2026-11-03 我自己裝的）。
 
 ### 下一步（最多三項）
-1. 票 022：用 `/diagnosing-bugs` 查 e2e 間歇失敗（`overlapping events…`、`weekly and daily views…`、magnet），讓 NFR-01 成立。
-2. 票 009／010（建議順序見 `issues/README.md`）；其他可開始的票：018。每張票另開新對話，用 `/implement` 與 `/tdd`。
-3. 審查 `docs/04-sad.md`、`docs/05-sds.md`、`docs/06-test-plan.md`（草稿）；待決項：Q-05（票 020）（S-01 採用 portable.flag、S-02 選 A 皆已於 2026-11-05 決定；票 016 已建置成功，M-01 乾淨 Windows 驗收暫緩，晚點回頭：安裝檔在私有 repo 的 draft release v0.1.0-m01-test，測完回報後回填票 016 與追溯表，並刪除該 draft）
+1. **票 021 不能直接接**：它被票 004（面板時間與持續分鐘新規則，TC-04 仍「未執行」）擋住，且票上有 4 個待決（介面形式、驗證規則、範圍判斷、標籤是否走 i18n）並需修訂 SRS R-3／FR-03。建議先做票 004（前置票 003 已完成），再讓專案擁有者回答 021 的待決。
+2. 專案擁有者決定票 025（新的長按與進場時間）與票 026（多時段選取的行為，建議先用 `/grilling` 問清楚）；025 要在 020 之後做，026 在 025 之後做。
+3. 票 022（e2e 間歇失敗，NFR-01）、審查 SAD／SDS／測試計畫草稿；M-01（票 016）暫緩、M-02、M-04、M-05 仍待專案擁有者人工驗收。
 
 ### 狀態核對
 
@@ -82,8 +85,8 @@
 | 已實作 | 部分 | 票 001～008 已實作（見上）；其餘票未做 |
 | 自動測試 | 部分 Passed | 2026-11-04：`npm test` 123/123、`typecheck`、`lint` Passed；`test:e2e` 單次 33/34、重跑 34/34（間歇失敗待票 022）；`test:rust` 與 `test:desktop` 為票 000／006 時的結果（Passed），票 008 後未重跑 |
 | 人工驗收 | Manual Pending | 從未人工驗收桌面版 |
-| 已 commit | 是（到票 008，`9589e5e`） | |
-| 已 push | 到票 007 | 票 008 的 commit 尚未 push，等票 010 一起 |
+| 已 commit | 是（到票 020；`git log -1` 查雜湊） | |
+| 已 push | 否（本輪） | 票 020 的 commit 尚未 push，等專案擁有者要求；以 `git status` 核對 |
 
 ### 接手者要先知道
 - 跑 e2e 前要在該程序設 `PLAYWRIGHT_BROWSERS_PATH=D:\DevTools\playwright-browsers`；沒設會找 C 槽、報 `Executable doesn't exist`（已驗證）。安裝同理：`npx playwright install webkit` 前先設。

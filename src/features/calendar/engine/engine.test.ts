@@ -4,6 +4,8 @@ import {
   magnetMinutes,
   radialBalls,
   radialHit,
+  radialRing,
+  radialStep,
   durationMinutes,
   edgeScrollSpeed,
   formatDuration,
@@ -288,5 +290,44 @@ describe('gesture geometry', () => {
     expect(balls.every(ball => ball.x >= 28 && ball.y >= 28)).toBe(true);
     expect(radialHit(balls[2]!, balls)).toBe(2);
     expect(radialHit({ x: 1200, y: 700 }, balls)).toBe(-1);
+  });
+  // TC-16（提案編號，待併入 docs/06-test-plan.md）｜AC-01.4、FR-04｜票 020
+  it('TC-16a hovering a radial ball only hovers it: nothing is picked yet', () => {
+    const balls = radialBalls({ x: 700, y: 450 }, 6, 1400, 900);
+    expect(radialStep(-1, balls[2]!, balls, radialRing({ x: 700, y: 450 }, 6, 1400, 900))).toEqual({ hovered: 2, picked: null });
+  });
+  it('TC-16b leaving the hovered ball picks it', () => {
+    const balls = radialBalls({ x: 700, y: 450 }, 6, 1400, 900);
+    const outside = { x: balls[2]!.x + 40, y: balls[2]!.y + 40 };
+    expect(radialHit(outside, balls)).toBe(-1);
+    expect(radialStep(2, outside, balls, radialRing({ x: 700, y: 450 }, 6, 1400, 900))).toEqual({ hovered: -1, picked: 2 });
+  });
+  it('TC-16c moving straight onto a neighbouring ball only switches the hover', () => {
+    const balls = [{ x: 100, y: 100 }, { x: 140, y: 100 }];
+    // x=128 is inside both hit circles (28 px) but nearer to ball 1.
+    expect(radialStep(0, { x: 128, y: 100 }, balls, { center: { x: 120, y: 300 }, radius: 76 })).toEqual({ hovered: 1, picked: null });
+  });
+  it('TC-16e returning from a hovered ball to the ring centre cancels the hover without picking', () => {
+    const origin = { x: 700, y: 450 };
+    const balls = radialBalls(origin, 6, 1400, 900);
+    const ring = radialRing(origin, 6, 1400, 900);
+    expect(radialStep(2, ring.center, balls, ring)).toEqual({ hovered: -1, picked: null });
+    // The centre is an 80 px circle. Probe between two balls so no ball hit circle is involved.
+    const between = (radius: number) => ({ x: ring.center.x + Math.cos(-Math.PI / 3) * radius, y: ring.center.y + Math.sin(-Math.PI / 3) * radius });
+    expect(radialHit(between(79), balls)).toBe(-1);
+    expect(radialStep(0, between(79), balls, ring)).toEqual({ hovered: -1, picked: null });
+    expect(radialHit(between(81), balls)).toBe(-1);
+    expect(radialStep(0, between(81), balls, ring)).toEqual({ hovered: -1, picked: 0 });
+  });
+  it('TC-16f leaving outward past the ring still picks the hovered ball', () => {
+    const origin = { x: 700, y: 450 };
+    const balls = radialBalls(origin, 6, 1400, 900);
+    const ring = radialRing(origin, 6, 1400, 900);
+    const outward = { x: balls[0]!.x, y: balls[0]!.y - 45 };
+    expect(radialStep(0, outward, balls, ring)).toEqual({ hovered: -1, picked: 0 });
+  });
+  it('TC-16d leaving empty space without ever hovering a ball picks nothing', () => {
+    const balls = radialBalls({ x: 700, y: 450 }, 6, 1400, 900);
+    expect(radialStep(-1, { x: 5, y: 5 }, balls, radialRing({ x: 700, y: 450 }, 6, 1400, 900))).toEqual({ hovered: -1, picked: null });
   });
 });

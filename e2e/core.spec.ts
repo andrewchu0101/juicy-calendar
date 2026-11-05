@@ -471,8 +471,18 @@ test('long press picks up a radial ball and drops in one held gesture', async ({
   await page.mouse.down();
   await expect(page.locator('.radial-choice')).toHaveCount(6);
   await page.waitForTimeout(250);
-  const choice = await box(page.locator('.radial-choice .ball').first());
-  await page.mouse.move(choice.x + 22, choice.y + 22);
+  const boxes = await page.locator('.radial-choice .ball').evaluateAll((balls) =>
+    balls.map((ball) => { const r = ball.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }),
+  );
+  const ring = { x: boxes.reduce((sum, b) => sum + b.x, 0) / boxes.length, y: boxes.reduce((sum, b) => sum + b.y, 0) / boxes.length };
+  // AC-01.4 / FR-04: hovering only wobbles the ball; the other balls stay and nothing is picked yet.
+  await page.mouse.move(boxes[0]!.x, boxes[0]!.y);
+  await expect(page.locator('.radial-hovered')).toHaveCount(1);
+  await expect(page.locator('.radial-choice')).toHaveCount(6);
+  await expect(page.getByTestId('ball-overlay')).toHaveCount(0);
+  // Leaving the ball's circle outward picks it and the other balls vanish.
+  const away = Math.hypot(boxes[0]!.x - ring.x, boxes[0]!.y - ring.y);
+  await page.mouse.move(boxes[0]!.x + (boxes[0]!.x - ring.x) / away * 70, boxes[0]!.y + (boxes[0]!.y - ring.y) / away * 70, { steps: 6 });
   await expect(page.getByTestId('ball-overlay')).toBeVisible();
   await expect(page.locator('.radial-choice')).toHaveCount(0);
   const target = await point(page, 0, 10);
@@ -481,6 +491,62 @@ test('long press picks up a radial ball and drops in one held gesture', async ({
   await page.mouse.up();
   expect((await onlyEvent(page)).templateId).toBe('coding');
   await expect(page.getByTestId('ball-overlay')).toHaveCount(0);
+});
+
+test('[TC-16][AC-01.4,FR-04] releasing the mouse while still on a hovered radial ball picks nothing', async ({ page }) => {
+  await page.mouse.move(650, 450);
+  await page.mouse.down();
+  await expect(page.locator('.radial-choice')).toHaveCount(6);
+  await page.waitForTimeout(250);
+  const first = await page.locator('.radial-choice .ball').first().evaluate((ball) => { const r = ball.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+  await page.mouse.move(first.x, first.y);
+  await expect(page.locator('.radial-hovered')).toHaveCount(1);
+  await page.mouse.up();
+  await expect(page.locator('.radial-choice')).toHaveCount(0);
+  await expect(page.getByTestId('ball-overlay')).toHaveCount(0);
+  expect(await storedEvents(page)).toHaveLength(0);
+});
+
+test('[TC-16][AC-01.4,FR-04] returning from a hovered ball to the ring centre cancels without picking', async ({ page }) => {
+  await page.mouse.move(650, 450);
+  await page.mouse.down();
+  await expect(page.locator('.radial-choice')).toHaveCount(6);
+  await page.waitForTimeout(250);
+  const boxes = await page.locator('.radial-choice .ball').evaluateAll((balls) =>
+    balls.map((ball) => { const r = ball.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }),
+  );
+  const ring = { x: boxes.reduce((sum, b) => sum + b.x, 0) / boxes.length, y: boxes.reduce((sum, b) => sum + b.y, 0) / boxes.length };
+  await page.mouse.move(boxes[0]!.x, boxes[0]!.y);
+  await expect(page.locator('.radial-hovered')).toHaveCount(1);
+  await page.mouse.move(ring.x, ring.y, { steps: 6 });
+  await expect(page.locator('.radial-hovered')).toHaveCount(0);
+  await expect(page.locator('.radial-choice')).toHaveCount(6);
+  await expect(page.getByTestId('ball-overlay')).toHaveCount(0);
+  await page.mouse.up();
+  expect(await storedEvents(page)).toHaveLength(0);
+});
+
+test('[TC-02][AC-01.2,FR-01] a radial-picked ball dropped outside the calendar splits into small balls, and not when motion is reduced', async ({ page }) => {
+  const pickRadialAndDropOutside = async () => {
+    await page.mouse.move(650, 450);
+    await page.mouse.down();
+    await expect(page.locator('.radial-choice')).toHaveCount(6);
+    await page.waitForTimeout(250);
+    const first = await page.locator('.radial-choice .ball').first().evaluate((ball) => { const r = ball.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    await page.mouse.move(first.x, first.y);
+    await page.mouse.move(first.x, first.y - 80, { steps: 6 });
+    await expect(page.getByTestId('ball-overlay')).toBeVisible();
+    await page.mouse.move(50, 700, { steps: 8 });
+    await page.mouse.up();
+  };
+  await pickRadialAndDropOutside();
+  await expect(page.locator('.split-particle')).toHaveCount(18);
+  await expect(page.locator('.split-particle').first()).toBeVisible();
+  expect(await storedEvents(page)).toHaveLength(0);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForTimeout(700);
+  await pickRadialAndDropOutside();
+  await expect(page.locator('.split-particle').first()).toBeHidden();
 });
 
 test('invalid drops split into small balls and can be retried', async ({ page }) => {

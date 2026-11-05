@@ -23,8 +23,8 @@
 | 000 | [骨架核對：Windows 桌面版啟動與 health 檢查](000-skeleton-windows-check.md) | M | 無 | 可開始 |
 | 001 | [修好拖曳測試輔助函式](001-fix-drag-helper.md) | S | 無 | 可開始 |
 | 002 | [測試 fixture 建構器與重開後一致](002-fixtures-and-reopen.md) | S | 無 | 可開始 |
-| 003 | [名稱不得超過 30 字，常數集中](003-name-limit-30.md) | M | 001 | 等待前置票 |
-| 004 | [面板時間與持續分鐘的新規則](004-panel-time-rules.md) | M | 003 | 等待前置票 |
+| 003 | [名稱不得超過 30 字，常數集中](003-name-limit-30.md) | M | 001 | 完成（TC-03 已執行，見測試計畫） |
+| 004 | [面板時間與持續分鐘的新規則](004-panel-time-rules.md) | M | 003（已完成） | 可開始（TC-04 未執行） |
 | 004a | [TC-02 間歇失敗（Escape 後預覽殘留）](004a-tc02-escape-ghost.md) | S | 無 | 完成（插入任務） |
 | 005 | [拖曳邊緣的 1 分鐘到 7 天上下限](005-resize-bounds.md) | S | 003 | 完成 |
 | 006 | [IPC 錯誤改為代碼與診斷文字](006-ipc-error-codes.md) | M | 無 | 完成 |
@@ -41,13 +41,15 @@
 | 017 | [免安裝 .zip 組裝腳本](017-portable-zip.md) | S | 015、016 | 實作完成（M-02 人工驗收待專案擁有者） |
 | 018 | [離線靜態檢查](018-offline-static-check.md) | S | 無 | 實作完成（僅 NFR-03b 的前端部分；M-06 正式流程未執行；**預跑發現 WebView2 對外連線，NFR-03c 未達成**，後續見 024） |
 | 019 | [排版隨內容與視窗調整](019-adaptive-layout.md) | M | 003、011、012 | 實作完成（自動檢查通過；M-04 人工驗收待專案擁有者） |
-| 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | **Q-05 決定**、`DESIGN.md` 規則修訂 | **未就緒** |
+| 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | 無（Q-05 已決） | 完成（M-03 專案擁有者回報通過，2026-11-05） |
 | 021 | [面板持續時間可用小時＋分鐘或分鐘輸入](021-duration-hours-minutes.md) | S | 004、SRS R-3 修訂 | **未就緒** |
 | 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |
 | 023 | [工具列語言選單](023-toolbar-language-menu.md) | S | 010、011 | 可開始 |
 | 024 | [NFR-03 調查：Rust 與依賴、Runtime 版本、正式 M-06、可控方式](024-offline-investigation.md) | M | 無（018 已完成）；結論由專案擁有者決定 | 可開始（調查票，不改產品行為） |
+| 025 | [radial 選單啟動速度](025-radial-activation-speed.md) | S | **專案擁有者決定**新的長按時間與進場時間 | **未就緒** |
+| 026 | [拖曳選取多個時段](026-multi-slot-drag-select.md) | L（暫估） | **專案擁有者決定**行為與手勢，並修訂 Brief／PRD／SRS | **未就緒** |
 
-**待專案擁有者決定**：Q-05（radial hover 樣式）。
+**待專案擁有者決定**：票 025 的長按與進場時間；票 026 的多時段選取行為（見各票的 Blocked by）。Q-05 已於 2026-11-05 決定。
 
 ## 依賴圖
 

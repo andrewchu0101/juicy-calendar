@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { sortedTemplates, useAppStore } from '../../../stores/appStore';
-import { radialBalls, radialHit, type Point } from '../../calendar/engine';
+import { radialBalls, radialRing, radialStep, type Point, type RadialRing } from '../../calendar/engine';
 
-type Menu = { origin: Point; positions: Point[]; hovered: number };
+type Menu = { origin: Point; positions: Point[]; ring: RadialRing; hovered: number };
 
 type Drag = {
   start: (id: string, point: Point) => void;
@@ -31,7 +31,8 @@ export function useRadialPalette(drag: Drag) {
       origin = { x: event.clientX, y: event.clientY };
       timer = setTimeout(() => {
         if (!origin) return;
-        session = { origin, positions: radialBalls(origin, sortedTemplates(templates).length, window.innerWidth, window.innerHeight), hovered: -1 };
+        const count = sortedTemplates(templates).length;
+        session = { origin, positions: radialBalls(origin, count, window.innerWidth, window.innerHeight), ring: radialRing(origin, count, window.innerWidth, window.innerHeight), hovered: -1 };
         setMenu(session);
       }, 450);
     };
@@ -41,16 +42,17 @@ export function useRadialPalette(drag: Drag) {
       if (draggingId) {
         dragRef.current.move(draggingId, point);
       } else if (session) {
-        session = { ...session, hovered: radialHit(point, session.positions) };
-        if (session.hovered >= 0) {
-          const template = sortedTemplates(templates)[session.hovered];
-          if (template) {
-            draggingId = template.id;
-            session = null;
-            setMenu(null);
-            dragRef.current.start(template.id, point);
-          }
-        } else setMenu(session);
+        const step = radialStep(session.hovered, point, session.positions, session.ring);
+        const picked = step.picked === null ? undefined : sortedTemplates(templates)[step.picked];
+        if (picked) {
+          draggingId = picked.id;
+          session = null;
+          setMenu(null);
+          dragRef.current.start(picked.id, point);
+        } else if (step.hovered !== session.hovered) {
+          session = { ...session, hovered: step.hovered };
+          setMenu(session);
+        }
       } else if (origin && Math.hypot(point.x - origin.x, point.y - origin.y) > 6) clear();
     };
     const up = (event: PointerEvent) => {

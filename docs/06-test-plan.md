@@ -19,7 +19,7 @@
 - R5 多語系與時間格式（中）：漏譯、格式不一致。以單元測試加人工驗證（TC-11、12、M-04、M-05）；對應 FR-09、10、NFR-07。
 - R6 安裝、免安裝、缺少 WebView2（中）：使用者無法打開。只能人工驗證（M-01、02、07）；對應 FR-08、11、NFR-05。
 - R7 舊工作區相容與載入規則變嚴（中）：舊資料被略過。以整合測試驗證（TC-07 的基底即版本 2 樣本）；對應 NFR-04。
-- R8 hover 動畫（低）：體驗問題，且樣式未決（Q-05）。人工（M-03），目前受阻。
+- R8 hover 動畫（低）：體驗問題；Q-05 已於 2026-11-05 決定。選中規則（離開範圍才選中）以 TC-16 自動驗證，視覺與減少動態以人工 M-03。
 
 **不測範圍**（及原因）：效能 NFR-06（沒有基準與需求來源，待量測）；深色模式（G-06 不屬本次）；現有功能（模板編輯、復原與重做、刪除、日與週檢視、縮放、磁吸）沿用既有的 48 項單元測試、29 項 e2e 與 5 項 Rust 測試，不重寫；macOS 與 Linux（NG-06）；檔案鎖在雲端同步資料夾與網路磁碟的行為（未實測，列為已知風險）。
 
@@ -56,6 +56,7 @@
 | TC-12 | R5；AC-03.3、FR-10 時間格式化 | 單元 |
 | TC-13 | FR-08、U-12 啟動前檢查（WebView2 偵測與說明語言） | Rust 單元 |
 | TC-14 | FR-11、AC-03.4 免安裝 .zip 組裝腳本（版面、說明檔、可重複執行、zip 內容、缺少執行檔、預設位置） | Node 單元（vitest，暫存資料夾） |
+| TC-16 | R8；AC-01.4、FR-04 radial 選中規則（hover 不選中、離開範圍選中、相鄰球只換 hover、重疊取最近） | 單元＋e2e |
 | TC-15 | NFR-03b 靜態檢查（CSP 白名單、前端原始碼無網路呼叫；不含 Rust、依賴與 WebView2） | 單元（vitest，讀真實設定與原始碼） |
 
 ### TC-01｜放球、調整、命名（AC-01.1、FR-01、FR-02）
@@ -231,6 +232,19 @@
 
 - 兩種語言的說明文字都含官方下載網址（實作時再確認網址）。
 
+### TC-16｜radial 選中規則（AC-01.4、FR-04，票 020；新增）
+
+層級：單元（引擎純函式 `radialStep`）＋e2e；選這層因為規則是幾何判斷，不需要真實 DOM。
+
+1. 游標進入某顆球的範圍。預期：`{ hovered: 該球, picked: null }`。
+2. 從該球移到範圍外。預期：`{ hovered: -1, picked: 該球 }`。
+3. 兩球範圍重疊時移到較近的球。預期：hover 換成較近者，`picked: null`。
+4. 從未 hover 過就在空白處移動。預期：`{ hovered: -1, picked: null }`。
+5. （e2e）hover 球後沒離開就放開滑鼠。預期：選單關閉、沒有拖曳覆蓋層、事件檔數量 0。
+6. 從 hover 的球退回圓環中央 80 px 的圓形區域（取在兩球之間：79 px 取消、81 px 仍選中）。預期：`{ hovered: -1, picked: null }`，選單保留（單元 TC-16e；e2e）。往圓環外側離開仍選中（單元 TC-16f）。
+
+e2e：hover 後其他球仍在、沒有拖曳覆蓋層；移到圓心方向離開後覆蓋層出現、其他球消失。執行方式：`npx vitest run src/features/calendar/engine/engine.test.ts -t TC-16`、`npm run test:e2e`。
+
 ## M-06 監看流程（NFR-03，票 018 定案；**尚未正式執行**）
 
 工具：Windows 內建的 PowerShell（`Get-NetTCPConnection`、`Get-CimInstance`），不需要安裝任何東西、不需要系統管理員。
@@ -294,7 +308,7 @@ $null = $proc.CloseMainWindow()
 |---|---|---|---|
 | M-01 | 乾淨的 Windows：執行安裝檔 → 啟動 → 建立工作區 → 完成 TC-01 的流程 → 解除安裝。預期：App 被移除，工作區資料夾與其中檔案仍在；README 的步驟可照做。Windows 10 1803 若沒有環境，標「未驗證」 | AC-03.1、FR-08、NFR-05 | 未執行 |
 | M-02 | 免安裝版解壓到任意資料夾 → 執行 → 建立區塊並切換語言 → 把整個資料夾複製到另一處或另一台電腦 → 執行。預期：區塊與語言設定相同；工作區檔案在執行檔旁的 `data` | AC-03.4、FR-11 | 未執行 |
-| M-03 | 在日曆空白處按住左鍵 450 ms 叫出 radial 選單，把游標移到球上，再開啟系統的減少動態效果。預期：效果出現與消失、減少動態時不播放、球身純色 | AC-01.4、FR-04 | 受阻（Q-05 樣式未決） |
+| M-03 | 在日曆空白處按住左鍵 450 ms 叫出 radial 選單，把游標移到球上，再開啟系統的減少動態效果。預期：被 hover 的球邊界果凍起伏、其他球仍在；離開該球範圍才開始拖曳、其他球消失；減少動態時不起伏；球身純色 | AC-01.4、FR-04 | 專案擁有者於 2026-11-05 回報通過（Windows 10 Pro 10.0.19045，Tauri 開發模式 `npm run desktop`；口頭回報，未逐項記錄減少動態效果等細項） |
 | M-04 | 把視窗縮到最小（900×560），名稱用 30 個全形字，兩種語言各一次。預期：文字不溢出、不遮蓋其他元件 | NFR-07 | 未執行（自動輔助 `e2e/layout.spec.ts` 已通過，不取代人工） |
 | M-05 | 把 Windows 的時間格式在 12 與 24 小時之間切換（結束後還原），檢查區塊、右側面板、時間軸。預期：全部一致；若面板的原生時間欄位與其他不一致，記為已知限制 | AC-03.3、FR-10 | 未執行；**需專案擁有者操作，會改系統設定** |
 | M-06 | 使用 App 期間監看它的網路連線。預期：零連線。監看方法與步驟見下方「M-06 監看流程」；預跑結果見「M-06 預跑紀錄」 | NFR-03c（也交叉檢查 03b） | 未執行 |
@@ -305,7 +319,7 @@ $null = $proc.CloseMainWindow()
 - **進入**：SRS 已確認；SAD 與 SDS 經審查；TC 預期值經專案擁有者確認；環境與資料可重建；第一張實作票（修好拖曳輔助函式）完成。
 - **退出**（全部達成才標交付通過，否則不標）：
   1. TC-01～TC-13 實際執行並通過；新規則的 TC 都曾看到「原因正確的紅燈」。
-  2. M-01、M-02、M-04、M-05 有結果；M-03 在 Q-05 決定前維持「受阻」並明記。
+  2. M-01、M-02、M-04、M-05 有結果；M-03 有結果。
   3. 每條 AC、FR、NFR 在下表有 TC、人工流程或明確缺口。
   4. NFR-01：連續重複執行 e2e，通過與失敗的清單必須一致。重複次數 N **沒有依據**；暫定「至少連續 3 次」，首次實測後由專案擁有者定案。
   5. 阻塞缺陷已處理；剩餘風險與負責人已記錄。
@@ -319,7 +333,7 @@ $null = $proc.CloseMainWindow()
 | AC-01.2 | TC-02 | 2026-11-04，3 次皆 Passed（舊版，只驗「沒有事件」）。2026-11-04（票 004a）補強為核對事件檔清單與每檔 SHA-256（兩種拒絕情境），並驗證之後球仍可拖曳；`npx playwright test -g TC-02 --repeat-each=40 --workers=8`：修正前 6/40 失敗（Escape 後 `drop-ghost` 殘留），修正後 40/40、`--repeat-each=120` 120/120 通過；完整 e2e 連續 3 次為 32／31（magnet 測試 1 次失敗）／32 passed | 碎片回饋「短時間內消失」仍未斷言；完整 e2e 3 次清單**不一致**（magnet 間歇失敗，見 LESSONS），NFR-01 尚未達成 |
 | AC-01.3、U-11 | TC-03 | 2026-11-04（票 003），Windows 11、Node 24.22.0、記憶體版 backend／WebKit e2e：單元 `validateTitle.test.ts` 11 項、store `nameLimit.test.ts` 9 項；完整 `npm test` 69 passed／0 failed；`typecheck`、`lint` Passed；`npm run test:e2e` 32 passed（含 3 項新 TC-03 e2e：雙擊命名、面板名稱、模板編輯器）。先紅後綠：單元紅燈 3 失敗（31 字被接受，專案擁有者已確認）；store 紅燈 9 失敗（store 不驗證名稱）；e2e 以暫時把 `NAME_MAX_CHARS` 改成 1000 做變異檢查，3 項皆因「31 字被接受」失敗，之後還原 | 拒絕時的寫入佇列長度 0 以「記憶體 backend 的 `write` 呼叫數為 0」驗證；e2e 的磁碟雜湊為瀏覽器版 localStorage，非真實磁碟。e2e 曾有 1 次 TC-02 間歇失敗（見 LESSONS） |
 | FR-02 邊緣上下限、U-04（拖曳） | TC-05 | 2026-11-04（票 005），Windows 11、Node 24.22.0、TZ America/New_York：單元 `src/features/calendar/engine/resizeBounds.test.ts` 4 項；紅燈 2 失敗／2 通過（1 分鐘下限本來就有，7 天上限缺，實際收到 `2027-03-01T00:00:00Z`、`2026-01-01T00:00:00Z`），綠燈 4/4。e2e `e2e/core.spec.ts` 2 項 TC-05（下緣、上緣拖到 ±14000 px）通過；變異檢查（暫把 `EVENT_MAX_MINUTES` 改成 100000000）兩項紅燈，已還原。完整 `npm test` 73/73；`typecheck`、`lint` Passed | 面板持續分鐘欄**仍無 7 天上限**（屬票 004／TC-04）；桌面版 Tauri 手動拖曳未驗收（改以 e2e）；完整 e2e 3 次為 33／33／34 passed，各有 1 項不相關的間歇失敗 |
-| AC-01.4、FR-04 | M-03 | 未執行 | **缺口**：受阻於 Q-05 |
+| AC-01.4、FR-04 | TC-16、M-03 | TC-16：2026-11-05（票 020），Node 24.22.0、node 版 vitest：`engine.test.ts` 4 項（TC-16a～d）；先紅後綠（16a 紅燈 `radialStep is not a function`；16b 紅燈 `picked: null` 而非 2；16c 紅燈收到 hover 0 而非最近的 1）；e2e `long press picks up a radial ball…` 依新契約更新（hover 後其他球仍在、離開後才拖曳）；新增 e2e `[TC-16]… releasing the mouse while still on a hovered radial ball picks nothing`（特徵化：程式本來就如此，改以變異檢查——暫讓 hover 即選中，兩項 e2e 皆失敗，已還原）。之後新增「退回圓環中心取消」（單元 TC-16e、f；e2e 一項）：16e 紅燈 `picked: 2` 而非 null；變異檢查（暫拿掉中心判斷）單元與 e2e 皆失敗，已還原；e2e 長按選球改為往外離開。中央半徑由 48 px 改為 65 px、再改為固定 80 px（使用者決定，先試用）：TC-16e 改測 79／81 px，先紅後綠。**回歸**：改 CSS 時誤刪 `split-particle`、`split-burst`、`radial-enter` 規則，使用者回報「放到非法空間變小球」消失；已從 git 還原，並新增 e2e（`[TC-02]… a radial-picked ball dropped outside…`）驗證小球可見、減少動態時隱藏（原有 TC-02 只數 DOM 元素，抓不到）。同日完整驗證（見下方最新執行）：`npm test` 344/344、`typecheck`、`lint`、`npm run test:rust` 43/43 Passed；`npm run test:e2e` 連續 3 次皆 60 passed（Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）。M-03：專案擁有者 2026-11-05 回報通過（口頭，未逐項記錄；Tauri 開發模式，非 release 版） | 起伏視覺與減少動態只靠 CSS，無自動斷言（以 M-03 與 e2e 變小球檢查補）；release 版與 NSIS 安裝版未驗證 |
 | FR-03 | TC-04 | 未執行 | |
 | AC-02.1、FR-05 | TC-06 | 2026-11-04，`npx vitest run src/services/persistence/reopen.test.ts` 1/1 Passed；完整 `npm test` 49/49 Passed（Windows 11、Node 24.22.0、記憶體版 backend、假時鐘 2026-11-02 12:00 EST）。先紅後綠：紅燈原因為空 fixture（`This folder has no workspace.json.`） | 重開驗證用記憶體版 backend，**未驗證**真實磁碟寫入；`.juicy.lock` 等屬 TC-09／10 |
 | AC-02.2、FR-06、NFR-04 | TC-07、TC-08 | TC-08 **僅代碼部分**（票 006，2026-11-04，Windows 11、Rust 1.99.1）：Rust `opening_a_folder_without_workspace_json_fails_with_not_a_workspace` 通過，並確認資料夾沒有新增檔案；先紅後綠（紅燈 `left: IoError right: NotAWorkspace`）。**TC-07（票 008，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend、假時鐘）**：`npx vitest run src/services/persistence/loadRules.test.ts` 14/14 Passed（(a)～(f) 加 (g) 模板名稱 31 字，各測「載入」與「編輯好事件後關閉」）；紅燈 3 失敗／11 通過，(c)(d) 為 `evt_bad` 被當成好事件載入、(g) 為模板數 7 而非 6，(a)(b)(e)(f) 本來就通過（特徵化）；綠燈後完整 `npm test` 123/123、`typecheck`、`lint` Passed。通知原因現在可區分（`invalid JSON`、`file name does not match id`、`name is empty or too long`、`event is longer than the maximum length`）。`npm run test:e2e`（票 008 完成後，同日）：第 1 次 33 passed／1 failed（既有的 `overlapping events…`，收到 `Mon 10:30` 而非 `Mon 11:00`，LESSONS 已記載的間歇失敗，與載入規則無關）；該項單獨重跑 1/1 通過；整套重跑 34/34 通過。**未驗證**：真實磁碟（Rust backend）載入、桌面版手動開啟舊工作區。**TC-08 前端部分與通知代碼（票 007，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend）**：`openErrors.test.ts`（TC-08 三情境，每個都核對資料夾每檔 SHA-256 不變；`FILE_SKIPPED`、`SETTINGS_RESET`）、`workspaceSession.test.ts`（`WORKSPACE_LOCKED`、`WORKSPACE_TOO_NEW` 帶版本號、`OPEN_FAILED` 診斷只放 `detail`）、`saveError.test.ts`、`notices.test.ts`（英文對照表）。完整 `npm test` 109/109、`typecheck`、`lint` Passed；`npm run test:e2e` 單次 34/34 Passed（含 magnet 測試，本次未失敗）。先紅後綠：`WORKSPACE_TOO_NEW`、`FILE_SKIPPED`、`WORKSPACE_LOCKED`、`saveError`、對照表皆見原因正確的紅燈（收到舊字串或缺少 `code`／函式）；`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`、`SETTINGS_RESET`、`WORKSPACE_TOO_NEW` 版本號、`OPEN_FAILED` 診斷因與前一步同一次改動一併完成，改以變異檢查（暫改程式使其出錯，測試因原因正確而失敗，之後還原並確認檔案相同） | TC-08 以記憶體版 backend 驗證，**未驗證**真實磁碟與原生對話框（`workspace_select` 只測抽出的 `choose_root`）；NFR-01 的「連續 3 次 e2e」本票只跑 1 次。**偏差**：①`saveError` 畫面不再附加診斷句（原本會顯示 `String(error)`，等於洩漏 `detail`），因 `writeQueue` 的 `onResult` 簽章有既有測試而未改；②`OPEN_FAILED` 畫面為 `Could not open the workspace.`，不再附加診斷句；③`WorkspaceOpenError.message` 仍是英文句子（日誌與既有 `/newer/` 斷言用，非畫面文字）；④`BackendError.message` 改讀對照表，句子不變 |

@@ -45,15 +45,42 @@ export function magnetMinutes(minutes: number, pixelsPerMinute: number, enabled:
   return enabled && Math.abs(nearest - minutes) * pixelsPerMinute <= 8 ? nearest : minutes;
 }
 
-/** A bounded radial palette, including hit targets independent of its entrance animation. */
-export function radialBalls(origin: Point, count: number, width: number, height: number) {
+export type RadialRing = { center: Point; radius: number };
+
+export function radialRing(origin: Point, count: number, width: number, height: number): RadialRing {
   const radius = Math.max(76, count * 50 / (2 * Math.PI));
   const center = { x: Math.max(radius + 28, Math.min(origin.x, width - radius - 28)), y: Math.max(radius + 28, Math.min(origin.y, height - radius - 28)) };
+  return { center, radius };
+}
+
+/** A bounded radial palette, including hit targets independent of its entrance animation. */
+export function radialBalls(origin: Point, count: number, width: number, height: number) {
+  const { center, radius } = radialRing(origin, count, width, height);
   return Array.from({ length: count }, (_, i) => ({ x: center.x + Math.cos(i * Math.PI * 2 / count - Math.PI / 2) * radius, y: center.y + Math.sin(i * Math.PI * 2 / count - Math.PI / 2) * radius }));
 }
 
+export const RADIAL_HIT_RADIUS = 28;
+/** Pointer inside this circle around the ring centre cancels the hover. Balls win where the two overlap. */
+export const RADIAL_CENTER_RADIUS = 80;
+
 export function radialHit(point: Point, balls: Point[]): number {
-  return balls.findIndex(ball => Math.hypot(point.x - ball.x, point.y - ball.y) <= 28);
+  return balls.findIndex(ball => Math.hypot(point.x - ball.x, point.y - ball.y) <= RADIAL_HIT_RADIUS);
+}
+
+export type RadialStep = { hovered: number; picked: number | null };
+
+/** Hovering only highlights a ball; leaving its fixed hit circle picks it, unless the pointer goes back to the ring centre (a ball's hit circle still wins). */
+export function radialStep(previousHovered: number, point: Point, balls: Point[], ring: RadialRing): RadialStep {
+  let hit = -1;
+  let nearest = Infinity;
+  balls.forEach((ball, index) => {
+    const distance = Math.hypot(point.x - ball.x, point.y - ball.y);
+    if (distance <= RADIAL_HIT_RADIUS && distance < nearest) { hit = index; nearest = distance; }
+  });
+  if (hit >= 0) return { hovered: hit, picked: null };
+  // Back inside the ring's inner circle: cancel the hover; the menu stays and nothing is picked.
+  if (Math.hypot(point.x - ring.center.x, point.y - ring.center.y) <= RADIAL_CENTER_RADIUS) return { hovered: -1, picked: null };
+  return { hovered: -1, picked: previousHovered >= 0 ? previousHovered : null };
 }
 
 export function splitParticles() {
