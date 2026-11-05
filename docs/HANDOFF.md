@@ -4,13 +4,14 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-05（票 020 完成：M-03 由專案擁有者回報通過；新增票 025、026；已 commit，未 push） |
-| 目前目標 | 依 `issues/` 的工作票逐張實作。票 020（radial hover）完成。下一張預計 021，但它被 004 擋住（見「下一步」）；025、026 為新增的未就緒票（等專案擁有者決定）。 |
+| 更新時間 | 2026-11-05（票 022 完成：e2e 間歇失敗已修；已 commit，未 push） |
+| 目前目標 | 依 `issues/` 的工作票逐張實作。票 022（e2e 間歇失敗）完成，NFR-01「連續 3 次清單相同」達成（N=3 仍暫定）。票 020（radial hover）先前完成。下一張預計 021，但它被 004 擋住（見「下一步」）；025、026 為新增的未就緒票（等專案擁有者決定）。 |
 | 工作目錄 | 這台電腦（第二台，無 D 槽）：`C:/Users/student/Project/juicy-calendar`；另一台為 `D:/Project/Fun/juicy-calendar/juicy-calendar` |
 | 分支／HEAD | `main` ／ 票 020 的 commit（`git log -1` 查雜湊）；上一個已知 HEAD 為 `7e9a6be`（票 019）。本輪**未 push**，以 `git status` 核對，不要只信這一行 |
 | 工作樹 | commit 後應為乾淨（以 `git status` 核對）。原 demo 在 `../juicy-calendar-oneshotted-demo`，未動 |
 
 ### 已完成
+- 票 022 e2e 間歇失敗（2026-11-05，已 commit，未 push）：原因是 `dragBall` 在預覽還停在中途點時放開（測試輔助函式競態，產品無誤）。修法在 `e2e/core.spec.ts`：放開前輪詢 `drop-ghost` 的 `y` 與目標差 ≤ `MAGNET_PX`（8），最後一段改單步移動；新增紅燈測試 `… slow drag …`（注入腳本延後 React 提交，修正前約 20～30% 紅，修正後 30/30；容差放寬突變 7/30 轉紅）。`--repeat-each=40 --workers=8`：overlapping 2／0／3→0／0、magnet 3／4→0／0、weekly and daily 0／0→0／0；完整 e2e 連續 3 次皆 63 passed、清單相同；`typecheck`、`lint` Passed、`npm test` 346 passed。已勾票 001「3 次一致」、票 004a 最後一項。**未驗證**：weekly and daily 基線未重現（歸為同因的推定）；macOS／Tauri 桌面版未跑；票 013 的 `moving stays correct after scrolling the calendar` 單次失敗仍未歸類（LESSONS）。細節見 `issues/022-e2e-intermittent-failures.md` 末段與 LESSONS。
 - 複製 template 骨架，併入 demo 原始碼（排除 `.git`、`node_modules`、`dist`、`real-test`、`src-tauri/target`）。
 - 新增 `AGENTS.md`（safe 範本 + demo 的 8 條專案規則）；`CLAUDE.md` 加 `@AGENTS.md`；`.gitignore` 合併 template 的秘密規則。
 - 安裝 Rust 1.99.1 到 `D:\DevTools\rust`（下載在 `D:\DevCache\rust`，SHA-256 已核對；只用程序層級環境變數，未改 PATH；C 槽無 `.cargo`/`.rustup`）。

@@ -58,18 +58,31 @@ async function point(page: Page, column: number, hour: number, minute = 0) {
   };
 }
 
+/** The magnet pulls toward a half-hour line only within this many screen pixels (engine/pointer.ts). */
+const MAGNET_PX = 8;
+
 async function dragBall(page: Page, index: number, target: { x: number; y: number }) {
   const ball = await box(page.getByTestId('template-ball').nth(index));
   await page.mouse.move(ball.x + ball.width / 2, ball.y + ball.height / 2);
   await page.mouse.down();
   await page.mouse.move(target.x, target.y - 30, { steps: 6 });
-  await page.mouse.move(target.x, target.y, { steps: 3 });
+  await page.mouse.move(target.x, target.y);
   // Release only after the drag state is committed (NFR-01). Releasing earlier makes onDragEnd see no active item.
   await expect(page.locator('.ball-dragging-source')).toHaveCount(1);
   const grid = await box(page.getByTestId('calendar-columns'));
   const inside =
     target.x >= grid.x && target.x <= grid.x + grid.width && target.y >= grid.y && target.y <= grid.y + grid.height;
-  if (inside) await expect(page.getByTestId('drop-ghost')).toBeVisible();
+  if (inside) {
+    // "Preview visible" is not enough: the first preview can show a mid-path position while the final moves are
+    // still uncommitted (ticket 022). Wait until it sits at the target, within the 8 px magnet pull. The mid-path
+    // point is 30 px away, so it can never be mistaken for the target.
+    await expect
+      .poll(async () => {
+        const ghost = await page.getByTestId('drop-ghost').first().boundingBox();
+        return ghost ? Math.abs(ghost.y - target.y) : Infinity;
+      })
+      .toBeLessThanOrEqual(MAGNET_PX);
+  }
   await page.mouse.up();
 }
 
@@ -231,6 +244,31 @@ test('overlapping events are allowed and keep their times', async ({ page }) => 
   expect(a.x + a.width).toBeLessThanOrEqual(b.x + 1);
   const times = (await storedEvents(page)).map((event) => localTime(event.startAt)).sort();
   expect(times).toEqual(['Mon 10:00', 'Mon 11:00']);
+});
+
+// Ticket 022. A slow machine makes the drag state lag behind the mouse; dragBall must still release at the target.
+test('[TC-01][AC-01.1,FR-01,NFR-01] a ball released after a slow drag still lands at the exact target time', async ({ page }) => {
+  await page.addInitScript(() => {
+    // Reproduces a loaded machine: React commits nothing until the 6th move of the drag, so the first preview shows a
+    // mid-path position, and later commits are held back. Mouse input is unaffected. React schedules via MessagePort.
+    let moves = 0;
+    document.addEventListener('pointerdown', () => (moves = 0), true);
+    document.addEventListener('pointermove', () => moves++, true);
+    const post = MessagePort.prototype.postMessage;
+    MessagePort.prototype.postMessage = function (this: MessagePort, ...args: Parameters<typeof post>) {
+      const run = () => post.apply(this, args);
+      const wait = () => {
+        if (document.querySelector('[data-testid="drop-ghost"]')) setTimeout(run, 1000);
+        else if (moves > 0 && moves < 6) setTimeout(wait, 1);
+        else run();
+      };
+      wait();
+    } as typeof post;
+  });
+  await page.reload();
+  await expect(page.getByTestId('template-ball')).toHaveCount(6);
+  await createAt(page, 0, 10);
+  expect(localTime((await onlyEvent(page)).startAt)).toBe('Mon 10:00');
 });
 
 test('cross-midnight events render whole on overnight and split on 24h timelines', async ({ page }) => {
