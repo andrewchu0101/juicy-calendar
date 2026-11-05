@@ -11,7 +11,10 @@ export function RadialPalette({ drag }: { drag: ReturnType<typeof useTemplateDra
       {templates.map((template, index) => {
         const point = menu.positions[index]!;
         return <div key={template.id} className={`radial-choice ${menu.hovered === index ? 'radial-hovered' : ''}`} style={{ left: point.x, top: point.y, '--from-x': `${menu.origin.x - point.x}px`, '--from-y': `${menu.origin.y - point.y}px` } as CSSProperties}>
-          <div className="ball size-11" style={{ '--ball-color': template.color } as CSSProperties} />
+          <div className="radial-ball">
+            <div className="ball size-11" style={{ '--ball-color': template.color } as CSSProperties} />
+            {menu.hovered === index && <i className="radial-wave" aria-hidden="true" style={{ '--ball-color': template.color } as CSSProperties} />}
+          </div>
           <span>{template.name}</span>
         </div>;
       })}

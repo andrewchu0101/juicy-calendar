@@ -41,16 +41,19 @@ export function useRadialPalette(drag: Drag) {
       if (draggingId) {
         dragRef.current.move(draggingId, point);
       } else if (session) {
-        session = { ...session, hovered: radialHit(point, session.positions) };
-        if (session.hovered >= 0) {
-          const template = sortedTemplates(templates)[session.hovered];
-          if (template) {
-            draggingId = template.id;
-            session = null;
-            setMenu(null);
-            dragRef.current.start(template.id, point);
-          }
-        } else setMenu(session);
+        const previous = session.hovered;
+        const hovered = radialHit(point, session.positions);
+        const template = previous >= 0 && hovered < 0 ? sortedTemplates(templates)[previous] : undefined;
+        if (template) {
+          // Leaving the hovered ball while the button is held picks it up.
+          draggingId = template.id;
+          session = null;
+          setMenu(null);
+          dragRef.current.start(template.id, point);
+        } else if (hovered !== previous) {
+          session = { ...session, hovered };
+          setMenu(session);
+        }
       } else if (origin && Math.hypot(point.x - origin.x, point.y - origin.y) > 6) clear();
     };
     const up = (event: PointerEvent) => {

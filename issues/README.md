@@ -41,13 +41,13 @@
 | 017 | [免安裝 .zip 組裝腳本](017-portable-zip.md) | S | 015、016 | 實作完成（M-02 人工驗收待專案擁有者） |
 | 018 | [離線靜態檢查](018-offline-static-check.md) | S | 無 | 實作完成（僅 NFR-03b 的前端部分；M-06 正式流程未執行；**預跑發現 WebView2 對外連線，NFR-03c 未達成**，後續見 024） |
 | 019 | [排版隨內容與視窗調整](019-adaptive-layout.md) | M | 003、011、012 | 實作完成（自動檢查通過；M-04 人工驗收待專案擁有者） |
-| 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | **Q-05 決定**、`DESIGN.md` 規則修訂 | **未就緒** |
+| 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | 無（Q-05 已決 2026-11-05） | **已實作，M-03 待人工** |
 | 021 | [面板持續時間可用小時＋分鐘或分鐘輸入](021-duration-hours-minutes.md) | S | 004、SRS R-3 修訂 | **未就緒** |
 | 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |
 | 023 | [工具列語言選單](023-toolbar-language-menu.md) | S | 010、011 | 可開始 |
 | 024 | [NFR-03 調查：Rust 與依賴、Runtime 版本、正式 M-06、可控方式](024-offline-investigation.md) | M | 無（018 已完成）；結論由專案擁有者決定 | 可開始（調查票，不改產品行為） |
 
-**待專案擁有者決定**：Q-05（radial hover 樣式）。
+Q-05 已決（2026-11-05）。
 
 ## 依賴圖
 

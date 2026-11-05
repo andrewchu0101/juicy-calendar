@@ -473,6 +473,8 @@ test('long press picks up a radial ball and drops in one held gesture', async ({
   await page.waitForTimeout(250);
   const choice = await box(page.locator('.radial-choice .ball').first());
   await page.mouse.move(choice.x + 22, choice.y + 22);
+  // 契約變更（票 020）：停在球上只是 hover；移出球範圍才撿起。
+  await page.mouse.move(choice.x + 22, choice.y + 110, { steps: 4 });
   await expect(page.getByTestId('ball-overlay')).toBeVisible();
   await expect(page.locator('.radial-choice')).toHaveCount(0);
   const target = await point(page, 0, 10);
@@ -481,6 +483,63 @@ test('long press picks up a radial ball and drops in one held gesture', async ({
   await page.mouse.up();
   expect((await onlyEvent(page)).templateId).toBe('coding');
   await expect(page.getByTestId('ball-overlay')).toHaveCount(0);
+});
+
+/** Opens the radial menu with a held left button and returns the viewport centre of its n-th ball. */
+async function openRadial(page: Page, index = 0) {
+  await page.mouse.move(650, 450);
+  await page.mouse.down();
+  await expect(page.locator('.radial-choice')).toHaveCount(6);
+  await page.waitForTimeout(250); // entrance animation is 220 ms
+  const rect = await box(page.locator('.radial-choice .ball').nth(index));
+  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+}
+
+test('[TC-16][AC-01.4,FR-04] hovering a radial ball keeps the menu open and marks only that ball', async ({ page }) => {
+  const ball = await openRadial(page, 0);
+  await page.mouse.move(ball.x, ball.y);
+  await page.waitForTimeout(400); // longer than any instant pick-up
+  await expect(page.getByTestId('ball-overlay')).toHaveCount(0);
+  await expect(page.locator('.radial-choice')).toHaveCount(6);
+  await expect(page.locator('.radial-hovered')).toHaveCount(1);
+  await expect(page.locator('.radial-choice').nth(0)).toHaveClass(/radial-hovered/);
+  await expect(page.locator('.radial-choice .radial-wave')).toHaveCount(1);
+  await expect(page.locator('.radial-choice').nth(0).locator('.radial-wave')).toHaveCount(1);
+});
+
+test('[TC-16][AC-01.4,FR-04] the wave stops when the cursor leaves the ball, and the held ball is picked up', async ({ page }) => {
+  const first = await openRadial(page, 0);
+  await page.mouse.move(first.x, first.y);
+  await expect(page.locator('.radial-choice').nth(0).locator('.radial-wave')).toHaveCount(1);
+  await expect(page.locator('.radial-choice .radial-wave')).toHaveCount(1);
+  await page.mouse.move(650, 650, { steps: 6 });
+  await expect(page.getByTestId('ball-overlay')).toBeVisible();
+  await expect(page.locator('.radial-choice .radial-wave')).toHaveCount(0);
+  await page.mouse.up();
+});
+
+test('[TC-16][AC-01.4,FR-04,G-07] the wave runs only with motion allowed, in the ball colour, leaving the ball flat and its box unchanged', async ({ page }) => {
+  const ball = await openRadial(page, 0);
+  const target = page.locator('.radial-choice').nth(0).locator('.ball');
+  const before = await box(target);
+  await page.mouse.move(ball.x, ball.y);
+  const wave = page.locator('.radial-choice').nth(0).locator('.radial-wave');
+  await expect(wave).toHaveCount(1);
+  const info = await wave.evaluate((el) => {
+    const s = getComputedStyle(el);
+    const b = getComputedStyle(el.parentElement!.querySelector('.ball')!);
+    return { animation: s.animationName, border: s.borderTopColor, ball: b.backgroundColor, image: b.backgroundImage, shadow: b.boxShadow };
+  });
+  expect(info.animation).not.toBe('none');
+  expect(info.border).toBe(info.ball);
+  expect(info.image).toBe('none');
+  expect(info.shadow).not.toContain('inset');
+  expect(await box(target)).toEqual(before);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await wave.evaluate((el) => getComputedStyle(el).display)).toBe('none');
+  expect(await wave.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+  await page.mouse.up();
 });
 
 test('invalid drops split into small balls and can be retried', async ({ page }) => {
