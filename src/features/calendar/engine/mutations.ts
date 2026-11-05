@@ -1,5 +1,3 @@
-import { addDays } from 'date-fns';
-
 import { EVENT_MAX_MINUTES, EVENT_MIN_MINUTES, NAME_MAX_CHARS, NEW_EVENT_MINUTES } from './limits';
 
 export type TimedEvent = { startAt: string; endAt: string };
@@ -69,7 +67,12 @@ export function withDate(event: TimedEvent, date: string): EventTimes | null {
     current.getMinutes(),
     current.getSeconds(),
   );
-  return Number.isNaN(start.getTime()) ? null : shiftTo(event, start);
+  // 不存在的日期（2026-02-30）會被 Date 進位到下個月；往返比對不一致就拒絕（SRS R-3）。
+  const exists =
+    start.getFullYear() === Number(match[1]) &&
+    start.getMonth() === Number(match[2]) - 1 &&
+    start.getDate() === Number(match[3]);
+  return exists ? shiftTo(event, start) : null;
 }
 
 /** Inspector: changes the start time on the same date, keeping the duration. */
@@ -79,23 +82,21 @@ export function withStartTime(event: TimedEvent, time: string): EventTimes | nul
 }
 
 /**
- * Inspector: changes the end time, keeping the start. Keeps the end's date when that is still
- * after the start; otherwise uses the next occurrence of that time, which may cross midnight.
+ * Inspector: changes the end time on the date the event currently ends on, keeping the start.
+ * The result must be strictly after the start and no longer than EVENT_MAX_MINUTES; otherwise
+ * it is rejected. It is never read as the next day (SRS R-3, PRD Q-04).
  */
 export function withEndTime(event: TimedEvent, time: string): EventTimes | null {
   const start = new Date(event.startAt);
-  const sameEndDate = atLocal(new Date(event.endAt), time);
-  if (!sameEndDate) return null;
-  if (sameEndDate > start) return times(start, sameEndDate);
-  const sameStartDate = atLocal(start, time);
-  if (sameStartDate && sameStartDate > start) return times(start, sameStartDate);
-  const nextDay = atLocal(addDays(start, 1), time);
-  return nextDay && times(start, nextDay);
+  const end = atLocal(new Date(event.endAt), time);
+  if (!end) return null;
+  const minutes = (end.getTime() - start.getTime()) / MS_PER_MINUTE;
+  return minutes >= EVENT_MIN_MINUTES && minutes <= EVENT_MAX_MINUTES ? times(start, end) : null;
 }
 
-/** Inspector: changes the duration, keeping the start. */
+/** Inspector: changes the duration, keeping the start. The range is judged on the input, then it is rounded. */
 export function withDuration(event: TimedEvent, minutes: number): EventTimes | null {
-  if (!Number.isFinite(minutes) || minutes < EVENT_MIN_MINUTES) return null;
+  if (!Number.isFinite(minutes) || minutes < EVENT_MIN_MINUTES || minutes > EVENT_MAX_MINUTES) return null;
   const start = new Date(event.startAt);
   return times(start, new Date(start.getTime() + Math.round(minutes) * MS_PER_MINUTE));
 }

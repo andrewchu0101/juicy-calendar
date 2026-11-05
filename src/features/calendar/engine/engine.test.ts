@@ -139,7 +139,8 @@ describe('mutations', () => {
     expect(durationMinutes(withDate(base, '2026-11-20')!)).toBe(120);
     expect(new Date(withStartTime(base, '08:15')!.endAt)).toEqual(at(2, 10, 15));
     expect(new Date(withEndTime(base, '11:00')!.endAt)).toEqual(at(2, 11));
-    expect(new Date(withEndTime(base, '01:00')!.endAt)).toEqual(at(3, 1));
+    // 票 004：早於開始的結束時間不再當成隔天（SRS R-3、PRD Q-04；舊期待為 at(3, 1)）
+    expect(withEndTime(base, '01:00')).toBeNull();
     expect(durationMinutes(withDuration(base, 45)!)).toBe(45);
   });
 

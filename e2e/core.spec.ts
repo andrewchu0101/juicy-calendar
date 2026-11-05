@@ -124,6 +124,12 @@ test('[TC-02][AC-01.2,FR-01,NFR-01] dropping outside the calendar or pressing Es
 
   await dragBall(page, 0, { x: 50, y: 700 });
   expect(await eventFileHashes(page)).toEqual(before);
+  // 碎片回饋（PRD AC-01.2、測試計畫 TC-02）：放開後出現，並在動畫結束（560 ms）後消失，不會停在畫面上。
+  const particles = page.locator('.split-particle');
+  await expect(particles).toHaveCount(18);
+  await expect
+    .poll(() => particles.evaluateAll((all) => Math.max(...all.map((el) => Number(getComputedStyle(el).opacity)))), { timeout: 3000 })
+    .toBe(0);
 
   const ball = await box(page.getByTestId('template-ball').first());
   const target = await point(page, 1, 10);
@@ -691,6 +697,34 @@ test('[TC-03][AC-01.3,FR-02,R-3] 右側面板的名稱：同一條規則，被�
   await input.press('Enter');
   await expect(input).toHaveValue('寫 PRD');
   await expect(page.getByTestId('event-title')).toHaveText('寫 PRD');
+});
+
+test('[TC-04][FR-03,Q-04,R-3] 右側面板的結束時間與持續分鐘：不合法的輸入被拒絕，欄位還原，事件檔不變', async ({ page }) => {
+  await createAt(page, 0, 10); // 10:00–12:00
+  await page.getByTestId('event-block').click();
+  const before = await eventFileHashes(page);
+
+  const end = page.getByTestId('inspector-end');
+  for (const bad of ['09:00', '10:00']) {
+    await end.fill(bad);
+    await end.press('Enter');
+    await expect(end).toHaveValue('12:00');
+    await expect(page.getByTestId('event-time')).toHaveText('10:00–12:00');
+    expect(await eventFileHashes(page)).toEqual(before);
+  }
+
+  const duration = page.getByTestId('inspector-duration');
+  for (const bad of ['0', '10081', '1e12']) {
+    await duration.fill(bad);
+    await duration.press('Enter');
+    await expect(duration).toHaveValue('120');
+    expect(await eventFileHashes(page)).toEqual(before);
+  }
+
+  await end.fill('11:00');
+  await end.press('Enter');
+  await expect(duration).toHaveValue('60');
+  await expect(page.getByTestId('event-time')).toHaveText('10:00–11:00');
 });
 
 test('[TC-03][U-11,FR-02] 模板編輯器的名稱：31 字不能儲存，30 字可以', async ({ page }) => {
