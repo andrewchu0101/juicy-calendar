@@ -95,3 +95,65 @@ test.describe('繁體中文 (system language zh-TW)', () => {
     await expect(page.getByTestId('range-label')).toHaveText('Nov 2 – 8, 2026');
   });
 });
+
+// 票 023｜FR-09、SRS R-7、SDS UI-03：日曆工具列的語言選單，與歡迎畫面同一個元件。
+test.describe('toolbar language menu (ticket 023)', () => {
+  test.use({ locale: 'en-US' });
+
+  test('[TC-11][FR-09,UI-03] the toolbar has a language menu named in both languages', async ({ page }) => {
+    await openWithEvents(page, 'Create workspace');
+    const menu = page.getByTestId('calendar-toolbar').getByLabel('Language');
+    await expect(menu).toBeVisible();
+    await expect(menu.locator('option')).toHaveText(['繁體中文', 'English']);
+    await menu.selectOption({ label: '繁體中文' });
+    const zhMenu = page.getByTestId('calendar-toolbar').getByLabel('語言');
+    await expect(zhMenu).toBeVisible();
+    await expect(zhMenu.locator('option')).toHaveText(['繁體中文', 'English']);
+  });
+
+  test('[TC-11][FR-09,R-7] switching language in the calendar changes toolbar, grid and title at once, without a reload', async ({ page }) => {
+    await openWithEvents(page, 'Create workspace');
+    await page.evaluate(() => ((window as unknown as { __sameDocument: boolean }).__sameDocument = true));
+    await expect(page.getByRole('button', { name: 'Today' })).toBeVisible();
+    await expect(page.getByTestId('range-label')).toHaveText('Nov 2 – 8, 2026');
+    await expect(page.getByTestId('day-header').first()).toContainText('Mon');
+
+    await page.getByTestId('calendar-toolbar').getByLabel('Language').selectOption({ label: '繁體中文' });
+    await expect(page.getByRole('button', { name: '今天' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Today' })).toHaveCount(0);
+    await expect(page.getByTestId('range-label')).toHaveText('2026年11月2日 – 8日');
+    await expect(page.getByTestId('day-header').first()).toContainText('週一');
+    expect(await page.evaluate(() => (window as unknown as { __sameDocument?: boolean }).__sameDocument)).toBe(true);
+
+    await page.getByTestId('calendar-toolbar').getByLabel('語言').selectOption({ label: 'English' });
+    await expect(page.getByRole('button', { name: 'Today' })).toBeVisible();
+    await expect(page.getByTestId('range-label')).toHaveText('Nov 2 – 8, 2026');
+  });
+
+  test('[TC-11][FR-09] the language chosen in the calendar survives a reload', async ({ page }) => {
+    await openWithEvents(page, 'Create workspace');
+    await page.getByTestId('calendar-toolbar').getByLabel('Language').selectOption({ label: '繁體中文' });
+    await expect(page.getByRole('button', { name: '今天' })).toBeVisible();
+    await page.waitForTimeout(250);
+    await page.reload();
+    await expect(page.getByRole('button', { name: '今天' })).toBeVisible();
+    await expect(page.getByTestId('calendar-toolbar').getByLabel('語言')).toHaveValue('zh-TW');
+  });
+
+  test('[TC-11][FR-09,AGENTS-11] a failed save shows the translated code text, never a diagnostic', async ({ page }) => {
+    await openWithEvents(page, 'Create workspace');
+    await page.evaluate(() => {
+      const original = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key: string, value: string) {
+        if (key === 'juicy-calendar:app-settings') throw new Error('SECRET-DIAGNOSTIC C:/Users/x/app-settings.json');
+        return original.call(this, key, value);
+      };
+    });
+    await page.getByTestId('calendar-toolbar').getByLabel('Language').selectOption({ label: '繁體中文' });
+    const alert = page.getByTestId('calendar-toolbar').getByRole('alert');
+    await expect(alert).toHaveText('無法儲存語言設定。');
+    await expect(page.locator('body')).not.toContainText('SECRET-DIAGNOSTIC');
+    // 儲存失敗時介面仍切換（既有行為：state 先更新，存檔失敗只回報代碼）
+    await expect(page.getByRole('button', { name: '今天' })).toBeVisible();
+  });
+});

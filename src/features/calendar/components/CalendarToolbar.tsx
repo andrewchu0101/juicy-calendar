@@ -1,3 +1,4 @@
+import { LanguageMenu } from '../../../components/LanguageMenu';
 import { useAppStore } from '../../../stores/appStore';
 import { useI18nStore } from '../../../i18n/i18n';
 import { formatTime } from '../../../i18n/formatTime';
@@ -24,7 +25,7 @@ export function CalendarToolbar() {
   const goToday = useAppStore((state) => state.goToday);
 
   return (
-    <header className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5 pl-1">
+    <header data-testid="calendar-toolbar" className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5 pl-1">
       <div className="flex items-center gap-0.5">
         <button className={iconButton} aria-label={t('toolbar.previous')} onClick={() => navigate(-1)}>
           ‹
@@ -102,6 +103,8 @@ export function CalendarToolbar() {
             </button>
           ))}
         </div>
+
+        <LanguageMenu className="!flex-row !items-center" />
       </div>
     </header>
   );
