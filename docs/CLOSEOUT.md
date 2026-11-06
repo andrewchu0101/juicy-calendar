@@ -4,7 +4,41 @@
 
 **環境與證據**：Windows 11 組建 10.0.26200；`npm test` 443/443、`npm run test:e2e` 94 passed（2026-11-07 票 027 後更新）、`npm run test:rust` 43 passed（上一輪）、`typecheck`／`lint` 通過。桌面版逐項證據見 `docs/evidence/desktop-verification-2026-11-07.md`。這些是自動化輔助證據，**不等於你親手驗收**。
 
-**要親手測的 exe（票 027 之後的新版）**：`D:/DevCache/m10/app/juicy-calendar.exe`（2026-11-07 01:17 編出，免安裝模式，SHA-256 與 `src-tauri/target/release/juicy-calendar.exe` 相同，旁邊 `data` 有 3 個原始活動：週一 10:00、週二 10:00、週一 16:00）。舊版（00:04，票 027 之前）在 `D:/DevCache/m09/app/`。測完請正常關閉視窗，不要強制結束。
+**本機要親手測的 exe（票 027 之後的新版，與預發行 `v0.2.0-beta.1` 同一份原始碼；另一台電腦請改用上面的 Release）**：`D:/DevCache/m10/app/juicy-calendar.exe`（2026-11-07 01:17 編出，免安裝模式，SHA-256 與 `src-tauri/target/release/juicy-calendar.exe` 相同，旁邊 `data` 有 3 個原始活動：週一 10:00、週二 10:00、週一 16:00）。舊版（00:04，票 027 之前）在 `D:/DevCache/m09/app/`。測完請正常關閉視窗，不要強制結束。
+
+---
+
+## 另一台 Windows 電腦驗收（預發行 `v0.2.0-beta.1`）
+
+- **Release**：https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.1（標為 Pre-release）。建置的 commit：`d0775c89325d7da62a218860210266c28fc70af0`，tag 指向同一個 commit。
+- **要下載哪個**：
+  - 驗收「免安裝」：`juicy-calendar_0.2.0-beta.1_x64-portable.zip`。
+  - 驗收「乾淨 Windows 安裝」：`juicy-calendar_0.2.0-beta.1_x64-setup.exe`。
+  - 兩個都附 `SHA256SUMS.txt`，建議兩個都下載。
+- **校驗**（PowerShell，在下載資料夾）：`Get-FileHash -Algorithm SHA256 .\juicy-calendar_0.2.0-beta.1_x64-setup.exe, .\juicy-calendar_0.2.0-beta.1_x64-portable.zip`，值要和 `SHA256SUMS.txt` 一致。
+- **安裝版是否會被 SmartScreen 擋**：會（沒有簽章）。選「其他資訊」→「仍要執行」。
+
+### 免安裝版（ZIP）怎麼驗
+1. 在檔案總管對 ZIP 按右鍵「全部解壓縮」，確認資料夾裡有 `juicy-calendar.exe`、`portable.flag`、空的 `data` 資料夾、`README.txt`；順便審閱 `README.txt` 的文字。
+2. 雙擊 `juicy-calendar.exe`，直接進入日曆（不會要你選資料夾）。
+3. **建立區塊**：拖一顆球到日曆，得到 2 小時區塊；雙擊命名。
+4. **編輯面板**：點一個區塊，右側出現面板，改「小時＋分鐘」持續時間（試 `1`＋`90` 分、`0`＋`0` 要被拒絕並還原）。
+5. **面板排版**：把視窗慢慢縮小再拉寬。預期：寬時面板在右側、不遮週六週日；窄到約 1050 以下變成左上角圓點、選取不變；拉寬後自動回來。
+6. **多選**：在空白處拖框選兩個區塊，工具列出現「已選 2 個事件　刪除」；整批拖到別天、按 `Esc` 取消；點「刪除」，再按 `Ctrl+Z` 一次復原。
+7. **語言**：用工具列右側的語言選單切換繁體中文與 English，畫面立即改變。
+8. 關閉視窗再開一次，區塊與語言都還在；把整個資料夾複製到另一處再開，結果相同。
+
+### 安裝版怎麼驗
+1. 執行安裝檔（電腦沒有 WebView2 時，安裝程式會連網下載微軟官方版本）。記錄 SmartScreen 畫面與安裝位置。
+2. 從開始功能表啟動，在歡迎畫面按「建立工作區」，用資料夾對話框選一個空資料夾（不要放在 OneDrive 等雲端同步資料夾）。
+3. 做一遍上面「免安裝版」的第 3～7 項，關閉再開，區塊還在。
+4. 在「設定 → 應用程式」解除安裝；確認你的工作區資料夾與檔案仍在。
+
+### 非 100% 縮放怎麼驗
+在 Windows「設定 → 系統 → 螢幕」把縮放改成 125% 或 150%，重新開啟 App，再做一遍：面板排版（縮小再拉寬）、多選與「已選 N 個事件　刪除」、日曆週日標題是否被遮住、文字是否被截斷。
+
+### 回報什麼
+每項寫「通過」或「不通過＋畫面或現象」；不通過的我會記到下面「D. 新發現」。
 
 ---
 
@@ -111,3 +145,6 @@
 - **2026-11-07｜已推送的 HEAD（`cb7f942`）`npm run lint` 會失敗**：我把 `docs/evidence/desktop-scripts/*.mjs` 提交進 repo，ESLint 會檢查它們，出現 98 個 `no-undef`（`document`、`setTimeout`）。證據：`npm run lint`。已在工作樹修正（`eslint.config.js` 忽略該資料夾），**尚未 commit**；擋住「`lint` 通過」的驗收，已處理。這是我提交前沒有重跑 lint 的疏失。
 - **2026-11-07｜選取活動時日曆欄會變窄（票 027 的取捨）**：面板只在選取時佔版面，點選或開始拖曳活動的瞬間，區塊會往左縮、有視覺跳動；功能正確（拖曳依目前畫面幾何落點）。另一種做法是面板一直預留空位並顯示空狀態，不跳動但日曆永遠少 288 px。證據：`core.spec.ts` 兩項測試因此需先選取再量座標。不擋驗收，請你親手感受後決定。
 - **2026-11-07｜窄視窗的圓點位置**：圓點從右上角改到日曆左上角（時間軸那一格），因為右上角會蓋住「週日」的日期數字。不擋驗收。
+- **2026-11-07｜發行前 e2e 在開發伺服器冷啟動時間歇逾時**：從 `d0775c8` 初次跑 `npm run test:e2e` 是 6 failed／88 passed（全在 `calendar-language.spec.ts`，各等 31 秒）；重跑一次 1 failed／93 passed（`panel-language.spec.ts`）；再重跑 94/94。失敗訊息都是第一次載入頁面時等不到「Create workspace」按鈕，只出現在剛啟動 vite 之後的頭幾個測試。推測是開發伺服器冷啟動（尚未驗證原因）；發行包不走 vite，不受影響。不擋發行；之後可考慮讓 Playwright 等頁面就緒或預熱再開跑。
+- **2026-11-07｜`test:desktop` 初次失敗、重跑通過**：發行 commit 上第一次跑失敗（同票 028 的冷啟動），第二次通過。已用實際發行 ZIP 解壓啟動、拖球建立區塊並正常關閉補驗。
+

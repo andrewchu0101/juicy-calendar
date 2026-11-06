@@ -101,3 +101,6 @@
 - **WebView2 Fixed Version 的環境變數路徑要用反斜線**（2026-11-06，票 024）：`WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 給正斜線路徑時，App 彈出「Could not find the WebView2 Runtime」，行程樹內沒有 WebView2；監看腳本看到 0 個端點，會被誤讀成「零連線」。監看結果一定要同時記錄 WebView2 行程的 `ExecutablePath`，空的就是沒啟動、不是通過。
 - **埠 1421 被卡死的 `npm run dev` 占住時，e2e 起不來**（2026-11-06，票 026c）：`reuseExistingServer` 為 true 也沒用，因為那個伺服器只綁 `::1` 且對請求逾時。不要擅自關掉使用者的行程；用一份暫時的 Playwright 設定把 `baseURL` 與 `webServer` 改到別的埠（例如 1431，`npx vite --port 1431 --strictPort`），用完刪除。
 - **真實按鍵測試要先確認前景視窗**（2026-11-06，票 026c）：`SetForegroundWindow` 可能失敗，按鍵會送到別的視窗，看起來像「App 沒反應」。送鍵前用 `GetForegroundWindow` 核對，不是就中止；並在頁面端記錄收到的 `keydown` 作為證據。
+- **e2e 的頭幾個測試在 vite 冷啟動時會逾時**（2026-11-07，發行前）：第一次載入頁面等不到「Create workspace」，各等 30 秒；重跑通常通過。發行驗證時保留初次結果、重跑確認，不要只貼最後一次。
+- **版本欄位有六處，改完要 grep**（2026-11-07，發行）：`package-lock.json` 裡還有第三方套件自己的 `0.1.0`（例如 `yocto-queue`），不是我們的，不能一起換。
+

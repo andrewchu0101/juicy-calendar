@@ -25,7 +25,7 @@
 1. 確認分支（`main`）、與遠端同步、工作樹乾淨；查已有 tag 與 Release。
 2. 版本升級單獨一個 commit：`chore(release): <版本>`，只改上面六處。push。
 3. **從這個 commit** 重跑：`npm run typecheck`、`npm run lint`、`npm test`、`npm run test:rust`、`npm run test:e2e`、`npm run test:desktop`。已知：`test:desktop` 剛編出新 debug 執行檔後的第一次冷啟動可能失敗（票 028），保留初次與重跑結果。
-4. 建置（Rust 環境變數見 `issues/README.md` 共同規則第 6 條）：`npx tauri build --bundles nsis`，再 `node scripts/make-portable-zip.mjs`。兩份都來自同一個 commit、同一個 release 執行檔。
+4. 建置（Rust 環境變數見 `issues/README.md` 共同規則第 6 條）：`npx tauri build --bundles nsis` 產安裝檔；再 `npx tauri build --no-bundle` 加 `node scripts/make-portable-zip.mjs` 產免安裝 ZIP（ZIP 用不帶安裝檔 bundle 標記的執行檔，沿用 `npm run portable` 的做法）。兩份都在同一個 commit、工作樹乾淨時建置；建置前後 `git status` 都要是乾淨的。
 5. 檔名帶版本號：`juicy-calendar_<版本>_x64-setup.exe`、`juicy-calendar_<版本>_x64-portable.zip`；附 `SHA256SUMS.txt`（格式同 `sha256sum`，每行 `雜湊 *檔名`）。ZIP 內要有 `juicy-calendar.exe`、`portable.flag`、空的 `data/`、`README.txt`。
 6. 驗證：解壓 ZIP 啟動 release 執行檔、確認視窗與工作區。安裝檔在開發機不安裝（會寫 C 槽與登錄），改在乾淨的另一台 Windows 驗收。
 7. 發布：`gh release create v<版本> --target <build 的 commit> --prerelease --notes-file …` 附上三個檔案。tag 必須指向實際建置的 commit。
@@ -36,3 +36,6 @@
 - 安裝檔缺少 WebView2 時由安裝程式連網下載；NSIS 工具快取在 `src-tauri/target/.tauri`（D 槽，已被 `.gitignore` 排除）。
 - 埠 1421 被別的 `npm run dev` 占住時，e2e 用暫時的 Playwright 設定改埠，用完刪除（見 `docs/LESSONS.md`）。
 - 在 PowerShell 執行 `npm run test:desktop` 會因 `bash` 解析成 WSL 而失敗，請用 Git Bash。
+- e2e 在開發伺服器冷啟動時偶爾有頭幾個測試逾時（等不到第一個畫面）；保留初次結果，重跑確認（見 `docs/CLOSEOUT.md` D 節）。
+- 第一次依本流程發行的紀錄：`v0.2.0-beta.1`，commit `d0775c8`，Release 連結見 `docs/CLOSEOUT.md`。
+
