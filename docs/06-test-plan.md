@@ -422,3 +422,5 @@ $null = $proc.CloseMainWindow()
 
 另：`npm test` 441/441、`npm run test:e2e` 89 passed、`npm run test:rust` 43 passed；`npm run test:desktop` 3 次中 1 次冷啟動失敗（票 028）。
 
+**票 027（2026-11-07）**：單選面板的排法（NFR-07）新增單元 `inspectorFit.test.ts` 2 項與 e2e `inspectorDock.spec.ts` 5 項，桌面版真的調整視窗大小實測；`layout.spec.ts`（M-04）與 `core.spec.ts` 各有測試因契約變更調整，細節見 `issues/027-inspector-covers-week-end.md`。M-04 人工驗收仍待專案擁有者。
+

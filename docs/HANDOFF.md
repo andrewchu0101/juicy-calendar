@@ -11,6 +11,7 @@
 | 工作樹 | commit 後應為乾淨（以 `git status` 核對）。原 demo 在 `../juicy-calendar-oneshotted-demo`，未動 |
 
 ### 已完成
+- 票 027 單選面板排法（2026-11-07，**未 commit**）：專案擁有者選排法 A（寬時固定佔版面、窄時收合成圓點）；單元 443、e2e 94 passed，桌面版真的調整視窗大小實測通過；**同時修正已推送 HEAD 的 `npm run lint` 失敗**（證據腳本被 ESLint 檢查，已在 `eslint.config.js` 忽略）。新版 exe：`D:/DevCache/m10/app/juicy-calendar.exe`（01:17）。詳見 `issues/027-inspector-covers-week-end.md`。
 - 2026-11-07 收尾（**未 commit**）：①票 026c 選取列改放工具列（不再蓋住週日標題）＋版面測試 6 項；②桌面版補驗證（TC-07、兩個行程、語言設定檔、面板、release 缺 WebView2、`data` 不可用、zip 複製、批次刪除）見 `docs/evidence/desktop-verification-2026-11-07.md`；③新票 027（右側面板蓋住週六／週日，只記錄）、028（`test:desktop` 冷啟動間歇失敗）；④`test:rust` 43 passed、`npm test` 441、e2e 89 passed。**注意**：1421 埠被使用者的 `npm run dev` 占住，e2e 用暫時設定跑，已刪。
 - 票 026c 追加選取列（2026-11-06，**未 commit**）：多選時日曆區右上角顯示「已選 N 個事件／刪除」，SRS FR-14 已補一句。`typecheck`、`lint` Passed；`npm test` 441/441；e2e 83 passed；桌面版以真實滑鼠點擊驗證刪除與復原通過。待專案擁有者：親手重測（exe：`D:/DevCache/m09/app/juicy-calendar.exe`，23:53:58 版）、選取列蓋住「週日」標題是否要調整、窄視窗外觀（M-04）。
 - 票 026c 桌面驗證（2026-11-06，**未 commit，未改程式碼**）：真實 Delete／Backspace 各 5/5 通過、一次 Ctrl+Z 全部回來且檔案逐位元組相同；詳見 `issues/026c-batch-delete.md` 末段。專案擁有者手動測過框選與整批移動（026a／b）通過；M-09 其餘項目與批次刪除手感仍待人工。待決定：多選時是否要有可見的刪除入口。
