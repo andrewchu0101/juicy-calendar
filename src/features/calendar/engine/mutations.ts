@@ -121,6 +121,16 @@ export function withDuration(event: TimedEvent, minutes: number): EventTimes | n
   return times(start, new Date(start.getTime() + Math.round(minutes) * MS_PER_MINUTE));
 }
 
+/** Inspector（票 021）：小時＋分鐘兩欄換算成總分鐘，再套用 withDuration 的同一條範圍規則。 */
+export function withHoursMinutes(event: TimedEvent, hours: string, minutes: string): EventTimes | null {
+  const h = hours.trim();
+  const m = minutes.trim();
+  if (h !== '' && !/^\d+$/.test(h)) return null;
+  // 分鐘欄：非負十進位數字（可小數、可科學記號）；不收負號、十六進位等 Number() 會放行的寫法。
+  if (m !== '' && !/^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(m)) return null;
+  return withDuration(event, Number(h) * 60 + Number(m));
+}
+
 const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
 /** 名稱規則（SRS R-3）：去前後空白後非空，且不超過 NAME_MAX_CHARS 個使用者看到的字元。不合法回傳 null。 */

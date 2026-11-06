@@ -8,7 +8,7 @@ import {
   durationMinutes,
   formatDuration,
   withDate,
-  withDuration,
+  withHoursMinutes,
   withEndTime,
   withStartTime,
   type EventTimes,
@@ -72,6 +72,118 @@ function DraftInput({
         }
       }}
     />
+  );
+}
+
+const INPUT_CLASS =
+  'w-full min-w-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-sm tabular-nums select-text focus:border-ink focus:outline-none';
+
+function splitMinutes(total: number): { hours: string; minutes: string } {
+  const rounded = Math.round(total);
+  return { hours: String(Math.floor(rounded / 60)), minutes: String(rounded % 60) };
+}
+
+/**
+ * 持續時間的「小時」「分鐘」兩欄（票 021，SRS R-3）。兩欄共用草稿，焦點離開整組、按 Enter 或卸載時
+ * 一起提交；Escape 還原。onCommit 回傳 false 表示拒絕，兩欄還原為目前事件的值。
+ */
+function DurationFields({
+  label,
+  hoursLabel,
+  minutesLabel,
+  hoursAria,
+  minutesAria,
+  minutes,
+  onCommit,
+}: {
+  label: string;
+  hoursLabel: string;
+  minutesLabel: string;
+  hoursAria: string;
+  minutesAria: string;
+  minutes: number;
+  onCommit: (hours: string, minutes: string) => boolean;
+}) {
+  const current = splitMinutes(minutes);
+  const [draft, setDraft] = useState(current);
+  const [lastMinutes, setLastMinutes] = useState(minutes);
+  const pending = useRef<{ hours: string; minutes: string } | null>(null);
+  const commitRef = useRef(onCommit);
+  useEffect(() => {
+    commitRef.current = onCommit;
+  });
+  useEffect(
+    () => () => {
+      if (pending.current) commitRef.current(pending.current.hours, pending.current.minutes);
+    },
+    [],
+  );
+
+  if (minutes !== lastMinutes) {
+    setLastMinutes(minutes);
+    setDraft(current);
+  }
+
+  const commit = () => {
+    const next = pending.current;
+    if (!next) return;
+    pending.current = null;
+    if (!onCommit(next.hours, next.minutes)) setDraft(current);
+  };
+
+  const edit = (patch: Partial<typeof draft>) => {
+    const next = { ...(pending.current ?? draft), ...patch };
+    pending.current = next;
+    setDraft(next);
+  };
+
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex flex-col gap-1 text-xs text-muted"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) commit();
+      }}
+      onKeyDown={(key) => {
+        key.stopPropagation();
+        if (key.key === 'Enter') commit();
+        if (key.key === 'Escape') {
+          pending.current = null;
+          setDraft(current);
+          (key.target as HTMLElement).blur();
+        }
+      }}
+    >
+      {label}
+      <div className="flex gap-2">
+        <label className="flex min-w-0 flex-1 flex-col gap-1">
+          {hoursLabel}
+          <input
+            type="number"
+            min={0}
+            step={1}
+            aria-label={hoursAria}
+            data-testid="inspector-duration-hours"
+            value={draft.hours}
+            className={INPUT_CLASS}
+            onChange={(event) => edit({ hours: event.target.value })}
+          />
+        </label>
+        <label className="flex min-w-0 flex-1 flex-col gap-1">
+          {minutesLabel}
+          <input
+            type="number"
+            min={0}
+            aria-label={minutesAria}
+            data-testid="inspector-duration-minutes"
+            value={draft.minutes}
+            className={INPUT_CLASS}
+            onChange={(event) => edit({ minutes: event.target.value })}
+          />
+        </label>
+      </div>
+    </div>
   );
 }
 
@@ -154,16 +266,15 @@ function InspectorPanel({ event }: { event: CalendarEvent }) {
           />
         </Field>
       </div>
-      <Field label={t('inspector.durationLabel', { duration: formatDuration(duration) })}>
-        <DraftInput
-          type="number"
-          min={1}
-          aria-label={t('inspector.durationAria')}
-          data-testid="inspector-duration"
-          value={String(Math.round(duration))}
-          onCommit={(minutes) => applyTimes(withDuration(event, Number(minutes)))}
-        />
-      </Field>
+      <DurationFields
+        label={t('inspector.durationLabel', { duration: formatDuration(duration) })}
+        hoursLabel={t('inspector.durationHoursLabel')}
+        minutesLabel={t('inspector.durationMinutesLabel')}
+        hoursAria={t('inspector.durationHoursAria')}
+        minutesAria={t('inspector.durationMinutesAria')}
+        minutes={duration}
+        onCommit={(hours, minutes) => applyTimes(withHoursMinutes(event, hours, minutes))}
+      />
       <div className="flex flex-col gap-1.5 text-xs text-muted">
         {t('color.label')}
         <ColorPicker value={event.color} onChange={(color) => updateEvent(event.id, { color })} />

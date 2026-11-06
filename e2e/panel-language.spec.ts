@@ -46,8 +46,9 @@ test.describe('English (system language en-US)', () => {
     const panel = page.getByRole('region', { name: 'Event details' });
     await expect(panel).toBeVisible();
     for (const label of ['Name', 'Date', 'Start', 'End']) await expect(panel.getByLabel(label, { exact: true })).toBeVisible();
-    await expect(panel.getByText('Duration (minutes) · 2h')).toBeVisible();
-    await expect(panel.getByLabel('Duration in minutes')).toBeVisible();
+    await expect(panel.getByText('Duration · 2h')).toBeVisible();
+    await expect(panel.getByLabel('Duration hours')).toBeVisible();
+    await expect(panel.getByLabel('Duration minutes')).toBeVisible();
     await expect(panel.getByRole('button', { name: 'Delete event' })).toBeVisible();
     await panel.getByRole('button', { name: 'Collapse inspector' }).click();
     await expect(page.getByRole('button', { name: 'Expand inspector' })).toBeVisible();
@@ -71,8 +72,9 @@ test.describe('繁體中文 (system language zh-TW)', () => {
     const panel = page.getByRole('region', { name: '事件詳細資料' });
     await expect(panel).toBeVisible();
     for (const label of ['名稱', '日期', '開始', '結束']) await expect(panel.getByLabel(label, { exact: true })).toBeVisible();
-    await expect(panel.getByText('持續時間（分鐘）· 2h')).toBeVisible();
-    await expect(panel.getByLabel('持續分鐘數')).toBeVisible();
+    await expect(panel.getByText('持續時間 · 2h')).toBeVisible();
+    await expect(panel.getByLabel('持續時間：小時')).toBeVisible();
+    await expect(panel.getByLabel('持續時間：分鐘')).toBeVisible();
     await expect(panel.getByRole('button', { name: '刪除事件' })).toBeVisible();
     await panel.getByRole('button', { name: '收合面板' }).click();
     await expect(page.getByRole('button', { name: '展開面板' })).toBeVisible();

@@ -32,8 +32,15 @@ const calendarTexts: ReadonlyArray<readonly [TranslationKey, string, string]> = 
   ['inspector.deletedTemplate', 'Deleted template', '已刪除的模板'],
   ['inspector.collapse', 'Collapse inspector', '收合面板'],
   ['inspector.expand', 'Expand inspector', '展開面板'],
-  ['inspector.durationLabel', 'Duration (minutes) · {duration}', '持續時間（分鐘）· {duration}'],
-  ['inspector.durationAria', 'Duration in minutes', '持續分鐘數'],
+  // 票 021（SRS R-3 修訂）：持續時間拆成小時、分鐘兩欄；原 durationLabel／durationAria 的「（分鐘）」隨之改寫。
+  ['inspector.durationLabel', 'Duration · {duration}', '持續時間 · {duration}'],
+  ['inspector.durationHoursLabel', 'Hours', '小時'],
+  ['inspector.durationHoursAria', 'Duration hours', '持續時間：小時'],
+  ['inspector.durationMinutesLabel', 'Minutes', '分鐘'],
+  ['inspector.durationMinutesAria', 'Duration minutes', '持續時間：分鐘'],
+  // 票 026c 追加：多選時的浮動列（FR-14）。
+  ['selection.count', '{count} selected', '已選 {count} 個事件'],
+  ['selection.deleteAria', 'Delete {count} selected events', '刪除選取的 {count} 個事件'],
   ['inspector.delete', 'Delete event', '刪除事件'],
   ['template.nameAria', 'Template name', '模板名稱'],
   ['template.durationLabel', 'Default duration (minutes)', '預設時長（分鐘）'],

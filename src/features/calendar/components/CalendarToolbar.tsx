@@ -6,6 +6,7 @@ import { rangeLabel } from '../../../i18n/rangeLabel';
 import { useT } from '../../../i18n/useT';
 import { useTimeFormat } from '../../../i18n/useTimeFormat';
 import { useCalendarModel } from '../hooks/useCalendarModel';
+import { SelectionBar } from './SelectionBar';
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -41,6 +42,8 @@ export function CalendarToolbar() {
       <h2 data-testid="range-label" className="m-0 text-base font-semibold tracking-tight">
         {rangeLabel(days, language)}
       </h2>
+
+      <SelectionBar />
 
       <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <label className="flex items-center gap-1 text-muted">

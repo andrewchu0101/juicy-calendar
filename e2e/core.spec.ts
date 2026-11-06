@@ -398,10 +398,12 @@ test('inspector shows and edits the selected event, and collapses', async ({ pag
   await expect(page.getByTestId('inspector-date')).toHaveValue('2026-11-02');
   await expect(page.getByTestId('inspector-start')).toHaveValue('10:30');
   await expect(page.getByTestId('inspector-end')).toHaveValue('12:30');
-  await expect(page.getByTestId('inspector-duration')).toHaveValue('120');
+  await expect(page.getByTestId('inspector-duration-hours')).toHaveValue('2');
+  await expect(page.getByTestId('inspector-duration-minutes')).toHaveValue('0');
 
-  await page.getByTestId('inspector-duration').fill('45');
-  await page.getByTestId('inspector-duration').press('Enter');
+  await page.getByTestId('inspector-duration-hours').fill('0');
+  await page.getByTestId('inspector-duration-minutes').fill('45');
+  await page.getByTestId('inspector-duration-minutes').press('Enter');
   await expect(page.getByTestId('event-time')).toHaveText('10:30–11:15');
   await page.getByTestId('inspector-title').fill('Research');
   await page.getByTestId('inspector-title').press('Enter');
@@ -713,18 +715,39 @@ test('[TC-04][FR-03,Q-04,R-3] 右側面板的結束時間與持續分鐘：不�
     expect(await eventFileHashes(page)).toEqual(before);
   }
 
-  const duration = page.getByTestId('inspector-duration');
-  for (const bad of ['0', '10081', '1e12']) {
-    await duration.fill(bad);
-    await duration.press('Enter');
-    await expect(duration).toHaveValue('120');
+  // 票 021：持續時間為「小時」「分鐘」兩欄；每組 [小時, 分鐘] 都應被拒絕並還原為 2 小時 0 分。
+  const hours = page.getByTestId('inspector-duration-hours');
+  const minutes = page.getByTestId('inspector-duration-minutes');
+  for (const [badHours, badMinutes] of <Array<[string, string]>>[
+    ['0', '0'],
+    ['0', '10081'],
+    ['0', '1e12'],
+    ['169', '0'],
+    ['1.5', '0'],
+    ['', ''],
+  ]) {
+    await hours.fill(badHours);
+    await minutes.fill(badMinutes);
+    await minutes.press('Enter');
+    await expect(hours).toHaveValue('2');
+    await expect(minutes).toHaveValue('0');
+    await expect(page.getByTestId('event-time')).toHaveText('10:00–12:00');
     expect(await eventFileHashes(page)).toEqual(before);
   }
 
   await end.fill('11:00');
   await end.press('Enter');
-  await expect(duration).toHaveValue('60');
+  await expect(hours).toHaveValue('1');
+  await expect(minutes).toHaveValue('0');
   await expect(page.getByTestId('event-time')).toHaveText('10:00–11:00');
+
+  // 小時＋分鐘與單填分鐘等價：1 小時 90 分 ＝ 150 分（10:00–12:30）；分鐘欄超過 59 直接換算。
+  await hours.fill('1');
+  await minutes.fill('90');
+  await minutes.press('Enter');
+  await expect(page.getByTestId('event-time')).toHaveText('10:00–12:30');
+  await expect(hours).toHaveValue('2');
+  await expect(minutes).toHaveValue('30');
 });
 
 test('[TC-03][U-11,FR-02] 模板編輯器的名稱：31 字不能儲存，30 字可以', async ({ page }) => {

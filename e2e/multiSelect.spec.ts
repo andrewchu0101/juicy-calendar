@@ -217,3 +217,50 @@ test('[TC-18][AC-04.4,FR-14] Delete removes every selected block and its file, w
   await expect(page.getByTestId('event-block')).toHaveCount(3);
   expect(await stored(page)).toEqual(before);
 });
+
+// 票 026c 追加（2026-11-06，專案擁有者選方案 1）：多選時右側面板不顯示，另提供可見的刪除入口。
+test('[TC-18][AC-04.4,FR-14] with several blocks selected a selection bar shows the count, and its Delete button removes them all in one undo step', async ({ page }) => {
+  const before = await stored(page);
+  await selectAAndB(page);
+  const bar = page.getByTestId('selection-bar');
+  await expect(bar).toBeVisible();
+  await expect(bar).toContainText('2 selected');
+  await page.getByTestId('selection-delete').click();
+  await settle(page);
+  await expect(page.getByTestId('event-block')).toHaveCount(1);
+  expect(await stored(page)).toHaveLength(1);
+  await expect(bar).toHaveCount(0);
+  await page.keyboard.press('Control+z');
+  await settle(page);
+  await expect(page.getByTestId('event-block')).toHaveCount(3);
+  expect(await stored(page)).toEqual(before);
+});
+
+test('[TC-18][AC-04.4,FR-14] the selection bar shows only for two or more selected blocks, never together with the inspector', async ({ page }) => {
+  const bar = page.getByTestId('selection-bar');
+  await expect(bar).toHaveCount(0); // nothing selected
+  const one = await point(page, 1, 11);
+  await page.mouse.click(one.x, one.y);
+  await settle(page);
+  await expect(page.getByTestId('inspector')).toBeVisible();
+  await expect(bar).toHaveCount(0); // one block: the inspector, not the bar
+  await selectAAndB(page);
+  await expect(bar).toBeVisible();
+  await expect(page.getByTestId('inspector')).toHaveCount(0);
+  const empty = await point(page, 3, 9);
+  await page.mouse.click(empty.x, empty.y);
+  await settle(page);
+  await expect(bar).toHaveCount(0); // selection cleared
+});
+
+test('[TC-18][AC-04.4,FR-14] after Delete on the keyboard the selection bar is gone and the unselected block is untouched', async ({ page }) => {
+  const before = await stored(page);
+  await selectAAndB(page);
+  await expect(page.getByTestId('selection-bar')).toBeVisible();
+  await page.keyboard.press('Backspace');
+  await settle(page);
+  await expect(page.getByTestId('selection-bar')).toHaveCount(0);
+  const rest = await stored(page);
+  expect(rest).toHaveLength(1);
+  expect(rest[0]).toEqual(before.find((event) => event.id === rest[0]!.id));
+});
