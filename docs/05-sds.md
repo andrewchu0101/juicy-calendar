@@ -56,7 +56,7 @@
 | `EVENT_MAX_MINUTES` | 10080（7 天） | 專案擁有者決定 |
 | `EVENT_MIN_MINUTES` | 1 | 現況 `MIN_EVENT_MINUTES` |
 | `NEW_EVENT_MINUTES` | 120 | 現況 |
-| `RADIAL_HOLD_MS` / `RADIAL_MOVE_TOLERANCE_PX` | 450 / 6 | 現況 |
+| `RADIAL_LONG_PRESS_MS` / `RADIAL_MOVE_TOLERANCE_PX` / `RADIAL_ENTER_MS` | 250 / 6 / 120 | 票 025（2026-11-05 專案擁有者決定）；定義在 `limits.ts` |
 | `MAGNET_RADIUS_PX` | 8 | 現況 |
 | `SAVE_DEBOUNCE_MS` | 120 | 現況 |
 

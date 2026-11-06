@@ -32,7 +32,7 @@ Pick a ball → drag it onto the calendar → a 2-hour block appears → resize 
 Accounts, cloud sync, collaboration, checkboxes, AI scheduling, external calendars,
 analytics, subscriptions.
 
-- Hold the primary pointer on empty space for 450 ms to open a radial template picker.
+- Hold the primary pointer on empty space for 250 ms to open a radial template picker.
   Keep holding the pointer, move onto a ball to pick it up, then drag onto a dated column and release to place.
 - Invalid template drops split into small flat balls and fade; templates remain reusable.
 - Workspace format v2 adds `magnetEnabled`; v1 settings migrate with the magnet enabled.

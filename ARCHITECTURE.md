@@ -80,7 +80,7 @@ Symlinks that escape the root are rejected. Writes go to a synced temp file, the
 | Lost writes on quit | Short debounce, flush on window close |
 | Overwriting user data | Allow-list, validation, skip-not-rewrite, version check |
 
-- Hold the primary pointer on empty space for 450 ms to open a radial template picker.
+- Hold the primary pointer on empty space for 250 ms to open a radial template picker.
   Keep holding the pointer, move onto a ball to pick it up, then drag onto a dated column and release to place.
 - Invalid template drops split into small flat balls and fade; templates remain reusable.
 - Workspace format v2 adds `magnetEnabled`; v1 settings migrate with the magnet enabled.

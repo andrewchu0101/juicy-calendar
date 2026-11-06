@@ -50,7 +50,7 @@ opens on click, so it never covers drop targets during repeated placement.
   grid: reflowing columns on selection would shift events under the pointer between the two clicks
   of a double-click, or at the start of a drag.
 
-- Radial picker: 220 ms outward entrance; hit targets stay at final positions.
+- Radial picker: 120 ms outward entrance; hit targets stay at final positions.
   Hovering a ball only wobbles it; the other balls stay. A ball is picked, and the others vanish, when the
   pointer leaves that ball's fixed circular hit radius. Moving straight onto another ball only switches the hover. Moving back into the 80 px circle around the ring centre cancels the hover and picks nothing; the menu stays. Where that circle overlaps a ball's hit circle, the ball wins.
 - Invalid ball drops: 18 flat circular fragments disperse and fade over 560 ms.

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { sortedTemplates, useAppStore } from '../../../stores/appStore';
-import { radialBalls, radialRing, radialStep, type Point, type RadialRing } from '../../calendar/engine';
+import { RADIAL_LONG_PRESS_MS, RADIAL_MOVE_TOLERANCE_PX, radialBalls, radialRing, radialStep, type Point, type RadialRing } from '../../calendar/engine';
 
 type Menu = { origin: Point; positions: Point[]; ring: RadialRing; hovered: number };
 
@@ -34,7 +34,7 @@ export function useRadialPalette(drag: Drag) {
         const count = sortedTemplates(templates).length;
         session = { origin, positions: radialBalls(origin, count, window.innerWidth, window.innerHeight), ring: radialRing(origin, count, window.innerWidth, window.innerHeight), hovered: -1 };
         setMenu(session);
-      }, 450);
+      }, RADIAL_LONG_PRESS_MS);
     };
     const move = (event: PointerEvent) => {
       if (event.pointerId !== pointerId) return;
@@ -53,7 +53,7 @@ export function useRadialPalette(drag: Drag) {
           session = { ...session, hovered: step.hovered };
           setMenu(session);
         }
-      } else if (origin && Math.hypot(point.x - origin.x, point.y - origin.y) > 6) clear();
+      } else if (origin && Math.hypot(point.x - origin.x, point.y - origin.y) > RADIAL_MOVE_TOLERANCE_PX) clear();
     };
     const up = (event: PointerEvent) => {
       if (event.pointerId !== pointerId) return;

@@ -169,7 +169,7 @@ button:disabled {
 }
 
 .radial-palette { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
-.radial-choice { position: absolute; width: 56px; display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -50%); animation: radial-enter 220ms ease-out; }
+.radial-choice { position: absolute; width: 56px; display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -50%); animation: radial-enter var(--radial-enter) ease-out; }
 .radial-choice span { margin-top: 5px; padding: 2px 5px; border-radius: 5px; background: var(--color-surface, white); font-size: 11px; }
 @keyframes radial-enter { from { opacity: 0; transform: translate(calc(-50% + var(--from-x)), calc(-50% + var(--from-y))) scale(.2); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 .split-particle { position: fixed; z-index: 100; pointer-events: none; border-radius: 50%; animation: split-burst 560ms ease-out forwards; }
