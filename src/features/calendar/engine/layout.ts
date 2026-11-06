@@ -1,4 +1,5 @@
 import { addDays } from 'date-fns';
+import { GUTTER_WIDTH_PX, INSPECTOR_GAP_PX, INSPECTOR_WIDTH_PX, MIN_COLUMN_WIDTH_PX } from './limits';
 import { durationMinutes, type TimedEvent } from './mutations';
 import { minutesFromColumnStart, minutesToPixels, timelineSpanMinutes, type TimelineConfig } from './timeline';
 
@@ -125,4 +126,12 @@ export function hiddenEventCounts(
       return positionEvent(event, days, timeline).length === 0;
     }).length;
   });
+}
+
+/**
+ * 票 027（NFR-07）：日曆區放不放得下「固定佔版面的面板＋完整的日曆欄」。放得下時面板固定在日曆旁、不遮任何日期；
+ * 放不下時面板改為收合成圓點、點開才以浮層顯示。
+ */
+export function inspectorFits(areaWidth: number, dayCount: number): boolean {
+  return areaWidth >= GUTTER_WIDTH_PX + MIN_COLUMN_WIDTH_PX * dayCount + INSPECTOR_GAP_PX + INSPECTOR_WIDTH_PX;
 }

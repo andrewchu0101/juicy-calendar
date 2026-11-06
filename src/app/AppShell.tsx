@@ -3,18 +3,26 @@ import { useRef } from 'react';
 import { Notices } from '../components/Notices';
 import { CalendarGrid } from '../features/calendar/components/CalendarGrid';
 import { CalendarToolbar } from '../features/calendar/components/CalendarToolbar';
+import { INSPECTOR_GAP_PX, inspectorFits } from '../features/calendar/engine';
+import { useElementWidth } from '../features/calendar/hooks/useElementWidth';
 import { useKeyboardShortcuts } from '../features/calendar/hooks/useKeyboardShortcuts';
 import { Inspector } from '../features/inspector/Inspector';
 import { DropSplash, SplitBurst, TemplateDragOverlay } from '../features/templates/components/TemplateDragOverlay';
 import { RadialPalette } from '../features/templates/components/RadialPalette';
 import { TemplatePalette } from '../features/templates/components/TemplatePalette';
 import { useTemplateDrag } from '../features/templates/hooks/useTemplateDrag';
+import { useAppStore } from '../stores/appStore';
 
 export function AppShell() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const columnsRef = useRef<HTMLDivElement>(null);
   const drag = useTemplateDrag(scrollerRef, columnsRef);
   useKeyboardShortcuts();
+  const areaRef = useRef<HTMLDivElement>(null);
+  const areaWidth = useElementWidth(areaRef);
+  const dayCount = useAppStore((state) => (state.settings.view === 'day' ? 1 : 7));
+  // 面板固定佔版面（不遮日曆）還是收合成圓點，由日曆區放不放得下完整的日曆欄決定（票 027、NFR-07）。
+  const docked = inspectorFits(areaWidth, dayCount);
 
   return (
     <DndContext {...drag.dndProps}>
@@ -22,10 +30,14 @@ export function AppShell() {
         <TemplatePalette />
         <main className="relative flex min-w-0 flex-1 flex-col pr-3 pb-3">
           <CalendarToolbar />
-          {/* 面板錨定在日曆區而非整個 main：工具列在窄視窗折行時，面板不會蓋住它（NFR-07）。 */}
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <CalendarGrid scrollerRef={scrollerRef} columnsRef={columnsRef} ghost={drag.ghost} />
-            <Inspector />
+          {/* 日曆區是一列：日曆在左、面板在右。放得下時面板固定佔版面（日曆讓出寬度，不遮任何日期）；放不下時面板改成
+              右上角圓點，點開才以浮層顯示（票 027、NFR-07）。浮層與圓點錨定在這個區塊，而非整個 main：工具列在窄視窗
+              折行時，它們不會蓋住工具列。 */}
+          <div ref={areaRef} className="relative flex min-h-0 flex-1" style={{ columnGap: INSPECTOR_GAP_PX }}>
+            <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+              <CalendarGrid scrollerRef={scrollerRef} columnsRef={columnsRef} ghost={drag.ghost} />
+            </div>
+            <Inspector docked={docked} />
           </div>
         </main>
       </div>

@@ -165,6 +165,9 @@ test('balls are one flat colour with no gradient or inset effect', async ({ page
 test('moving preserves duration, works across dates, and is not snapped', async ({ page }) => {
   await page.getByLabel('30 minute magnet').uncheck();
   await createAt(page, 0, 10);
+  // 票 027：選取活動時右側面板固定佔版面、日曆欄變窄；先選取，再依「面板已開」的版面量座標。斷言不變。
+  await page.getByTestId('event-block').click();
+  await expect(page.getByTestId('inspector')).toBeVisible();
   const from = await point(page, 0, 11);
   const to = await point(page, 2, 14, 7);
   await dragFromTo(page, from, to);
@@ -218,6 +221,9 @@ test('double-click names one event only; Enter saves and Escape cancels', async 
   await createAt(page, 0, 10);
   await createAt(page, 1, 10);
   const first = page.getByTestId('event-block').first();
+  // 票 027：選取活動時面板固定佔版面、日曆欄變窄；先選取，再量「面板已開」的外框，才能比較命名前後。斷言不變。
+  await first.click();
+  await expect(page.getByTestId('inspector')).toBeVisible();
   const before = await box(first);
 
   await first.dblclick();

@@ -5,6 +5,7 @@ import { useT } from '../../i18n/useT';
 import { useAppStore } from '../../stores/appStore';
 import type { CalendarEvent } from '../../types';
 import {
+  INSPECTOR_WIDTH_PX,
   durationMinutes,
   formatDuration,
   withDate,
@@ -196,12 +197,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function InspectorPanel({ event }: { event: CalendarEvent }) {
+function InspectorPanel({ event, docked, onCollapse }: { event: CalendarEvent; docked: boolean; onCollapse: () => void }) {
   const t = useT();
   const templateName = useAppStore((state) => state.templates[event.templateId]?.name);
   const updateEvent = useAppStore((state) => state.updateEvent);
   const deleteEvent = useAppStore((state) => state.deleteEvent);
-  const updateSettings = useAppStore((state) => state.updateSettings);
 
   const applyTimes = (times: EventTimes | null) => (times ? updateEvent(event.id, times) : false);
   const start = new Date(event.startAt);
@@ -212,7 +212,11 @@ function InspectorPanel({ event }: { event: CalendarEvent }) {
     <section
       data-testid="inspector"
       aria-label={t('inspector.aria')}
-      className="card-pop absolute top-2 right-4 z-40 flex max-h-[calc(100%-1rem)] w-[17rem] flex-col gap-3 overflow-y-auto rounded-2xl border border-line bg-surface p-4 shadow-xl"
+      data-docked={docked}
+      style={{ width: INSPECTOR_WIDTH_PX }}
+      className={`card-pop flex flex-col gap-3 overflow-y-auto rounded-2xl border border-line bg-surface p-4 shadow-xl ${
+        docked ? 'max-h-full shrink-0 self-start' : 'absolute top-2 right-4 z-40 max-h-[calc(100%-1rem)]'
+      }`}
     >
       <div className="flex items-center gap-2">
         <span className="size-3.5 shrink-0 rounded-full" style={{ backgroundColor: event.color }} />
@@ -223,7 +227,7 @@ function InspectorPanel({ event }: { event: CalendarEvent }) {
           aria-label={t('inspector.collapse')}
           data-testid="inspector-collapse"
           className="flex size-6 items-center justify-center rounded-full text-muted hover:bg-line hover:text-ink"
-          onClick={() => updateSettings({ inspectorCollapsed: true })}
+          onClick={onCollapse}
         >
           ›
         </button>
@@ -290,26 +294,41 @@ function InspectorPanel({ event }: { event: CalendarEvent }) {
   );
 }
 
-export function Inspector() {
+/**
+ * 單選時的編輯面板（票 027）。docked＝日曆區放得下「面板＋完整日曆欄」：面板固定佔版面，是否收合由使用者的偏好
+ * （`inspectorCollapsed`，存檔）決定。放不下：預設收合成圓點，點開只是「暫時展開」（元件內狀態，不存檔、不改偏好），
+ * 所以視窗大小不會覆寫使用者的選擇；選取的活動不變。
+ */
+export function Inspector({ docked }: { docked: boolean }) {
   const t = useT();
   const event = useAppStore((state) =>
     state.selectedEventId ? state.events[state.selectedEventId] : undefined,
   );
   const collapsed = useAppStore((state) => state.settings.inspectorCollapsed);
   const updateSettings = useAppStore((state) => state.updateSettings);
+  const [peek, setPeek] = useState(false);
 
   if (!event) return null;
-  if (collapsed) {
+  const open = docked ? !collapsed : peek;
+  if (!open) {
     return (
       <button
         aria-label={t('inspector.expand')}
         data-testid="inspector-expand"
-        className="absolute top-2 right-4 z-40 flex size-9 items-center justify-center rounded-full border border-line bg-surface shadow-lg transition-transform hover:scale-110"
-        onClick={() => updateSettings({ inspectorCollapsed: false })}
+        // 放在日曆左上角、時間軸那一格（原本是空的）：不遮任何日期標題、日曆欄或活動（票 027）。
+        className="absolute top-1 left-3 z-40 flex size-8 items-center justify-center rounded-full border border-line bg-surface shadow-lg transition-transform hover:scale-110"
+        onClick={() => (docked ? updateSettings({ inspectorCollapsed: false }) : setPeek(true))}
       >
         <span className="size-3.5 rounded-full" style={{ backgroundColor: event.color }} />
       </button>
     );
   }
-  return <InspectorPanel key={event.id} event={event} />;
+  return (
+    <InspectorPanel
+      key={event.id}
+      event={event}
+      docked={docked}
+      onCollapse={() => (docked ? updateSettings({ inspectorCollapsed: true }) : setPeek(false))}
+    />
+  );
 }

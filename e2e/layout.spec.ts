@@ -36,6 +36,8 @@ async function openWithLongNames(page: Page, createLabel: string) {
   await page.reload();
   await expect(page.getByTestId('event-block')).toHaveCount(1);
   await page.getByTestId('event-block').click();
+  // 票 027：900 寬放不下「面板＋完整一週」，面板預設收合成圓點；點圓點以浮層展開，之後的檢查照舊。
+  await page.getByTestId('inspector-expand').click();
   await expect(page.getByTestId('inspector')).toBeVisible();
 }
 
@@ -130,6 +132,8 @@ for (const [label, locale, createLabel] of [
         expect(clipped, id).toEqual({ blockClips: true, titleEllipsis: true, titleNoWrap: true });
         await expect(block).toHaveAttribute('title', new RegExp(`^${LONG_NAME}`));
         await block.click({ position: { x: 4, y: 1 }, force: true });
+        // 票 027：重新載入後 900 寬的面板是收合的圓點；點開才看得到完整名稱（已展開時不用再點）。
+        if (await page.getByTestId('inspector-expand').count()) await page.getByTestId('inspector-expand').click();
         await expect(page.getByTestId('inspector-title')).toHaveValue(LONG_NAME);
       }
     });

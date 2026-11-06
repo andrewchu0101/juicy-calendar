@@ -8,6 +8,8 @@ import { formatTimeRange } from '../../../i18n/formatTimeRange';
 import { useT } from '../../../i18n/useT';
 import { useTimeFormat } from '../../../i18n/useTimeFormat';
 import {
+  GUTTER_WIDTH_PX,
+  MIN_COLUMN_WIDTH_PX,
   isPastDate,
   formatDuration,
   durationMinutes,
@@ -27,8 +29,6 @@ import { EventBlock, GhostBlock } from './EventBlock';
 
 export type GhostEvent = TimedEvent & { id: string; title: string; color: string };
 
-const GUTTER_WIDTH = 56;
-const MIN_COLUMN_WIDTH = 84;
 
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date());
@@ -102,9 +102,9 @@ export function CalendarGrid({
       data-testid="calendar-scroller"
       className="calendar-scroller relative min-h-0 flex-1 overflow-auto rounded-2xl border border-line bg-surface"
     >
-      <div style={{ minWidth: GUTTER_WIDTH + MIN_COLUMN_WIDTH * days.length }}>
+      <div style={{ minWidth: GUTTER_WIDTH_PX + MIN_COLUMN_WIDTH_PX * days.length }}>
         <div className="sticky top-0 z-30 flex border-b border-line bg-surface/95 backdrop-blur-sm">
-          <div className="sticky left-0 z-10 shrink-0 bg-surface" style={{ width: GUTTER_WIDTH }} />
+          <div className="sticky left-0 z-10 shrink-0 bg-surface" style={{ width: GUTTER_WIDTH_PX }} />
           {days.map((day, index) => {
             const today = isSameDay(day, now);
             const hiddenCount = hidden[index] ?? 0;
@@ -137,7 +137,7 @@ export function CalendarGrid({
         </div>
 
         <div className="flex">
-          <div className="sticky left-0 z-20 shrink-0 bg-surface" style={{ width: GUTTER_WIDTH, height }}>
+          <div className="sticky left-0 z-20 shrink-0 bg-surface" style={{ width: GUTTER_WIDTH_PX, height }}>
             <div className="relative h-full">
               {marks.map((mark) => (
                 <span
