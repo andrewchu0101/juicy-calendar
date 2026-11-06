@@ -25,6 +25,8 @@ export type AppState = {
   /** The date the calendar is showing, as an ISO instant. */
   anchor: string;
   selectedEventId: string | null;
+  /** 兩個以上區塊被選中時的代號；此時 selectedEventId 為 null（SRS R-9）。 */
+  selectedEventIds: string[];
   editingEventId: string | null;
   /** The event that should play the drop animation. */
   droppedEventId: string | null;
@@ -41,10 +43,16 @@ export type AppState = {
   createEventFromTemplate(templateId: string, start: Date): string | null;
   /** 回傳 false 表示被拒絕（找不到事件或名稱不合法），此時資料完全不變。 */
   updateEvent(id: string, patch: EventPatch | EventTimes): boolean;
+  /** 整批移動（SRS R-9）：一次提交、一次復原。有任何一個代號不是事件就整批拒絕並回傳 false，資料完全不變。 */
+  moveEvents(changes: Record<string, EventTimes>): boolean;
   deleteEvent(id: string): void;
+  /** 刪除所有選中的區塊（單選或多選），一次提交、一次復原；沒有選取時什麼都不做。 */
+  deleteSelected(): void;
   undo(): void;
   redo(): void;
   select(id: string | null): void;
+  /** 0 個＝清除、1 個＝單選、2 個以上＝多選。不存在的代號會被忽略。 */
+  selectMany(ids: string[]): void;
   setEditing(id: string | null): void;
   clearDropped(): void;
 
@@ -67,6 +75,7 @@ const initial = {
   events: {} as EventMap,
   settings: DEFAULT_SETTINGS,
   selectedEventId: null,
+  selectedEventIds: [] as string[],
   editingEventId: null,
   droppedEventId: null,
   past: [] as EventMap[],
@@ -99,14 +108,17 @@ export const useAppStore = create<AppState>((set, get) => {
 
   /** Selection and editing must not point at an event that history just removed. */
   const restore = (events: EventMap, past: EventMap[], future: EventMap[]) => {
-    const { selectedEventId } = get();
+    const { selectedEventId, selectedEventIds } = get();
+    const alive = selectedEventIds.filter((id) => events[id]);
     set({
       events,
       past,
       future,
       editingEventId: null,
       droppedEventId: null,
-      selectedEventId: selectedEventId && events[selectedEventId] ? selectedEventId : null,
+      ...(alive.length >= 2
+        ? { selectedEventId: null, selectedEventIds: alive }
+        : { selectedEventId: alive[0] ?? (selectedEventId && events[selectedEventId] ? selectedEventId : null), selectedEventIds: [] }),
     });
   };
 
@@ -146,7 +158,7 @@ export const useAppStore = create<AppState>((set, get) => {
       };
       commit(
         { ...get().events, [event.id]: event },
-        { selectedEventId: null, editingEventId: null, droppedEventId: event.id },
+        { selectedEventId: null, selectedEventIds: [], editingEventId: null, droppedEventId: event.id },
       );
       return event.id;
     },
@@ -163,6 +175,26 @@ export const useAppStore = create<AppState>((set, get) => {
       const changed = (Object.keys(patch) as (keyof typeof patch)[]).some((key) => event[key] !== patch[key]);
       if (changed) commit({ ...get().events, [id]: { ...event, ...patch } });
       return true;
+    },
+
+    moveEvents: (changes) => {
+      const { events } = get();
+      const ids = Object.keys(changes);
+      if (ids.length === 0 || ids.some((id) => !events[id])) return false;
+      const next = { ...events };
+      for (const id of ids) next[id] = { ...events[id]!, ...changes[id]! };
+      commit(next);
+      return true;
+    },
+
+    deleteSelected: () => {
+      const { events, selectedEventId, selectedEventIds } = get();
+      const doomed = selectedEventIds.length > 0 ? selectedEventIds : selectedEventId ? [selectedEventId] : [];
+      const next = { ...events };
+      let removed = 0;
+      for (const id of doomed) if (next[id]) { delete next[id]; removed += 1; }
+      if (removed === 0) return;
+      commit(next, { selectedEventId: null, selectedEventIds: [], editingEventId: null });
     },
 
     deleteEvent: (id) => {
@@ -190,9 +222,16 @@ export const useAppStore = create<AppState>((set, get) => {
     select: (id) =>
       set((state) => ({
         selectedEventId: id,
+        selectedEventIds: [],
         editingEventId: state.editingEventId === id ? id : null,
       })),
-    setEditing: (id) => set(id ? { editingEventId: id, selectedEventId: id } : { editingEventId: null }),
+    selectMany: (ids) => {
+      const { events } = get();
+      const valid = [...new Set(ids)].filter((id) => events[id]);
+      if (valid.length >= 2) set({ selectedEventId: null, selectedEventIds: valid, editingEventId: null });
+      else set({ selectedEventId: valid[0] ?? null, selectedEventIds: [], editingEventId: null });
+    },
+    setEditing: (id) => set(id ? { editingEventId: id, selectedEventId: id, selectedEventIds: [] } : { editingEventId: null }),
 
     clearDropped: () => set({ droppedEventId: null }),
 

@@ -64,7 +64,8 @@
 - 環境（2026-11-04，第二台電腦）：`C:/DevTools/jq` 已由專案擁有者同意加入**使用者 PATH**（登錄 `HKCU/Environment`，原值備份在暫存區）；Rust 仍不在 PATH。新開的終端機與重啟的 Claude Code 才會讀到。以新 PATH 在 Git Bash 實測 `bash .maintain/check.sh`，`test-guard-git.sh`、`test-guard-secrets.sh` 實際執行並通過。注意：PowerShell 裡的 `bash` 會先找到 WSL 啟動器（`C:/Windows/system32/bash.exe`），那個看不到 jq；hook 要在 Git Bash 下執行才有效。
 
 - 票 020 radial hover（2026-11-05，已 commit）：Q-05 決定樣式 A「果凍起伏邊界」（`clip-path` 多邊形、3＋5 瓣、4 秒、hover 球放大 1.3 倍、純色；減少動態時不起伏，改靜態外框）。選中規則改為 hover 只起伏、其他球保留，離開球的固定圓形命中範圍（28 px）才選中並開始拖曳；相鄰球只換 hover、重疊取最近；退回圓環中央（固定半徑 80 px，超出圓環半徑 76 px；球優先）取消 hover、選單保留；hover 沒離開就放開則關閉選單、不建區塊。新增引擎 `radialRing`、`radialStep`、`RADIAL_HIT_RADIUS`、`RADIAL_CENTER_RADIUS`（`engine/pointer.ts`），`useRadialPalette.ts` 改用 `radialStep`。測試 TC-16a～f（單元）與 3 項 e2e（長按選球改為往外離開、放開不選、退回圓心取消）加 1 項變小球 e2e。PRD AC-01.4、SRS FR-04、`DESIGN.md`、測試計畫、SAD／SDS 的 Q-05 已同步。驗證（2026-11-05，Windows 10 Pro 10.0.19045，Node 24.22.0）：`npm test` 346/346、`typecheck`、`lint`、`test:rust` 43/43 Passed；`test:e2e` 連續 3 次皆 62 passed。M-03：專案擁有者回報通過（口頭，未逐項記錄；Tauri 開發模式）。**回歸教訓**：改 `index.css` 時用「整段取代」誤刪 `split-particle`／`split-burst`／`radial-enter` 規則，使用者回報變小球消失；已從 git 還原並新增 e2e（原 TC-02 只數 DOM 元素抓不到）。改 CSS 請用只含目標行的精確取代，並看 `git diff` 的刪除行。
-- 票 025、026（2026-11-05，新增，皆「未就緒」）：025 radial 選單啟動速度（長按 450 ms、進場 220 ms，等專案擁有者定新數值，改動需同步 PRD AC-01.4／SRS FR-04）；026 拖曳選取多個時段（新功能，行為未定，與 NG-03 新事件固定 120 分鐘及空白處長按手勢有衝突，需先問答並修訂 Brief／PRD／SRS）。
+- 票 025 radial 選單啟動速度（2026-11-05，未 commit）：長按 250 ms、進場 120 ms、移動容許 6 px 維持（專案擁有者決定）；常數在 `limits.ts`；`e2e/radialSpeed.spec.ts` TC-17 三項；PRD／SRS／DESIGN／SDS／測試計畫已同步。`typecheck`、`lint` Passed；`npm test` 387；`test:e2e` 3 次皆 71 passed。M-03 手感已由專案擁有者回報通過（桌面版開發模式，口頭）；`test:rust`／`test:desktop` 未跑。
+- 票 026 框選多個區塊（2026-11-06，未 commit）：經 `/grilling` 訪談定案為「框選已存在的區塊，整批移動、整批刪除」（不建立新區塊，不與 NG-03 衝突）。規格：Brief G-08、PRD US-04（AC-04.1～04.4）、SRS FR-12～FR-14 與 R-9、測試計畫 TC-18 與 M-09。實作拆為 026a 框選、026b 整批移動、026c 整批刪除，皆完成：`useMarqueeSelect.ts`（新）、`appStore.ts`（`selectedEventIds`、`selectMany`、`moveEvents`、`deleteSelected`）、`mutations.ts`（`moveEventsTogether`）、`pointer.ts`（`rectFromPoints`、`rectsIntersect`）、`useEventInteractions.ts`、`useKeyboardShortcuts.ts`、`CalendarGrid.tsx`；測試 `selection.test.ts`、`multiSelect.test.ts`、`e2e/multiSelect.spec.ts`。`typecheck`、`lint` Passed；`npm test` 405；`test:e2e` 連續 3 次皆 80 passed。**未驗證**：M-09 手感（桌面版）、`test:rust`／`test:desktop`、框的樣式（實作者假設）。訪談中兩處我說錯，已在規格更正：吸附是 R-1 的磁吸（8 px 內），不是固定 30 分鐘；Escape 清除選取本來就存在。SAD／SDS 尚未補多選的設計說明。
 
 ### 進行中
 - 無。
@@ -79,7 +80,7 @@
 
 ### 下一步（最多三項）
 1. **專案擁有者要先決定的事**（我無法代決）：①票 024：NFR-03c 要保留、改寫還是拆開，以及是否同意做安裝版 M-06、`pktmon`（需管理員）、Fixed Version Runtime 實測（簡報在 `docs/evidence/024-nfr-03-brief.md` 第 5 節）；②票 023：工具列語言選單的位置與樣式（目前是最右側、同歡迎畫面的下拉，為實作者假設）；③票 021 的 4 個待決（介面形式、驗證規則、範圍判斷、標籤是否走 i18n，需修訂 SRS R-3／FR-03）。票 021 已不再被 004 擋住。
-2. 票 025（新的長按與進場時間）與票 026（多時段選取，建議先 `/grilling`）等專案擁有者決定；025 在 020 之後、026 在 025 之後。
+2. 票 025、026（026a～c）已實作完成，待 M-03／M-09 手感；SAD／SDS 補多選的設計說明。
 3. 人工驗收仍待專案擁有者：M-01（票 016，暫緩）、M-02、M-04、M-05、M-06（正式）、M-08（斷網，新增）；以及審查 SAD／SDS／測試計畫草稿。
 
 ### 狀態核對

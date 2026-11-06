@@ -24,6 +24,26 @@ export function moveEvent(event: TimedEvent, pointerTime: Date, grabOffsetMs: nu
   return times(start, new Date(start.getTime() + elapsed));
 }
 
+/**
+ * 整批移動（SRS R-9）：被抓住的區塊已經算好新時間，其他區塊以同樣的時間差位移，
+ * 所以彼此的間隔與各自的長度都不變。
+ */
+export function moveEventsTogether(
+  group: Record<string, TimedEvent>,
+  grabbedId: string,
+  grabbedTimes: EventTimes,
+): Record<string, EventTimes> {
+  const grabbed = group[grabbedId];
+  if (!grabbed) return {};
+  const delta = new Date(grabbedTimes.startAt).getTime() - new Date(grabbed.startAt).getTime();
+  return Object.fromEntries(
+    Object.entries(group).map(([id, event]) => [
+      id,
+      times(new Date(new Date(event.startAt).getTime() + delta), new Date(new Date(event.endAt).getTime() + delta)),
+    ]),
+  );
+}
+
 /** Top edge: the end stays fixed. */
 export function resizeStart(event: TimedEvent, pointerTime: Date): EventTimes {
   const end = new Date(event.endAt);

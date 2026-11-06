@@ -46,10 +46,13 @@
 | 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |
 | 023 | [工具列語言選單](023-toolbar-language-menu.md) | S | 010、011 | 可開始 |
 | 024 | [NFR-03 調查：Rust 與依賴、Runtime 版本、正式 M-06、可控方式](024-offline-investigation.md) | M | 無（018 已完成）；結論由專案擁有者決定 | 可開始（調查票，不改產品行為） |
-| 025 | [radial 選單啟動速度](025-radial-activation-speed.md) | S | **專案擁有者決定**新的長按時間與進場時間 | **未就緒** |
-| 026 | [拖曳選取多個時段](026-multi-slot-drag-select.md) | L（暫估） | **專案擁有者決定**行為與手勢，並修訂 Brief／PRD／SRS | **未就緒** |
+| 025 | [radial 選單啟動速度](025-radial-activation-speed.md) | S | 無（數值已決定：250 ms／120 ms／6 px） | 完成（M-03 已通過） |
+| 026 | [框選多個區塊（規格票）](026-multi-slot-drag-select.md) | 規格 | 無 | 規格完成（2026-11-06） |
+| 026a | [框選多個區塊（含與 radial 分流）](026a-marquee-select.md) | M | 025 | 完成（M-09 待專案擁有者） |
+| 026b | [整批移動選中的區塊](026b-batch-move.md) | M | 026a | 完成（M-09 待專案擁有者） |
+| 026c | [整批刪除選中的區塊](026c-batch-delete.md) | S | 026a | 完成（M-09 待專案擁有者） |
 
-**待專案擁有者決定**：票 025 的長按與進場時間；票 026 的多時段選取行為（見各票的 Blocked by）。Q-05 已於 2026-11-05 決定。
+**待專案擁有者決定**：無。Q-05 已於 2026-11-05 決定；票 026 的行為已於 2026-11-06 訪談定案。
 
 ## 依賴圖
 

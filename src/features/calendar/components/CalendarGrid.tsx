@@ -21,6 +21,7 @@ import {
   type TimedEvent,
 } from '../engine';
 import { useCalendarModel } from '../hooks/useCalendarModel';
+import { useMarqueeSelect } from '../hooks/useMarqueeSelect';
 import { useEventInteractions, type ElementRef } from '../hooks/useEventInteractions';
 import { EventBlock, GhostBlock } from './EventBlock';
 
@@ -68,17 +69,19 @@ export function CalendarGrid({
   const selectedEventId = useAppStore((state) => state.selectedEventId);
   const editingEventId = useAppStore((state) => state.editingEventId);
   const droppedEventId = useAppStore((state) => state.droppedEventId);
-  const select = useAppStore((state) => state.select);
+  const selectedEventIds = useAppStore((state) => state.selectedEventIds);
   const openDay = useAppStore((state) => state.openDay);
   const now = useNow();
   const { draft, begin } = useEventInteractions(scrollerRef, columnsRef, days, timeline);
+  const marquee = useMarqueeSelect();
   useZoomAnchoring(scrollerRef, timeline.pixelsPerMinute);
 
   const displayed = useMemo(
     () =>
-      Object.values(events).map((event) =>
-        event.id === draft?.eventId ? { ...event, ...draft.times } : event,
-      ),
+      Object.values(events).map((event) => {
+        const preview = draft?.batch?.[event.id] ?? (event.id === draft?.eventId ? draft.times : undefined);
+        return preview ? { ...event, ...preview } : event;
+      }),
     [events, draft],
   );
   const segments = useMemo(() => layoutSegments(displayed, days, timeline), [displayed, days, timeline]);
@@ -154,7 +157,7 @@ export function CalendarGrid({
             data-testid="calendar-columns"
             className="relative min-w-0 flex-1"
             style={{ height }}
-            onPointerDown={() => select(null)}
+            onPointerDown={marquee.onPointerDown}
           >
             {Array.from({ length: Math.floor(span / 30) }, (_, index) => (index + 1) * 30).filter(minutes => minutes % 60 !== 0).map(minutes => (
               <div key={`half-${minutes}`} className="pointer-events-none absolute inset-x-0 border-t border-dashed border-line/60" style={{ top: minutesToPixels(minutes, timeline) }} />
@@ -199,10 +202,10 @@ export function CalendarGrid({
                           past={isPastDate(day, now)}
                           segment={segment}
                           event={event}
-                          selected={selectedEventId === event.id}
+                          selected={selectedEventId === event.id || selectedEventIds.includes(event.id)}
                           editing={editingEventId === event.id}
                           dropped={droppedEventId === event.id}
-                          active={draft?.eventId === event.id}
+                          active={draft?.eventId === event.id || Boolean(draft?.batch?.[event.id])}
                           onBegin={(press, mode) => {
                             // A gesture always starts from the stored event, not a draft.
                             const stored = events[event.id];
@@ -217,6 +220,14 @@ export function CalendarGrid({
           </div>
         </div>
       </div>
+
+      {marquee.rect && (
+        <div
+          data-testid="marquee"
+          className="pointer-events-none fixed z-40 rounded border border-ink/60 bg-ink/10"
+          style={{ left: marquee.rect.left, top: marquee.rect.top, width: marquee.rect.right - marquee.rect.left, height: marquee.rect.bottom - marquee.rect.top }}
+        />
+      )}
 
       {draft && draftEvent && (
         <div

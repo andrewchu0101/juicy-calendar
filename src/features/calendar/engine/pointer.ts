@@ -91,3 +91,16 @@ export function splitParticles() {
 export function visibleFeedbackPoint(point: Point, width: number, height: number): Point {
   return { x: Math.max(24, Math.min(width - 24, point.x)), y: Math.max(24, Math.min(height - 24, point.y)) };
 }
+
+/** A screen rectangle in client coordinates. */
+export type Rect = { left: number; top: number; right: number; bottom: number };
+
+/** The rectangle spanned by two corners, whichever direction the drag went. */
+export function rectFromPoints(a: Point, b: Point): Rect {
+  return { left: Math.min(a.x, b.x), top: Math.min(a.y, b.y), right: Math.max(a.x, b.x), bottom: Math.max(a.y, b.y) };
+}
+
+/** Touching counts: a marquee that grazes a block selects it (SRS FR-12). */
+export function rectsIntersect(a: Rect, b: Rect): boolean {
+  return a.left <= b.right && b.left <= a.right && a.top <= b.bottom && b.top <= a.bottom;
+}

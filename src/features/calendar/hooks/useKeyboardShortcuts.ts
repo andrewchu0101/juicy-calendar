@@ -19,9 +19,9 @@ export function useKeyboardShortcuts() {
         else store.undo();
         return;
       }
-      if ((event.key === 'Delete' || event.key === 'Backspace') && store.selectedEventId) {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && (store.selectedEventId || store.selectedEventIds.length > 0)) {
         event.preventDefault();
-        store.deleteEvent(store.selectedEventId);
+        store.deleteSelected();
         return;
       }
       if (event.key === 'Escape') store.select(null);

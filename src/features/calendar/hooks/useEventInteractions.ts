@@ -4,6 +4,7 @@ import type { CalendarEvent } from '../../../types';
 import {
   edgeScrollSpeed,
   moveEvent,
+  moveEventsTogether,
   magnetMinutes,
   pointerToTime,
   resizeEnd,
@@ -24,6 +25,8 @@ export type InteractionDraft = {
   eventId: string;
   mode: InteractionMode;
   times: EventTimes;
+  /** 整批移動時，所有選中區塊的預覽時間（含被抓住的那個）。 */
+  batch?: Record<string, EventTimes>;
   pointer: Point;
 };
 
@@ -53,7 +56,12 @@ export function useEventInteractions(
       const scroller = scrollerRef.current;
       if (press.button !== 0 || !columns || !scroller) return;
       press.stopPropagation();
-      useAppStore.getState().select(event.id);
+      const state = useAppStore.getState();
+      // 抓住多選中的一個區塊移動＝整批移動；其他情況維持單選（SRS FR-13）。
+      const group = mode === 'move' && state.selectedEventIds.includes(event.id)
+        ? Object.fromEntries(state.selectedEventIds.map((id) => [id, state.events[id]!]).filter(([, found]) => found))
+        : null;
+      if (!group) state.select(event.id);
 
       const pointerId = press.pointerId;
       const origin: Point = { x: press.clientX, y: press.clientY };
@@ -78,7 +86,13 @@ export function useEventInteractions(
         if (mode === 'move') latest = moveEvent(event, edgeTime, 0);
         else if (mode === 'resize-start') latest = resizeStart(event, edgeTime);
         else latest = resizeEnd(event, edgeTime);
-        setDraft({ eventId: event.id, mode, times: latest, pointer });
+        const batch = group && latest ? moveEventsTogether(group, event.id, latest) : undefined;
+        setDraft({ eventId: event.id, mode, times: latest, batch, pointer });
+      };
+
+      const isOutsideCalendar = (point: Point) => {
+        const grid = columns.getBoundingClientRect();
+        return point.x < grid.left || point.x > grid.right || point.y < grid.top || point.y > grid.bottom;
       };
 
       const tick = () => {
@@ -124,8 +138,14 @@ export function useEventInteractions(
       function onUp(up: PointerEvent) {
         if (up.pointerId !== pointerId) return;
         const result = latest;
+        const batch = group && result ? moveEventsTogether(group, event.id, result) : null;
+        const outside = isOutsideCalendar({ x: up.clientX, y: up.clientY });
         stop();
-        if (active && result) useAppStore.getState().updateEvent(event.id, result);
+        if (group) {
+          // 整批：在日曆以外放開＝整批拒絕（AC-04.3）；沒有拖曳的點擊＝選取縮成這一個。
+          if (!active) useAppStore.getState().select(event.id);
+          else if (batch && !outside) useAppStore.getState().moveEvents(batch);
+        } else if (active && result) useAppStore.getState().updateEvent(event.id, result);
       }
 
       function onKey(key: KeyboardEvent) {

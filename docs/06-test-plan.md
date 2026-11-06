@@ -57,6 +57,8 @@
 | TC-13 | FR-08、U-12 啟動前檢查（WebView2 偵測與說明語言） | Rust 單元 |
 | TC-14 | FR-11、AC-03.4 免安裝 .zip 組裝腳本（版面、說明檔、可重複執行、zip 內容、缺少執行檔、預設位置） | Node 單元（vitest，暫存資料夾） |
 | TC-16 | R8；AC-01.4、FR-04 radial 選中規則（hover 不選中、離開範圍選中、相鄰球只換 hover、重疊取最近） | 單元＋e2e |
+| TC-17 | AC-01.4、FR-04 radial 選單啟動速度（長按時間、移動容許值、進場時間；票 025） | e2e（Playwright 凍結時鐘） |
+| TC-18 | AC-04.1～04.4、FR-12～FR-14 多選：框選、整批移動、拒絕、整批刪除與復原（票 026a～c） | 單元（引擎純函式、store）＋e2e |
 | TC-15 | NFR-03b 靜態檢查（CSP 白名單、前端原始碼無網路呼叫；不含 Rust、依賴與 WebView2） | 單元（vitest，讀真實設定與原始碼） |
 
 ### TC-01｜放球、調整、命名（AC-01.1、FR-01、FR-02）
@@ -250,6 +252,33 @@
 
 e2e：hover 後其他球仍在、沒有拖曳覆蓋層；移到圓心方向離開後覆蓋層出現、其他球消失。執行方式：`npx vitest run src/features/calendar/engine/engine.test.ts -t TC-16`、`npm run test:e2e`。
 
+### TC-17｜radial 選單啟動速度（AC-01.4、FR-04，票 025；新增）
+
+層級：e2e（`e2e/radialSpeed.spec.ts`）；選這層因為要驗證真實的計時器與 CSS 動畫。時鐘以 `page.clock.install` 加 `pauseAt` 凍結，只靠 `runFor` 推進；每次「沒有出現」的斷言前先 `settle`（等 React 排程的渲染落地），否則斷言可能早於渲染而空過。數值來自 `limits.ts`（`RADIAL_LONG_PRESS_MS` 250、`RADIAL_MOVE_TOLERANCE_PX` 6、`RADIAL_ENTER_MS` 120），測試引用常數、不複製數字。
+
+1. 按住空白處，推進長按時間減 1 ms。預期：沒有選單；再推進 1 ms。預期：6 顆球出現。
+2. 按住後在長按時間之前移動超過容許值（7 px）。預期：選單不出現、不建立事件；移動剛好等於容許值（6 px）。預期：選單照常出現。
+3. 選單出現後，6 顆球的 `animation-duration` 等於進場時間（0.12s）。
+
+減少動態效果時不播放進場動畫：沿用既有 CSS（`.radial-choice { animation: none; }`），本票未新增斷言。
+
+### TC-18｜多選：框選、整批移動、整批刪除（AC-04.1～04.4、FR-12～FR-14，票 026a～c；新增）
+
+層級：引擎與 store 的純邏輯用單元測試（框與區塊相交、整批位移、選取狀態、整批刪除與復原）；手勢分流（框選對 radial）與畫面行為用 e2e，時鐘沿用 TC-17 的凍結做法。預期值來自 PRD AC 與 SRS R-9 的人工算例。
+
+1. （單元）框與矩形相交：碰到邊算相交、不相交不選。
+2. （單元）整批位移：被抓住的區塊依 R-1 決定新開始，其他區塊套同一個時間差；長度不變；跨天時差保持。
+3. （單元，store）`selectMany`：0 個＝清除、1 個＝單選、2 個以上＝多選且單選欄位為空；`select`／`setEditing` 都會清掉多選；復原後去掉已不存在的區塊。
+4. （單元，store）`moveEvents` 一次提交、可一次復原；`deleteSelected` 一次提交、可一次復原。
+5. （e2e）框選：250 ms 內移動超過 6 px 才是框選，兩個區塊被選中、隱藏區塊沒被選、沒有 radial、面板不顯示、沒有檔案被寫入；按住不動滿 250 ms 仍是 radial。
+6. （e2e）框選進行中按 Escape 還原；框到空白清除；點選中的區塊縮成一個。
+7. （e2e）整批移動保持間隔且可跨天；Escape 與在日曆外放開整批回原位且事件檔不變。
+8. （e2e）`Delete` 刪除全部選中、對應檔案消失；復原一次全部回來。
+
+**狀態：** 已實作並通過（2026-11-06）；執行結果見下方追溯表。
+
+**實作對照：** 第 1 項 `src/features/calendar/engine/selection.test.ts`（TC-18a，4 項）；第 2 項同檔（TC-18b，3 項）；第 3、4 項 `src/stores/multiSelect.test.ts`（TC-18c、TC-18d，11 項）；第 5～8 項 `e2e/multiSelect.spec.ts`（9 項）。
+
 ## M-06 監看流程（NFR-03，票 018 定案；**尚未正式執行**）
 
 工具：Windows 內建的 PowerShell（`Get-NetTCPConnection`、`Get-CimInstance`），不需要安裝任何東西、不需要系統管理員。
@@ -313,11 +342,12 @@ $null = $proc.CloseMainWindow()
 |---|---|---|---|
 | M-01 | 乾淨的 Windows：執行安裝檔 → 啟動 → 建立工作區 → 完成 TC-01 的流程 → 解除安裝。預期：App 被移除，工作區資料夾與其中檔案仍在；README 的步驟可照做。Windows 10 1803 若沒有環境，標「未驗證」 | AC-03.1、FR-08、NFR-05 | 未執行 |
 | M-02 | 免安裝版解壓到任意資料夾 → 執行 → 建立區塊並切換語言 → 把整個資料夾複製到另一處或另一台電腦 → 執行。預期：區塊與語言設定相同；工作區檔案在執行檔旁的 `data` | AC-03.4、FR-11 | 未執行 |
-| M-03 | 在日曆空白處按住左鍵 450 ms 叫出 radial 選單，把游標移到球上，再開啟系統的減少動態效果。預期：被 hover 的球邊界果凍起伏、其他球仍在；離開該球範圍才開始拖曳、其他球消失；減少動態時不起伏；球身純色 | AC-01.4、FR-04 | 專案擁有者於 2026-11-05 回報通過（Windows 10 Pro 10.0.19045，Tauri 開發模式 `npm run desktop`；口頭回報，未逐項記錄減少動態效果等細項） |
+| M-03 | 在日曆空白處按住左鍵 250 ms 叫出 radial 選單，把游標移到球上，再開啟系統的減少動態效果。預期：被 hover 的球邊界果凍起伏、其他球仍在；離開該球範圍才開始拖曳、其他球消失；減少動態時不起伏；球身純色 | AC-01.4、FR-04 | 專案擁有者於 2026-11-05 回報通過（Windows 10 Pro 10.0.19045，Tauri 開發模式 `npm run desktop`；口頭回報，未逐項記錄減少動態效果等細項） |
 | M-04 | 把視窗縮到最小（900×560），名稱用 30 個全形字，兩種語言各一次。預期：文字不溢出、不遮蓋其他元件 | NFR-07 | 未執行（自動輔助 `e2e/layout.spec.ts` 已通過，不取代人工） |
 | M-05 | 把 Windows 的時間格式在 12 與 24 小時之間切換（結束後還原），檢查區塊、右側面板、時間軸。預期：全部一致；若面板的原生時間欄位與其他不一致，記為已知限制 | AC-03.3、FR-10 | 未執行；**需專案擁有者操作，會改系統設定** |
 | M-06 | 使用 App 期間監看它的網路連線。預期：零連線。監看方法與步驟見下方「M-06 監看流程」；預跑結果見「M-06 預跑紀錄」 | NFR-03c（也交叉檢查 03b） | 未執行 |
 | M-07 | 以官方環境變數把 WebView2 指向空資料夾來模擬缺少。預期：顯示說明視窗（語言依系統）、結束碼為 1、Tauri 沒有啟動 | FR-08、U-12 | 代理以 UI Automation 自動化執行一次（2026-11-04，Windows 10 Pro 10.0.19045，中文系統語系，debug 版）：環境變數指向空資料夾 → 出現說明視窗（標題「Juicy Calendar 缺少 WebView2」、繁體中文內文含官方網址）→ 按「確定」後結束碼 1；未設環境變數時無說明視窗、程序持續執行、主視窗 `Juicy Calendar` 出現。**專案擁有者於 2026-11-04 親自確認**：說明視窗出現且內容正確（螢幕截圖已看過，沒有 Tauri 主視窗），並按下「確定」；結束碼 1 以上述自動化為證，擁有者未另報數值。**英文版視窗與 release 版（無主控台）：未執行** |
+| M-09 | 多選手感（票 026 新增）：在桌面版建立 3～4 個區塊（含跨天），在空白處快速拖曳框選其中幾個 → 拖其中一個到別天 → 按 Escape、在視窗外放開各試一次 → 再框選後按 Delete，Ctrl+Z 復原。同時確認一般點擊、拖曳區塊邊緣、長按叫出 radial 不受影響。預期：框的樣式與手感合適；整批移動時預覽同步；拒絕時全部回原位；刪除與復原一次到位 | AC-04.1～04.4、FR-12～FR-14 | 未執行 |
 | M-08 | 斷網實測（票 024 新增）：拔掉網路線或關閉所有網路介面卡（Wi-Fi、乙太網路都關），執行免安裝版或安裝版 → 建立工作區 → 拖球建立區塊 → 命名、拖移、調整 → 切換語言 → 關閉再開啟。預期：全部功能照常運作，沒有等待網路的卡頓或錯誤畫面。結束後還原網路。 | NFR-03a | 未執行 |
 
 ## 進入／退出條件
@@ -339,7 +369,8 @@ $null = $proc.CloseMainWindow()
 | AC-01.2 | TC-02 | 2026-11-04，3 次皆 Passed（舊版，只驗「沒有事件」）。2026-11-04（票 004a）補強為核對事件檔清單與每檔 SHA-256（兩種拒絕情境），並驗證之後球仍可拖曳；`npx playwright test -g TC-02 --repeat-each=40 --workers=8`：修正前 6/40 失敗（Escape 後 `drop-ghost` 殘留），修正後 40/40、`--repeat-each=120` 120/120 通過；完整 e2e 連續 3 次為 32／31（magnet 測試 1 次失敗）／32 passed | 2026-11-05（票 004a 補完）：TC-02 e2e 加斷言——日曆外放開後 `.split-particle` 有 18 個，且在動畫結束後透明度為 0（3 秒內）；`--repeat-each=40 --workers=8` 80/80；突變（CSS 移除 `forwards`，碎片動畫後留在畫面）轉紅。完整 e2e 清單已一致（見 NFR-01 列） | 「消失」以透明度 0 判定：碎片元素在 DOM 中不會被移除（`burst` 狀態只會被下一次取代），視覺上已消失；是否要卸載元素未決（不影響行為）。`prefers-reduced-motion` 下碎片為 `display:none`，本斷言在該設定下不適用 |
 | AC-01.3、U-11 | TC-03 | 2026-11-04（票 003），Windows 11、Node 24.22.0、記憶體版 backend／WebKit e2e：單元 `validateTitle.test.ts` 11 項、store `nameLimit.test.ts` 9 項；完整 `npm test` 69 passed／0 failed；`typecheck`、`lint` Passed；`npm run test:e2e` 32 passed（含 3 項新 TC-03 e2e：雙擊命名、面板名稱、模板編輯器）。先紅後綠：單元紅燈 3 失敗（31 字被接受，專案擁有者已確認）；store 紅燈 9 失敗（store 不驗證名稱）；e2e 以暫時把 `NAME_MAX_CHARS` 改成 1000 做變異檢查，3 項皆因「31 字被接受」失敗，之後還原 | 拒絕時的寫入佇列長度 0 以「記憶體 backend 的 `write` 呼叫數為 0」驗證；e2e 的磁碟雜湊為瀏覽器版 localStorage，非真實磁碟。e2e 曾有 1 次 TC-02 間歇失敗（見 LESSONS） |
 | FR-02 邊緣上下限、U-04（拖曳） | TC-05 | 2026-11-04（票 005），Windows 11、Node 24.22.0、TZ America/New_York：單元 `src/features/calendar/engine/resizeBounds.test.ts` 4 項；紅燈 2 失敗／2 通過（1 分鐘下限本來就有，7 天上限缺，實際收到 `2027-03-01T00:00:00Z`、`2026-01-01T00:00:00Z`），綠燈 4/4。e2e `e2e/core.spec.ts` 2 項 TC-05（下緣、上緣拖到 ±14000 px）通過；變異檢查（暫把 `EVENT_MAX_MINUTES` 改成 100000000）兩項紅燈，已還原。完整 `npm test` 73/73；`typecheck`、`lint` Passed | 面板持續分鐘欄**仍無 7 天上限**（屬票 004／TC-04）；桌面版 Tauri 手動拖曳未驗收（改以 e2e）；完整 e2e 3 次為 33／33／34 passed，各有 1 項不相關的間歇失敗 |
-| AC-01.4、FR-04 | TC-16、M-03 | TC-16：2026-11-05（票 020），Node 24.22.0、node 版 vitest：`engine.test.ts` 4 項（TC-16a～d）；先紅後綠（16a 紅燈 `radialStep is not a function`；16b 紅燈 `picked: null` 而非 2；16c 紅燈收到 hover 0 而非最近的 1）；e2e `long press picks up a radial ball…` 依新契約更新（hover 後其他球仍在、離開後才拖曳）；新增 e2e `[TC-16]… releasing the mouse while still on a hovered radial ball picks nothing`（特徵化：程式本來就如此，改以變異檢查——暫讓 hover 即選中，兩項 e2e 皆失敗，已還原）。之後新增「退回圓環中心取消」（單元 TC-16e、f；e2e 一項）：16e 紅燈 `picked: 2` 而非 null；變異檢查（暫拿掉中心判斷）單元與 e2e 皆失敗，已還原；e2e 長按選球改為往外離開。中央半徑由 48 px 改為 65 px、再改為固定 80 px（使用者決定，先試用）：TC-16e 改測 79／81 px，先紅後綠。**回歸**：改 CSS 時誤刪 `split-particle`、`split-burst`、`radial-enter` 規則，使用者回報「放到非法空間變小球」消失；已從 git 還原，並新增 e2e（`[TC-02]… a radial-picked ball dropped outside…`）驗證小球可見、減少動態時隱藏（原有 TC-02 只數 DOM 元素，抓不到）。同日完整驗證（見下方最新執行）：`npm test` 344/344、`typecheck`、`lint`、`npm run test:rust` 43/43 Passed；`npm run test:e2e` 連續 3 次皆 60 passed（Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）。M-03：專案擁有者 2026-11-05 回報通過（口頭，未逐項記錄；Tauri 開發模式，非 release 版） | 起伏視覺與減少動態只靠 CSS，無自動斷言（以 M-03 與 e2e 變小球檢查補）；release 版與 NSIS 安裝版未驗證 |
+| AC-04.1～04.4、FR-12～FR-14 | TC-18、M-09 | 票 026a～c（2026-11-06，Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）：單元 18 項（`selection.test.ts` 7、`multiSelect.test.ts` 11）、e2e 9 項（`multiSelect.spec.ts`，凍結時鐘）。先紅後綠：引擎紅燈 `rectFromPoints／rectsIntersect／moveEventsTogether is not a function`；store 紅燈 `selectMany／moveEvents／deleteSelected is not a function`；e2e 框選紅燈選中 0 個、預期 2；整批移動紅燈 B 的位移 0、預期 +1560 分鐘（A 單獨移動）；Escape／日曆外放開／Delete 各紅燈（選取縮成 1、事件數 3 而非 1）。突變檢查（皆失敗，已還原）：框選忽略相交、Escape 不還原、位移差改 0、日曆外放開仍提交、Delete 只刪第一個。同日 `typecheck`、`lint` Passed；`npm test` 405 passed；`test:e2e` 連續 3 次皆 80 passed。 | **未驗證**：M-09 手感；隱藏區塊（「+N」徽章）不被選中沒有專屬斷言（框選只比對畫面上已渲染的區塊，隱藏的本來就不在 DOM）；`test:rust`、`test:desktop` 未跑（未動 Rust）；框的樣式為實作者假設，待試用；「在日曆以外放開」以指標是否在日曆欄區域外判定，只套用在整批移動 |
+| AC-01.4、FR-04 | TC-16、TC-17、M-03 | TC-16：2026-11-05（票 020），Node 24.22.0、node 版 vitest：`engine.test.ts` 4 項（TC-16a～d）；先紅後綠（16a 紅燈 `radialStep is not a function`；16b 紅燈 `picked: null` 而非 2；16c 紅燈收到 hover 0 而非最近的 1）；e2e `long press picks up a radial ball…` 依新契約更新（hover 後其他球仍在、離開後才拖曳）；新增 e2e `[TC-16]… releasing the mouse while still on a hovered radial ball picks nothing`（特徵化：程式本來就如此，改以變異檢查——暫讓 hover 即選中，兩項 e2e 皆失敗，已還原）。之後新增「退回圓環中心取消」（單元 TC-16e、f；e2e 一項）：16e 紅燈 `picked: 2` 而非 null；變異檢查（暫拿掉中心判斷）單元與 e2e 皆失敗，已還原；e2e 長按選球改為往外離開。中央半徑由 48 px 改為 65 px、再改為固定 80 px（使用者決定，先試用）：TC-16e 改測 79／81 px，先紅後綠。**回歸**：改 CSS 時誤刪 `split-particle`、`split-burst`、`radial-enter` 規則，使用者回報「放到非法空間變小球」消失；已從 git 還原，並新增 e2e（`[TC-02]… a radial-picked ball dropped outside…`）驗證小球可見、減少動態時隱藏（原有 TC-02 只數 DOM 元素，抓不到）。同日完整驗證（見下方最新執行）：`npm test` 344/344、`typecheck`、`lint`、`npm run test:rust` 43/43 Passed；`npm run test:e2e` 連續 3 次皆 60 passed（Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）。M-03：專案擁有者 2026-11-05 回報通過（口頭，未逐項記錄；Tauri 開發模式，非 release 版）。**票 025（2026-11-05，Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）**：長按 450→250 ms、進場 220→120 ms、移動容許 6 px 維持（專案擁有者決定）；TC-17 三項 e2e。第一項先紅後綠（紅燈：滿 250 ms 時選單 0 顆、預期 6，原因是 hook 寫死 450）。第二項為特徵化，首版負向斷言早於渲染而空過（突變「取消條件改 >9999」存活），加 `settle` 後兩個突變（移除取消、`>` 改 `>=`）皆失敗，已還原。第三項紅燈收到 0.22s、預期 0.12s。同日 `typecheck`、`lint` Passed；`npm test` 387 passed；`test:e2e` 連續 3 次皆 71 passed。M-03 手感：專案擁有者 2026-11-05 在桌面版（開發模式）回報通過、「節奏很不錯」（口頭，未逐項記錄） | 起伏視覺與減少動態只靠 CSS，無自動斷言（以 M-03 與 e2e 變小球檢查補）；release 版與 NSIS 安裝版未驗證 |
 | FR-03 | TC-04 | 票 004（2026-11-05，Windows 10 Pro、Node 24.22.0、TZ America/New_York）：單元 `src/features/calendar/engine/panelInputs.test.ts` 38 項（表格逐列＋票 004 補列），紅燈 11 項失敗：結束 `10:30`／`09:00` 與超過 10080 的結束被接受、持續分鐘 `10081`／`10080.4` 被接受、`1e12` 拋 `RangeError`（Invalid time value）、日期 `2026-02-30` 等進位成下個月，皆為斷言失敗「預期 null」；其餘 27 項本來就綠（特徵化）。綠燈只改 `mutations.ts` 的 `withEndTime`（結束套在結束目前的日期，嚴格晚於開始且 ≤ 10080）、`withDuration`（先判斷輸入範圍再四捨五入）、`withDate`（往返比對）。既有測試 `engine.test.ts › applies inspector edits` 的 `withEndTime(base, '01:00')` 原期待隔天 01:00，依 SRS R-3／PRD Q-04 與 TC-04 改為期待 `null`（已註解舊期待）。e2e `[TC-04]…`：舊引擎下紅燈（收到 `09:00` 而非還原的 `12:00`），新引擎 `--repeat-each=40 --workers=8` 40/40；完整 e2e 連續 3 次皆 64 passed、清單相同；`npm test` 384 passed、`typecheck`／`lint` Passed | 日期欄在 e2e 只能用瀏覽器允許的值（`type=date` 不接受 `2026-02-30`），不存在日期只在單元層驗證；人工操作面板未做；面板 Escape 還原的既有行為未新增測試 |
 | AC-02.1、FR-05 | TC-06 | 2026-11-04，`npx vitest run src/services/persistence/reopen.test.ts` 1/1 Passed；完整 `npm test` 49/49 Passed（Windows 11、Node 24.22.0、記憶體版 backend、假時鐘 2026-11-02 12:00 EST）。先紅後綠：紅燈原因為空 fixture（`This folder has no workspace.json.`） | 重開驗證用記憶體版 backend，**未驗證**真實磁碟寫入；`.juicy.lock` 等屬 TC-09／10 |
 | AC-02.2、FR-06、NFR-04 | TC-07、TC-08 | TC-08 **僅代碼部分**（票 006，2026-11-04，Windows 11、Rust 1.99.1）：Rust `opening_a_folder_without_workspace_json_fails_with_not_a_workspace` 通過，並確認資料夾沒有新增檔案；先紅後綠（紅燈 `left: IoError right: NotAWorkspace`）。**TC-07（票 008，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend、假時鐘）**：`npx vitest run src/services/persistence/loadRules.test.ts` 14/14 Passed（(a)～(f) 加 (g) 模板名稱 31 字，各測「載入」與「編輯好事件後關閉」）；紅燈 3 失敗／11 通過，(c)(d) 為 `evt_bad` 被當成好事件載入、(g) 為模板數 7 而非 6，(a)(b)(e)(f) 本來就通過（特徵化）；綠燈後完整 `npm test` 123/123、`typecheck`、`lint` Passed。通知原因現在可區分（`invalid JSON`、`file name does not match id`、`name is empty or too long`、`event is longer than the maximum length`）。`npm run test:e2e`（票 008 完成後，同日）：第 1 次 33 passed／1 failed（既有的 `overlapping events…`，收到 `Mon 10:30` 而非 `Mon 11:00`，LESSONS 已記載的間歇失敗，與載入規則無關）；該項單獨重跑 1/1 通過；整套重跑 34/34 通過。**未驗證**：真實磁碟（Rust backend）載入、桌面版手動開啟舊工作區。**TC-08 前端部分與通知代碼（票 007，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend）**：`openErrors.test.ts`（TC-08 三情境，每個都核對資料夾每檔 SHA-256 不變；`FILE_SKIPPED`、`SETTINGS_RESET`）、`workspaceSession.test.ts`（`WORKSPACE_LOCKED`、`WORKSPACE_TOO_NEW` 帶版本號、`OPEN_FAILED` 診斷只放 `detail`）、`saveError.test.ts`、`notices.test.ts`（英文對照表）。完整 `npm test` 109/109、`typecheck`、`lint` Passed；`npm run test:e2e` 單次 34/34 Passed（含 magnet 測試，本次未失敗）。先紅後綠：`WORKSPACE_TOO_NEW`、`FILE_SKIPPED`、`WORKSPACE_LOCKED`、`saveError`、對照表皆見原因正確的紅燈（收到舊字串或缺少 `code`／函式）；`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`、`SETTINGS_RESET`、`WORKSPACE_TOO_NEW` 版本號、`OPEN_FAILED` 診斷因與前一步同一次改動一併完成，改以變異檢查（暫改程式使其出錯，測試因原因正確而失敗，之後還原並確認檔案相同） | TC-08 以記憶體版 backend 驗證，**未驗證**真實磁碟與原生對話框（`workspace_select` 只測抽出的 `choose_root`）；NFR-01 的「連續 3 次 e2e」本票只跑 1 次。**偏差**：①`saveError` 畫面不再附加診斷句（原本會顯示 `String(error)`，等於洩漏 `detail`），因 `writeQueue` 的 `onResult` 簽章有既有測試而未改；②`OPEN_FAILED` 畫面為 `Could not open the workspace.`，不再附加診斷句；③`WorkspaceOpenError.message` 仍是英文句子（日誌與既有 `/newer/` 斷言用，非畫面文字）；④`BackendError.message` 改讀對照表，句子不變 |
