@@ -31,3 +31,6 @@
 - `README.txt` 為雙語提案文字（CRLF 換行），**待專案擁有者審閱**。
 - 實機：`tauri build --no-bundle` 1m05s；zip 2.95 MB；解壓到全新資料夾後啟動 release 版，8 秒內旁邊建出 `data`（`workspace.json`、`settings.json`、6 個模板、`.juicy.lock`），`%APPDATA%/app.juicycalendar.timeblock` 沒有被建立。測試用的行程是手動結束的，不是正常關閉。
 - **未驗證**：①M-02 的人工流程（建立區塊、切換語言、複製資料夾到另一處或另一台電腦、再執行）；②zip 在乾淨的 Windows 上解壓與執行；③release 版從 zip 啟動後的畫面與操作（只確認檔案出現，沒有看畫面）；④Windows 檔案總管內建解壓是否保留空的 `data/`（只用 bsdtar 驗證）；⑤SmartScreen 對這個未簽章 zip 內 exe 的反應；⑥`README.txt` 在記事本中的顯示（CRLF 與 UTF-8 無 BOM，記事本通常能辨識，但沒實測）。
+
+## 補充（2026-11-07）
+M-02 自動化部分通過：組裝 zip（內含空的 `data/`）→ `Expand-Archive` 解壓 → 執行 → 建立區塊、切 English → 複製整個資料夾到另一處 → 區塊與語言相同。細節見 `docs/evidence/desktop-verification-2026-11-07.md`。**未驗證**：另一台電腦、檔案總管內建解壓、SmartScreen、README.txt 文字審閱（待專案擁有者）。

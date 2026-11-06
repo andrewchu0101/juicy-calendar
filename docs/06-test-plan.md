@@ -119,6 +119,21 @@
 
 另一個事件為週一 23:00–週二 01:00：結束 `02:00` → 週二 02:00（180 分鐘）；`22:00` → 週二 22:00（1380 分鐘）；`23:00` → 週二 23:00（1440 分鐘），皆接受。拒絕時事件逐欄相同、寫入佇列長度為 0。
 
+#### TC-04 延伸：持續時間「小時＋分鐘」兩欄（票 021，SRS R-3 修訂 2026-11-06）
+
+層級：單元（引擎 `withHoursMinutes(event, hours, minutes)`，字串入）＋ e2e（面板）。事件同上（週一 10:30–12:30）。
+
+| 小時／分鐘 | 預期 |
+|---|---|
+| `2／30`、`0／150`、`1／90` | 接受，皆為 150 分鐘（結束 13:00） |
+| `15／空白`、`空白／900`、`0／900` | 接受，結束 `2026-11-03T06:30:00Z` |
+| `0／1`、`0／1.4` | 接受，長度 1 分鐘；`0／1.5` → 2 分鐘 |
+| `168／0`、`0／10080` | 接受，長度 10080 |
+| `1.5／0`、`-1／30`、`abc／30`、`1e1／30`、`0x2／30`、`Infinity／30` | 拒絕（小時欄只收非負整數；`1.5／0` 的總值 90 在範圍內仍須拒絕） |
+| 兩欄皆空（含空白字元） | 拒絕 |
+| `0／0`、`0／0.4`、`0／10081`、`168／0.4`、`169／0` | 拒絕（以輸入值判斷 1..10080） |
+| `0／abc`、`0／-1`、`0／1e12`、`0／0x10`、`0／0b11`、`2／-30` | 拒絕（`2／-30` 的總值 90 在範圍內仍須拒絕） |
+
 ### TC-05｜拖曳邊緣上下限（FR-02、U-04）
 
 層級：單元（引擎的 `resizeStart`、`resizeEnd`）。事件週一 10:30–12:30（`15:30Z–17:30Z`）。
@@ -286,7 +301,7 @@ e2e：hover 後其他球仍在、沒有拖曳覆蓋層；移到圓心方向離�
 1. **準備**：關閉所有 Juicy Calendar；確認沒有殘留的 WebView2 行程（下面第一個指令應印出 0，檢查時排除腳本自己）。測試用全新解壓的免安裝版或乾淨機器上的安裝版。
 2. **啟動並取樣**：把下面整段貼進 PowerShell，改掉 `$Exe`。腳本會啟動 App，每 3 秒取樣一次 App 及其所有子行程（含 `msedgewebview2.exe`）的 TCP 連線，記下每一個**不是本機**的遠端位址，最後正常關閉 App。
 3. **操作**：取樣期間（至少 5 分鐘，把 `$Seconds` 調成 300 以上）依序做：建立工作區、拖球建立區塊、雙擊命名、拖移、調整長度、切換語言、復原與重做、關閉工作區再開啟。
-4. **判定**：「不是本機的遠端位址」一筆都沒有 → 通過；有任何一筆 → 失敗，記下遠端位址、連接埠、行程名稱與出現的時間。
+4. **判定**（2026-11-06 依 U-13 改寫）：記下**每一筆**非本機遠端位址、連接埠、行程名稱與出現時間，並調查來源；來源未釐清標「待查」，不能單憑行程名稱判定為執行階段自行發起。M-06 的結果是一份記錄，不再以「零筆」為通過門檻；若出現**非 `msedgewebview2.exe`** 的行程（我們自己的 App 行程）對外連線，仍視為 03b 失敗。
 
 ```powershell
 # 0) 殘留檢查（應為 0；上一次關閉後 WebView2 行程要幾秒才會完全退出，不是 0 就等 10 秒再查）
@@ -315,7 +330,7 @@ $null = $proc.CloseMainWindow()
 
 **限制（誠實寫明）**：每 3 秒取樣一次，只看已建立或等待中的 TCP，會漏掉兩次取樣之間就結束的短連線；看不到 UDP 與 DNS 查詢。要更確定時，另以系統管理員身分用 `pktmon`（Windows 內建封包監看）或「資源監視器」的網路頁籤交叉確認（這兩個我**沒有試跑**）。強制結束 App（`Stop-Process`）會留下孤兒的 WebView2 行程並占住資料夾，下次啟動會失敗；一律用正常關閉。
 
-**預跑結果摘要**：流程可執行，但預跑已觀察到非本機連線，見下方「M-06 預跑紀錄」。NFR-03c 目前**未達成**，正式 M-06 照現狀跑會失敗。
+**預跑結果摘要**：流程可執行，但預跑已觀察到非本機連線，見下方「M-06 預跑紀錄」。NFR-03c 於 2026-11-06 改寫（SRS U-13）：M-06 的目的改為**記錄並調查**外部連線，不再以零連線為通過門檻。
 
 ### M-06 預跑紀錄（2026-11-05；**不是正式 M-06**，正式流程仍為「未執行」）
 
@@ -345,7 +360,7 @@ $null = $proc.CloseMainWindow()
 | M-03 | 在日曆空白處按住左鍵 250 ms 叫出 radial 選單，把游標移到球上，再開啟系統的減少動態效果。預期：被 hover 的球邊界果凍起伏、其他球仍在；離開該球範圍才開始拖曳、其他球消失；減少動態時不起伏；球身純色 | AC-01.4、FR-04 | 專案擁有者於 2026-11-05 回報通過（Windows 10 Pro 10.0.19045，Tauri 開發模式 `npm run desktop`；口頭回報，未逐項記錄減少動態效果等細項） |
 | M-04 | 把視窗縮到最小（900×560），名稱用 30 個全形字，兩種語言各一次。預期：文字不溢出、不遮蓋其他元件 | NFR-07 | 未執行（自動輔助 `e2e/layout.spec.ts` 已通過，不取代人工） |
 | M-05 | 把 Windows 的時間格式在 12 與 24 小時之間切換（結束後還原），檢查區塊、右側面板、時間軸。預期：全部一致；若面板的原生時間欄位與其他不一致，記為已知限制 | AC-03.3、FR-10 | 未執行；**需專案擁有者操作，會改系統設定** |
-| M-06 | 使用 App 期間監看它的網路連線。預期：零連線。監看方法與步驟見下方「M-06 監看流程」；預跑結果見「M-06 預跑紀錄」 | NFR-03c（也交叉檢查 03b） | 未執行 |
+| M-06 | 使用 App 期間監看它的網路連線。預期：完整記錄所有非本機連線（位址、埠、行程、時間），並調查來源；不以零連線為通過門檻（SRS U-13，2026-11-06）。監看方法與步驟見下方「M-06 監看流程」；預跑結果見「M-06 預跑紀錄」 | NFR-03c（也交叉檢查 03b） | 未執行 |
 | M-07 | 以官方環境變數把 WebView2 指向空資料夾來模擬缺少。預期：顯示說明視窗（語言依系統）、結束碼為 1、Tauri 沒有啟動 | FR-08、U-12 | 代理以 UI Automation 自動化執行一次（2026-11-04，Windows 10 Pro 10.0.19045，中文系統語系，debug 版）：環境變數指向空資料夾 → 出現說明視窗（標題「Juicy Calendar 缺少 WebView2」、繁體中文內文含官方網址）→ 按「確定」後結束碼 1；未設環境變數時無說明視窗、程序持續執行、主視窗 `Juicy Calendar` 出現。**專案擁有者於 2026-11-04 親自確認**：說明視窗出現且內容正確（螢幕截圖已看過，沒有 Tauri 主視窗），並按下「確定」；結束碼 1 以上述自動化為證，擁有者未另報數值。**英文版視窗與 release 版（無主控台）：未執行** |
 | M-09 | 多選手感（票 026 新增）：在桌面版建立 3～4 個區塊（含跨天），在空白處快速拖曳框選其中幾個 → 拖其中一個到別天 → 按 Escape、在視窗外放開各試一次 → 再框選後按 Delete，Ctrl+Z 復原。同時確認一般點擊、拖曳區塊邊緣、長按叫出 radial 不受影響。預期：框的樣式與手感合適；整批移動時預覽同步；拒絕時全部回原位；刪除與復原一次到位 | AC-04.1～04.4、FR-12～FR-14 | 未執行 |
 | M-08 | 斷網實測（票 024 新增）：拔掉網路線或關閉所有網路介面卡（Wi-Fi、乙太網路都關），執行免安裝版或安裝版 → 建立工作區 → 拖球建立區塊 → 命名、拖移、調整 → 切換語言 → 關閉再開啟。預期：全部功能照常運作，沒有等待網路的卡頓或錯誤畫面。結束後還原網路。 | NFR-03a | 未執行 |
@@ -372,6 +387,7 @@ $null = $proc.CloseMainWindow()
 | AC-04.1～04.4、FR-12～FR-14 | TC-18、M-09 | 票 026a～c（2026-11-06，Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）：單元 18 項（`selection.test.ts` 7、`multiSelect.test.ts` 11）、e2e 9 項（`multiSelect.spec.ts`，凍結時鐘）。先紅後綠：引擎紅燈 `rectFromPoints／rectsIntersect／moveEventsTogether is not a function`；store 紅燈 `selectMany／moveEvents／deleteSelected is not a function`；e2e 框選紅燈選中 0 個、預期 2；整批移動紅燈 B 的位移 0、預期 +1560 分鐘（A 單獨移動）；Escape／日曆外放開／Delete 各紅燈（選取縮成 1、事件數 3 而非 1）。突變檢查（皆失敗，已還原）：框選忽略相交、Escape 不還原、位移差改 0、日曆外放開仍提交、Delete 只刪第一個。同日 `typecheck`、`lint` Passed；`npm test` 405 passed；`test:e2e` 連續 3 次皆 80 passed。 | **未驗證**：M-09 手感；隱藏區塊（「+N」徽章）不被選中沒有專屬斷言（框選只比對畫面上已渲染的區塊，隱藏的本來就不在 DOM）；`test:rust`、`test:desktop` 未跑（未動 Rust）；框的樣式為實作者假設，待試用；「在日曆以外放開」以指標是否在日曆欄區域外判定，只套用在整批移動 |
 | AC-01.4、FR-04 | TC-16、TC-17、M-03 | TC-16：2026-11-05（票 020），Node 24.22.0、node 版 vitest：`engine.test.ts` 4 項（TC-16a～d）；先紅後綠（16a 紅燈 `radialStep is not a function`；16b 紅燈 `picked: null` 而非 2；16c 紅燈收到 hover 0 而非最近的 1）；e2e `long press picks up a radial ball…` 依新契約更新（hover 後其他球仍在、離開後才拖曳）；新增 e2e `[TC-16]… releasing the mouse while still on a hovered radial ball picks nothing`（特徵化：程式本來就如此，改以變異檢查——暫讓 hover 即選中，兩項 e2e 皆失敗，已還原）。之後新增「退回圓環中心取消」（單元 TC-16e、f；e2e 一項）：16e 紅燈 `picked: 2` 而非 null；變異檢查（暫拿掉中心判斷）單元與 e2e 皆失敗，已還原；e2e 長按選球改為往外離開。中央半徑由 48 px 改為 65 px、再改為固定 80 px（使用者決定，先試用）：TC-16e 改測 79／81 px，先紅後綠。**回歸**：改 CSS 時誤刪 `split-particle`、`split-burst`、`radial-enter` 規則，使用者回報「放到非法空間變小球」消失；已從 git 還原，並新增 e2e（`[TC-02]… a radial-picked ball dropped outside…`）驗證小球可見、減少動態時隱藏（原有 TC-02 只數 DOM 元素，抓不到）。同日完整驗證（見下方最新執行）：`npm test` 344/344、`typecheck`、`lint`、`npm run test:rust` 43/43 Passed；`npm run test:e2e` 連續 3 次皆 60 passed（Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）。M-03：專案擁有者 2026-11-05 回報通過（口頭，未逐項記錄；Tauri 開發模式，非 release 版）。**票 025（2026-11-05，Windows 10 Pro 10.0.19045、Node 24.22.0、WebKit）**：長按 450→250 ms、進場 220→120 ms、移動容許 6 px 維持（專案擁有者決定）；TC-17 三項 e2e。第一項先紅後綠（紅燈：滿 250 ms 時選單 0 顆、預期 6，原因是 hook 寫死 450）。第二項為特徵化，首版負向斷言早於渲染而空過（突變「取消條件改 >9999」存活），加 `settle` 後兩個突變（移除取消、`>` 改 `>=`）皆失敗，已還原。第三項紅燈收到 0.22s、預期 0.12s。同日 `typecheck`、`lint` Passed；`npm test` 387 passed；`test:e2e` 連續 3 次皆 71 passed。M-03 手感：專案擁有者 2026-11-05 在桌面版（開發模式）回報通過、「節奏很不錯」（口頭，未逐項記錄） | 起伏視覺與減少動態只靠 CSS，無自動斷言（以 M-03 與 e2e 變小球檢查補）；release 版與 NSIS 安裝版未驗證 |
 | FR-03 | TC-04 | 票 004（2026-11-05，Windows 10 Pro、Node 24.22.0、TZ America/New_York）：單元 `src/features/calendar/engine/panelInputs.test.ts` 38 項（表格逐列＋票 004 補列），紅燈 11 項失敗：結束 `10:30`／`09:00` 與超過 10080 的結束被接受、持續分鐘 `10081`／`10080.4` 被接受、`1e12` 拋 `RangeError`（Invalid time value）、日期 `2026-02-30` 等進位成下個月，皆為斷言失敗「預期 null」；其餘 27 項本來就綠（特徵化）。綠燈只改 `mutations.ts` 的 `withEndTime`（結束套在結束目前的日期，嚴格晚於開始且 ≤ 10080）、`withDuration`（先判斷輸入範圍再四捨五入）、`withDate`（往返比對）。既有測試 `engine.test.ts › applies inspector edits` 的 `withEndTime(base, '01:00')` 原期待隔天 01:00，依 SRS R-3／PRD Q-04 與 TC-04 改為期待 `null`（已註解舊期待）。e2e `[TC-04]…`：舊引擎下紅燈（收到 `09:00` 而非還原的 `12:00`），新引擎 `--repeat-each=40 --workers=8` 40/40；完整 e2e 連續 3 次皆 64 passed、清單相同；`npm test` 384 passed、`typecheck`／`lint` Passed | 日期欄在 e2e 只能用瀏覽器允許的值（`type=date` 不接受 `2026-02-30`），不存在日期只在單元層驗證；人工操作面板未做；面板 Escape 還原的既有行為未新增測試 |
+| FR-03（票 021：持續時間小時＋分鐘） | TC-04 延伸 | 票 021（2026-11-06，Windows 11、Node 24.22.0、TZ America/New_York）：單元 `src/features/calendar/engine/durationHoursMinutes.test.ts` 31 項；紅燈：第 1 個行為收到 `null`（空殼）、小時欄 `1.5`／`1e1`／`0x2` 被接受（4 項失敗）、`2／-30`／`0／0x10`／`0／0b11` 被接受（3 項失敗），綠燈 31/31。i18n `dictionary.test.ts`：新增／改寫 5 列，紅燈 5 失敗，綠燈 54/54。e2e `core.spec.ts` 2 項改寫為兩欄（含 `1／90`→12:30、六組拒絕）、`panel-language.spec.ts` 2 項改標籤，完整 `npm run test:e2e` 80 passed；`npm test` 439/439（含新增）；`typecheck`、`lint` Passed | **偏差**：①UI（`Inspector.tsx` 的 `DurationFields`）先於 e2e 修改完成，e2e 沒有先看到紅燈（舊 testid 消失即會失敗，但未單獨執行）；②改寫了既有 e2e 與字典測試的舊單欄斷言（SRS 契約變更，非放寬）；③分鐘欄接受科學記號（`1e1`＝10 分）因 `type=number` 會產生此寫法，規格未明言，待專案擁有者確認；④M 手動未做 |
 | AC-02.1、FR-05 | TC-06 | 2026-11-04，`npx vitest run src/services/persistence/reopen.test.ts` 1/1 Passed；完整 `npm test` 49/49 Passed（Windows 11、Node 24.22.0、記憶體版 backend、假時鐘 2026-11-02 12:00 EST）。先紅後綠：紅燈原因為空 fixture（`This folder has no workspace.json.`） | 重開驗證用記憶體版 backend，**未驗證**真實磁碟寫入；`.juicy.lock` 等屬 TC-09／10 |
 | AC-02.2、FR-06、NFR-04 | TC-07、TC-08 | TC-08 **僅代碼部分**（票 006，2026-11-04，Windows 11、Rust 1.99.1）：Rust `opening_a_folder_without_workspace_json_fails_with_not_a_workspace` 通過，並確認資料夾沒有新增檔案；先紅後綠（紅燈 `left: IoError right: NotAWorkspace`）。**TC-07（票 008，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend、假時鐘）**：`npx vitest run src/services/persistence/loadRules.test.ts` 14/14 Passed（(a)～(f) 加 (g) 模板名稱 31 字，各測「載入」與「編輯好事件後關閉」）；紅燈 3 失敗／11 通過，(c)(d) 為 `evt_bad` 被當成好事件載入、(g) 為模板數 7 而非 6，(a)(b)(e)(f) 本來就通過（特徵化）；綠燈後完整 `npm test` 123/123、`typecheck`、`lint` Passed。通知原因現在可區分（`invalid JSON`、`file name does not match id`、`name is empty or too long`、`event is longer than the maximum length`）。`npm run test:e2e`（票 008 完成後，同日）：第 1 次 33 passed／1 failed（既有的 `overlapping events…`，收到 `Mon 10:30` 而非 `Mon 11:00`，LESSONS 已記載的間歇失敗，與載入規則無關）；該項單獨重跑 1/1 通過；整套重跑 34/34 通過。**未驗證**：真實磁碟（Rust backend）載入、桌面版手動開啟舊工作區。**TC-08 前端部分與通知代碼（票 007，2026-11-04，Windows 11、Node 24.22.0、記憶體版 backend）**：`openErrors.test.ts`（TC-08 三情境，每個都核對資料夾每檔 SHA-256 不變；`FILE_SKIPPED`、`SETTINGS_RESET`）、`workspaceSession.test.ts`（`WORKSPACE_LOCKED`、`WORKSPACE_TOO_NEW` 帶版本號、`OPEN_FAILED` 診斷只放 `detail`）、`saveError.test.ts`、`notices.test.ts`（英文對照表）。完整 `npm test` 109/109、`typecheck`、`lint` Passed；`npm run test:e2e` 單次 34/34 Passed（含 magnet 測試，本次未失敗）。先紅後綠：`WORKSPACE_TOO_NEW`、`FILE_SKIPPED`、`WORKSPACE_LOCKED`、`saveError`、對照表皆見原因正確的紅燈（收到舊字串或缺少 `code`／函式）；`NO_WORKSPACE_JSON`、`WORKSPACE_DAMAGED`、`SETTINGS_RESET`、`WORKSPACE_TOO_NEW` 版本號、`OPEN_FAILED` 診斷因與前一步同一次改動一併完成，改以變異檢查（暫改程式使其出錯，測試因原因正確而失敗，之後還原並確認檔案相同） | TC-08 以記憶體版 backend 驗證，**未驗證**真實磁碟與原生對話框（`workspace_select` 只測抽出的 `choose_root`）；NFR-01 的「連續 3 次 e2e」本票只跑 1 次。**偏差**：①`saveError` 畫面不再附加診斷句（原本會顯示 `String(error)`，等於洩漏 `detail`），因 `writeQueue` 的 `onResult` 簽章有既有測試而未改；②`OPEN_FAILED` 畫面為 `Could not open the workspace.`，不再附加診斷句；③`WorkspaceOpenError.message` 仍是英文句子（日誌與既有 `/newer/` 斷言用，非畫面文字）；④`BackendError.message` 改讀對照表，句子不變 |
 | AC-02.3、FR-07 | TC-09 | 票 009（2026-11-04，Windows 11、Rust 1.90.0、`npm run test:rust` 15 passed／0 failed）。TC-09 雙行程：`workspace_lock::tests::second_process_is_refused_until_the_first_is_killed`（測試執行檔自己當子行程 A；B 被拒得 `WORKSPACE_LOCKED`，`.juicy.lock` 大小為 0 且大小與修改時間不變、檔案清單與其他檔案位元組不變；`kill` A 後 B 取鎖成功）。第二條：`reselecting_the_open_workspace_returns_its_location_without_locking_itself_out`、`..._by_another_spelling_...`（大小寫不同，僅 Windows；突變檢查：比對改成原始路徑相等即紅燈 `Err(WorkspaceLocked)`）。第三條：`failed_lock_keeps_the_open_workspace_and_the_remembered_one`。TC-10：`a_folder_holding_only_the_lock_file_counts_as_empty`；`.juicy.lock` 不在允許清單由既有 `resolve_rejects_paths_outside_the_allow_list_with_path_not_allowed` 證明（原本就通過，無紅燈）。先紅後綠：紅燈原因依序為 `left: Ok(()) right: Err(WorkspaceLocked)`、`unwrap_err` 收到 `Ok`（沒取鎖）、`Err(WorkspaceLocked)` 被自己擋住、`MyTimeBlock` 子資料夾被誤建。另跑 `typecheck`、`lint`、`npm test`（123 passed）皆 Passed | **未驗證**：兩個真實 App 行程指向同一資料夾（人工，會動到真實設定資料夾，待確認）；`workspace_select`／`workspace_restore` 命令本身（含原生對話框）無單元測試，僅測 `activate_in`；除錯用 `JUICY_SMOKE_WORKSPACE` 路徑不取鎖；雲端同步資料夾與網路磁碟**未涵蓋** |
@@ -386,7 +402,7 @@ $null = $proc.CloseMainWindow()
 | NFR-02 | TC-10 | 票 006（2026-11-04，Windows 11、Node 24.22.0、Rust 1.99.1）：`test:rust` 9 passed（原有 5 項保留，新增 4 項：`serializes_as_code_and_detail_with_screaming_snake_case_codes`（JSON 形狀；變異檢查把 `rename_all` 改 `camelCase` 即紅燈）、`resolve_rejects_paths_outside_the_allow_list_with_path_not_allowed`、`file_commands_without_an_open_workspace_fail_with_no_workspace_open`、`opening_a_folder_without_workspace_json_fails_with_not_a_workspace`）；前端 `backendError.test.ts` 12 項、`tauriBackend.test.ts` 8 項；完整 `npm test` 93/93、`typecheck`、`lint` Passed；`test:desktop` Passed。先紅後綠，各循環紅燈原因均為預期代碼不符 | TC-10 的 `app_settings` 已於票 010 執行（見 AC-03.2 列）；`portable::detect` **未執行**（票 015）；`new_workspace_dir` 忽略 `.juicy.lock` 已於票 009 執行。`serde_json` 經同意加入 dev-dependencies。symlink／跳出工作區改回 `PATH_NOT_ALLOWED` 的測試只能在 unix 跑，Windows 未驗證。煙霧測試只確認「rejected」，未確認代碼 |
 | NFR-03a | M-08（票 024 新增，**未執行**） | **未驗證**：沒有在斷網環境實測所有功能 | 需要時在票 024 一併補一個斷網的人工項目 |
 | NFR-03b | TC-15 | 票 018（2026-11-05，Windows 11、Node 24.22.0）：TC-15 的前端部分通過（`src/offline/offline.test.ts` 19 項；掃描器與設定測試先紅後綠，真實設定與原始碼掃描為特徵化）；變異檢查：把 `https://evil.example` 暫時加進 `tauri.conf.json` 的 `connect-src` → 2 項轉紅，在 `src` 暫時加入 `fetch('https://evil.example/track')` → 1 項轉紅並指出檔案與行號，都已還原。`npm test` 29 檔 340 passed、`typecheck`、`lint` Passed | **僅部分達成**：Rust 程式、Cargo 與 npm 依賴、Tauri 外掛權限尚未查（票 024）；掃描有已知限制（間接呼叫、第三方套件、執行期組出的網址） 票 024（2026-11-05）補查 Rust 與依賴：`cargo tree` 268 項無 HTTP／socket／遙測套件，Tauri 權限無網路能力，Rust 原始碼無網路呼叫，打包產物無 XHR／WebSocket／sendBeacon；結論「未發現」，限制見 `docs/evidence/024-nfr-03-brief.md` 第 2 節 |
-| NFR-03c | M-06 | **未達成**。M-06 正式流程已寫成可重做，仍是未執行；預跑 3 次有效，皆在啟動後約 3 秒內看到 WebView2 瀏覽器行程（`msedgewebview2.exe`）對非本機位址的 443 連線（見「M-06 預跑紀錄」） | 待專案擁有者決定（SRS U-13、票 024）；調查前不得把 WebView2 流量視為可忽略，也不得宣稱「完全不連網」 票 024 預跑 #2（2026-11-05，Windows 10 Pro 19045、WebView2 156.0.4314.58）：後續啟動 60 s×2、首次啟動 90 s 皆見 `msedgewebview2.exe` → `150.171.28.11:443`（約 +57～60 s；位址擁有者未查證，PTR 無紀錄）；仍是閒置預跑，非正式 M-06。見 `docs/evidence/024-nfr-03-brief.md` |
+| NFR-03c | M-06 | **規格已改寫（2026-11-06，U-13）**：揭露 WebView2 網路行為並保留監看，不再要求零連線。M-06 正式流程已寫成可重做，仍是未執行；預跑 3 次有效，皆在啟動後約 3 秒內看到 WebView2 瀏覽器行程（`msedgewebview2.exe`）對非本機位址的 443 連線（見「M-06 預跑紀錄」） | U-13 已決；仍不得把 WebView2 流量視為可忽略，來源未釐清保留「待查」，不得宣稱「完全不連網」；產品說明的揭露文字尚未寫入。票 024 Fixed Version 157.0.4341.42 閒置預跑（2026-11-06）仍有 3 個外部端點，見簡報第 7 節 票 024 預跑 #2（2026-11-05，Windows 10 Pro 19045、WebView2 156.0.4314.58）：後續啟動 60 s×2、首次啟動 90 s 皆見 `msedgewebview2.exe` → `150.171.28.11:443`（約 +57～60 s；位址擁有者未查證，PTR 無紀錄）；仍是閒置預跑，非正式 M-06。見 `docs/evidence/024-nfr-03-brief.md` |
 | NFR-06 | 無 | — | **缺口**：待量測，不設 TC |
 | NFR-07 | M-04、`e2e/layout.spec.ts` | 票 019（2026-11-05，Windows 11、Node 24.22.0、WebKit）：`layout.spec.ts` 6 項通過（先紅後綠：模板列 30 字名稱被切掉、面板蓋住工具列；短區塊截斷為特徵化＋突變檢查）；`typecheck`、`lint` Passed；`npm test` 29 檔 340 passed；`test:e2e` 59 passed。截圖 `docs/evidence/019-*.png` | **M-04 人工未執行**；自動檢查只看幾何，不判斷美觀；WebKit 字體與 Windows WebView2 可能不同 |
 | G-03（基準線，票 000） | `typecheck`、`lint`、`npm test`、`test:rust`、`test:desktop` | 2026-11-04，Windows 11、node 24.22.0、Rust 1.99.1：`typecheck` Passed；`lint` Passed；`npm test` 48 passed／0 failed；`test:rust` 5 passed／0 failed；`test:desktop`（bash 腳本，Git Bash）Passed，輸出 `Desktop smoke test passed`（建立工作區、拖放一顆球得 10:30–12:30、重開後 `blocksOnLaunch: 1`，路徑穿越類寫入全被拒絕）。`npm run desktop` 視窗出現、Vite 回 HTTP 200 | 人工「建立工作區、關閉、重開還原」尚待人工驗收；`test:e2e` 不在此票範圍，仍不穩定 |
@@ -399,3 +415,10 @@ $null = $proc.CloseMainWindow()
 不適用：本產品沒有模型或其他非決定性元件。
 
 > 審查重點：每個 TC 有來源與人確認的預期值；高風險有案例；未執行不標通過。
+
+## 桌面版補驗證（2026-11-07）
+
+用目前原始碼重新編譯的 Windows 11 桌面版（免安裝複本、暫存工作區）補驗證了票上寫「人工驗收未做／桌面版未驗證」的自動化可及部分：TC-07 六種壞檔、單一寫入者兩個真實行程、語言設定檔讀寫、面板輸入、release 版缺少 WebView2 說明窗、`data` 無法使用、免安裝 zip 的複製與還原、批次刪除（含真實滑鼠與真實按鍵）。逐項做法、結果與限制見 `docs/evidence/desktop-verification-2026-11-07.md`。**這些是輔助證據，不取代 M-01、M-02、M-04、M-05、M-06、M-08、M-09 的人工驗收；那些仍是「未執行／待專案擁有者」。**
+
+另：`npm test` 441/441、`npm run test:e2e` 89 passed、`npm run test:rust` 43 passed；`npm run test:desktop` 3 次中 1 次冷啟動失敗（票 028）。
+

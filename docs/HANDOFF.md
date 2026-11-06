@@ -4,16 +4,23 @@
 
 | 項目 | 內容 |
 |---|---|
-| 更新時間 | 2026-11-05（票 023 完成、票 024 部分完成；**未 commit**；票 004／004a 已 commit 為 `b8019c2`） |
-| 目前目標 | 依 `issues/` 的工作票逐張實作。票 022（e2e 間歇失敗）完成，NFR-01「連續 3 次清單相同」達成（N=3 仍暫定）。票 020（radial hover）先前完成。下一張預計 021，但它被 004 擋住（見「下一步」）；025、026 為新增的未就緒票（等專案擁有者決定）。 |
+| 更新時間 | 2026-11-07（票 021、026c 追加、各票桌面補驗證完成；票 024 U-13 已決；**多個工作樹改動未 commit**，以 `git status` 為準） |
+| 目前目標 | 收尾所有未完成的票：自動化可及的部分已做完；剩下的都需要專案擁有者親手操作或決定，集中清單在 `docs/CLOSEOUT.md`（範圍已凍結：027、028 暫緩）。 |
 | 工作目錄 | 這台電腦（第二台，無 D 槽）：`C:/Users/student/Project/juicy-calendar`；另一台為 `D:/Project/Fun/juicy-calendar/juicy-calendar` |
 | 分支／HEAD | `main` ／ 票 020 的 commit（`git log -1` 查雜湊）；上一個已知 HEAD 為 `7e9a6be`（票 019）。本輪**未 push**，以 `git status` 核對，不要只信這一行 |
 | 工作樹 | commit 後應為乾淨（以 `git status` 核對）。原 demo 在 `../juicy-calendar-oneshotted-demo`，未動 |
 
 ### 已完成
+- 2026-11-07 收尾（**未 commit**）：①票 026c 選取列改放工具列（不再蓋住週日標題）＋版面測試 6 項；②桌面版補驗證（TC-07、兩個行程、語言設定檔、面板、release 缺 WebView2、`data` 不可用、zip 複製、批次刪除）見 `docs/evidence/desktop-verification-2026-11-07.md`；③新票 027（右側面板蓋住週六／週日，只記錄）、028（`test:desktop` 冷啟動間歇失敗）；④`test:rust` 43 passed、`npm test` 441、e2e 89 passed。**注意**：1421 埠被使用者的 `npm run dev` 占住，e2e 用暫時設定跑，已刪。
+- 票 026c 追加選取列（2026-11-06，**未 commit**）：多選時日曆區右上角顯示「已選 N 個事件／刪除」，SRS FR-14 已補一句。`typecheck`、`lint` Passed；`npm test` 441/441；e2e 83 passed；桌面版以真實滑鼠點擊驗證刪除與復原通過。待專案擁有者：親手重測（exe：`D:/DevCache/m09/app/juicy-calendar.exe`，23:53:58 版）、選取列蓋住「週日」標題是否要調整、窄視窗外觀（M-04）。
+- 票 026c 桌面驗證（2026-11-06，**未 commit，未改程式碼**）：真實 Delete／Backspace 各 5/5 通過、一次 Ctrl+Z 全部回來且檔案逐位元組相同；詳見 `issues/026c-batch-delete.md` 末段。專案擁有者手動測過框選與整批移動（026a／b）通過；M-09 其餘項目與批次刪除手感仍待人工。待決定：多選時是否要有可見的刪除入口。
+- U-13 落案（2026-11-06，**未 commit**）：SRS NFR-03c 改寫、U-13 標已決；SAD／SDS 參照與測試計畫 M-06 判定同步。**未同步**：`docs/01-brief.md` 第 89 行「App 執行時仍不對外連線」、`README.md` 的「The app itself never goes online」與產品說明的揭露文字，待專案擁有者決定。
+- 票 024 Fixed Version 實測（2026-11-06，**未 commit**）：157.0.4341.42 閒置預跑仍有 3 個非本機端點，Fixed Version 不能消除 03c 的連線（簡報第 7 節）。檔案在 `D:/DevCache/webview2-fixed/`（壓縮包、測試複本、使用者資料）與 `D:/DevTools/webview2-fixed/`（解壓）；不需要時可整個刪除。
+- 票 016／024 文件工作（2026-11-06，**未 commit**）：README 兩處過時敘述已改；024 簡報補文件重查；新增 `docs/evidence/manual-checklist-m01-m06-m08.md`。016 的 M-01、024 的正式 M-06／`pktmon`／Fixed Version 實測**仍未執行**。018 無剩餘項目（M-06 歸 024）。
+- 票 021 持續時間小時＋分鐘（2026-11-06，**未 commit**）：引擎 `withHoursMinutes`、面板 `DurationFields`（兩欄共用草稿，焦點離開整組／Enter 提交）、i18n 5 鍵。`typecheck`、`lint` Passed；`npm test` 439/439；`npm run test:e2e` 80 passed。未驗證：手動操作（桌面版）、分鐘欄科學記號是否允許（待專案擁有者）。
 - 票 023 工具列語言選單（2026-11-05，**未 commit**）：新增 `src/components/LanguageMenu.tsx`（唯一一份選單與儲存失敗提示），歡迎畫面與 `CalendarToolbar.tsx` 共用；工具列加 `data-testid="calendar-toolbar"`。測試：`languageMenuShared.test.ts`（3 項）與 `calendar-language.spec.ts` 4 項 e2e，先紅後綠。`typecheck`、`lint` Passed；`npm test` 387 passed；完整 e2e 3 次皆 68 passed、清單相同。**需確認**：選單位置與樣式（工具列最右、同歡迎畫面的下拉）是實作者假設。票 011 的「切換語言立即反映」已勾。**未驗證**：桌面版、人工操作。
 - 票 024 NFR-03 調查（2026-11-05，**部分完成，未 commit**）：成果在 `docs/evidence/024-nfr-03-brief.md`。靜態稽核（Rust 268 項依賴、Tauri 權限、原始碼、打包產物）未發現網路能力；Windows 10 預跑 #2：首次與後續啟動都在約 60 s 看到 `msedgewebview2.exe` → `150.171.28.11:443`（擁有者未查證）；新增人工項目 M-08（斷網，NFR-03a，未執行）。**未做**：正式 M-06、安裝版、`pktmon`、控制方式實測（Fixed Version 等），皆需要你同意或人在場；WebView2 隱私頁 404，執行期資料傳送的官方說明未取得。NFR-03 的寫法由專案擁有者決定（SRS U-13），我沒有改。
-- 票 004 面板時間規則＋票 004a 補完（2026-11-05，**未 commit**）：`engine/mutations.ts` 的 `withEndTime`（結束套在結束目前的日期，嚴格晚於開始且 ≤ 10080，不再當隔天）、`withDuration`（先判輸入範圍再四捨五入）、`withDate`（往返比對，拒絕 `2026-02-30`）。新增 `panelInputs.test.ts`（TC-04，38 項；紅燈 11 項，原因皆為「預期 null」）與 e2e `[TC-04]`（舊引擎紅、新引擎 40/40）；TC-04 表格經同意補列。修訂既有測試一條：`engine.test.ts › applies inspector edits` 的 `withEndTime(base,'01:00')` 由隔天改為 `null`（依 SRS R-3、PRD Q-04）。票 004a 補完：TC-02 e2e 斷言碎片 18 個且動畫後透明度 0，突變轉紅。`typecheck`、`lint` Passed；`npm test` 384 passed；完整 e2e 連續 3 次皆 64 passed、清單相同；TC-04／TC-02 `--repeat-each=40 --workers=8` 皆全過。**未驗證**：人工操作面板；`type=date` 不存在日期只在單元層；`test:rust`、`test:desktop` 本輪未跑（未改 Rust）。**下一步**：票 021 現在不再被 004 擋住，但仍未就緒（待專案擁有者回答，見票內）。
+- 票 004 面板時間規則＋票 004a 補完（2026-11-05，**未 commit**）：`engine/mutations.ts` 的 `withEndTime`（結束套在結束目前的日期，嚴格晚於開始且 ≤ 10080，不再當隔天）、`withDuration`（先判輸入範圍再四捨五入）、`withDate`（往返比對，拒絕 `2026-02-30`）。新增 `panelInputs.test.ts`（TC-04，38 項；紅燈 11 項，原因皆為「預期 null」）與 e2e `[TC-04]`（舊引擎紅、新引擎 40/40）；TC-04 表格經同意補列。修訂既有測試一條：`engine.test.ts › applies inspector edits` 的 `withEndTime(base,'01:00')` 由隔天改為 `null`（依 SRS R-3、PRD Q-04）。票 004a 補完：TC-02 e2e 斷言碎片 18 個且動畫後透明度 0，突變轉紅。`typecheck`、`lint` Passed；`npm test` 384 passed；完整 e2e 連續 3 次皆 64 passed、清單相同；TC-04／TC-02 `--repeat-each=40 --workers=8` 皆全過。**未驗證**：人工操作面板；`type=date` 不存在日期只在單元層；`test:rust`、`test:desktop` 本輪未跑（未改 Rust）。**下一步**：票 021 規格已決，可開工（見票內）。
 - 票 022 e2e 間歇失敗（2026-11-05，已 commit，未 push）：原因是 `dragBall` 在預覽還停在中途點時放開（測試輔助函式競態，產品無誤）。修法在 `e2e/core.spec.ts`：放開前輪詢 `drop-ghost` 的 `y` 與目標差 ≤ `MAGNET_PX`（8），最後一段改單步移動；新增紅燈測試 `… slow drag …`（注入腳本延後 React 提交，修正前約 20～30% 紅，修正後 30/30；容差放寬突變 7/30 轉紅）。`--repeat-each=40 --workers=8`：overlapping 2／0／3→0／0、magnet 3／4→0／0、weekly and daily 0／0→0／0；完整 e2e 連續 3 次皆 63 passed、清單相同；`typecheck`、`lint` Passed、`npm test` 346 passed。已勾票 001「3 次一致」、票 004a 最後一項。**未驗證**：weekly and daily 基線未重現（歸為同因的推定）；macOS／Tauri 桌面版未跑；票 013 的 `moving stays correct after scrolling the calendar` 單次失敗仍未歸類（LESSONS）。細節見 `issues/022-e2e-intermittent-failures.md` 末段與 LESSONS。
 - 複製 template 骨架，併入 demo 原始碼（排除 `.git`、`node_modules`、`dist`、`real-test`、`src-tauri/target`）。
 - 新增 `AGENTS.md`（safe 範本 + demo 的 8 條專案規則）；`CLAUDE.md` 加 `@AGENTS.md`；`.gitignore` 合併 template 的秘密規則。
@@ -79,7 +86,7 @@
 - Playwright WebKit 已重裝到 `D:\DevTools\playwright-browsers`（實體檔案，175 MB），C 槽 `ms-playwright` 已刪除（那是 2026-11-03 我自己裝的）。
 
 ### 下一步（最多三項）
-1. **專案擁有者要先決定的事**（我無法代決）：①票 024：NFR-03c 要保留、改寫還是拆開，以及是否同意做安裝版 M-06、`pktmon`（需管理員）、Fixed Version Runtime 實測（簡報在 `docs/evidence/024-nfr-03-brief.md` 第 5 節）；②票 023：工具列語言選單的位置與樣式（目前是最右側、同歡迎畫面的下拉，為實作者假設）；③票 021 的 4 個待決（介面形式、驗證規則、範圍判斷、標籤是否走 i18n，需修訂 SRS R-3／FR-03）。票 021 已不再被 004 擋住。
+1. **專案擁有者要先決定的事**（我無法代決）：①票 024：NFR-03c 要保留、改寫還是拆開，以及是否同意做安裝版 M-06、`pktmon`（需管理員）、Fixed Version Runtime 實測（簡報在 `docs/evidence/024-nfr-03-brief.md` 第 5 節）；②票 023：工具列語言選單的位置與樣式（目前是最右側、同歡迎畫面的下拉，為實作者假設）；③票 021 已於 2026-11-06 全部決定並修訂 SRS R-3／FR-03（兩欄位、小時整數、分鐘可超過 59 直接換算且小數四捨五入、兩欄皆空拒絕、走 i18n），可開工。
 2. 票 025、026（026a～c）已實作完成，待 M-03／M-09 手感；SAD／SDS 補多選的設計說明。
 3. 人工驗收仍待專案擁有者：M-01（票 016，暫緩）、M-02、M-04、M-05、M-06（正式）、M-08（斷網，新增）；以及審查 SAD／SDS／測試計畫草稿。
 

@@ -28,3 +28,6 @@
 - 測試：`npm run typecheck`、`npm run lint` Passed；`npm test` 93/93；`npm run test:rust` 9/9（原有 5 項保留 + 4 項新增）；`npm run test:desktop` Passed。
 - 過渡設計：`BackendError.message` 為由代碼決定的舊英文句子，票 007 改為集中對照表、票 012 改由字典後移除。
 - 未驗證：symlink／跳出工作區回 `PATH_NOT_ALLOWED` 僅 unix 測得到，Windows 未驗；`test:desktop` 只確認路徑被拒絕，未確認代碼；`test:e2e` 未跑（瀏覽器版 backend 未改）。
+
+## 補充（2026-11-07）
+`npm run test:rust` 43 passed／0 failed（Windows 11）。`test:desktop` 通過（見票 000 補充）。symlink 跳出工作區在 Windows 仍未驗證。人工驗收仍未做。

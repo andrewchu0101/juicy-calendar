@@ -1,0 +1,11 @@
+import { createRequire } from 'node:module';
+const require = createRequire('D:/Project/Fun/juicy-calendar/juicy-calendar/package.json');
+const { chromium } = require('@playwright/test');
+const b = await chromium.connectOverCDP('http://127.0.0.1:9333'); const page = b.contexts()[0].pages()[0];
+const g = await page.getByTestId('calendar-columns').boundingBox(); const cols = await page.getByTestId('day-column').count();
+const pt = (c,h,m=0)=>({x:g.x+(g.width/cols)*(c+0.5),y:g.y+(h-8)*60+m});
+const marquee = async (a,z)=>{await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(z.x,z.y,{steps:6});await page.mouse.up();await new Promise(r=>setTimeout(r,300));};
+const info = async (l)=>console.log(l, JSON.stringify(await page.evaluate(()=>({inspector:!!document.querySelector('[data-testid="inspector"]'),inspectorDelete:!!document.querySelector('[data-testid="inspector-delete"]'),selected:document.querySelectorAll('[data-testid="event-block"][data-selected="true"]').length,buttons:[...document.querySelectorAll('button')].map(x=>x.getAttribute('aria-label')||x.textContent.trim()).filter(Boolean).slice(0,40)}))));
+await page.mouse.click(pt(0,10,30).x, pt(0,10,30).y); await new Promise(r=>setTimeout(r,400)); await info('single-select (click a block):');
+await page.keyboard.press('Escape'); await marquee(pt(0,9,30), pt(1,11,30)); await info('multi-select (marquee 2):');
+await b.close().catch(()=>{});

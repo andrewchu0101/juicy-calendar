@@ -20,18 +20,18 @@
 
 | # | 票 | 大小 | Blocked by | 狀態 |
 |---|---|---|---|---|
-| 000 | [骨架核對：Windows 桌面版啟動與 health 檢查](000-skeleton-windows-check.md) | M | 無 | 可開始 |
-| 001 | [修好拖曳測試輔助函式](001-fix-drag-helper.md) | S | 無 | 可開始 |
-| 002 | [測試 fixture 建構器與重開後一致](002-fixtures-and-reopen.md) | S | 無 | 可開始 |
-| 003 | [名稱不得超過 30 字，常數集中](003-name-limit-30.md) | M | 001 | 完成（TC-03 已執行，見測試計畫） |
-| 004 | [面板時間與持續分鐘的新規則](004-panel-time-rules.md) | M | 003（已完成） | 可開始（TC-04 未執行） |
+| 000 | [骨架核對：Windows 桌面版啟動與 health 檢查](000-skeleton-windows-check.md) | M | 無 | 完成（建立工作區的原生對話框流程待專案擁有者） |
+| 001 | [修好拖曳測試輔助函式](001-fix-drag-helper.md) | S | 無 | 完成 |
+| 002 | [測試 fixture 建構器與重開後一致](002-fixtures-and-reopen.md) | S | 無 | 完成 |
+| 003 | [名稱不得超過 30 字，常數集中](003-name-limit-30.md) | M | 001 | 完成 |
+| 004 | [面板時間與持續分鐘的新規則](004-panel-time-rules.md) | M | 003（已完成） | 完成（面板桌面版已實測；人工待專案擁有者） |
 | 004a | [TC-02 間歇失敗（Escape 後預覽殘留）](004a-tc02-escape-ghost.md) | S | 無 | 完成（插入任務） |
 | 005 | [拖曳邊緣的 1 分鐘到 7 天上下限](005-resize-bounds.md) | S | 003 | 完成 |
 | 006 | [IPC 錯誤改為代碼與診斷文字](006-ipc-error-codes.md) | M | 無 | 完成 |
-| 007 | [通知與開啟錯誤以代碼呈現](007-structured-notices.md) | M | 006 | 等待前置票 |
+| 007 | [通知與開啟錯誤以代碼呈現](007-structured-notices.md) | M | 006 | 完成（人工驗收未做） |
 | 008 | [載入規則變嚴：過長事件與過長名稱視為壞檔](008-load-rules-stricter.md) | M | 002、003、007 | 完成 |
-| 009 | [單一寫入者：第二個視窗被擋](009-single-writer-lock.md) | L | 006、007 | 完成（人工驗收未做） |
-| 010 | [多語系基礎：語言選單、偵測與設定持久](010-i18n-foundation.md) | L | 006、007 | 等待前置票 |
+| 009 | [單一寫入者：第二個視窗被擋](009-single-writer-lock.md) | L | 006、007 | 完成（兩個真實行程已實測；視窗畫面待專案擁有者確認） |
+| 010 | [多語系基礎：語言選單、偵測與設定持久](010-i18n-foundation.md) | L | 006、007 | 完成（桌面版設定檔讀寫已實測） |
 | 011 | [翻譯日曆與工具列](011-translate-calendar.md) | M | 010 | 完成（人工驗收未做；日曆畫面的切換驗證由票 023 承接） |
 | 012 | [翻譯面板、模板編輯器、通知與錯誤](012-translate-panel-notices.md) | M | 007、010 | 完成（人工驗收未做） |
 | 013 | [時間格式跟隨 Windows](013-time-format-windows.md) | M | 010 | 實作完成（M-05 人工驗收待專案擁有者） |
@@ -42,17 +42,19 @@
 | 018 | [離線靜態檢查](018-offline-static-check.md) | S | 無 | 實作完成（僅 NFR-03b 的前端部分；M-06 正式流程未執行；**預跑發現 WebView2 對外連線，NFR-03c 未達成**，後續見 024） |
 | 019 | [排版隨內容與視窗調整](019-adaptive-layout.md) | M | 003、011、012 | 實作完成（自動檢查通過；M-04 人工驗收待專案擁有者） |
 | 020 | [radial 選單 hover 效果](020-radial-hover-effect.md) | M | 無（Q-05 已決） | 完成（M-03 專案擁有者回報通過，2026-11-05） |
-| 021 | [面板持續時間可用小時＋分鐘或分鐘輸入](021-duration-hours-minutes.md) | S | 004、SRS R-3 修訂 | **未就緒** |
-| 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 可開始 |
-| 023 | [工具列語言選單](023-toolbar-language-menu.md) | S | 010、011 | 可開始 |
-| 024 | [NFR-03 調查：Rust 與依賴、Runtime 版本、正式 M-06、可控方式](024-offline-investigation.md) | M | 無（018 已完成）；結論由專案擁有者決定 | 可開始（調查票，不改產品行為） |
+| 021 | [面板持續時間可用小時＋分鐘或分鐘輸入](021-duration-hours-minutes.md) | S | 004、SRS R-3 修訂 | 實作完成（人工檢查待專案擁有者） |
+| 022 | [e2e 間歇失敗（overlapping、weekly/daily）](022-e2e-intermittent-failures.md) | S | 無 | 完成 |
+| 023 | [工具列語言選單](023-toolbar-language-menu.md) | S | 010、011 | 完成（選單位置與樣式待專案擁有者確認） |
+| 024 | [NFR-03 調查：Rust 與依賴、Runtime 版本、正式 M-06、可控方式](024-offline-investigation.md) | M | 無（018 已完成）；結論由專案擁有者決定 | 部分完成（U-13 已決；正式 M-06、pktmon、M-08 待人工） |
 | 025 | [radial 選單啟動速度](025-radial-activation-speed.md) | S | 無（數值已決定：250 ms／120 ms／6 px） | 完成（M-03 已通過） |
 | 026 | [框選多個區塊（規格票）](026-multi-slot-drag-select.md) | 規格 | 無 | 規格完成（2026-11-06） |
 | 026a | [框選多個區塊（含與 radial 分流）](026a-marquee-select.md) | M | 025 | 完成（M-09 待專案擁有者） |
 | 026b | [整批移動選中的區塊](026b-batch-move.md) | M | 026a | 完成（M-09 待專案擁有者） |
-| 026c | [整批刪除選中的區塊](026c-batch-delete.md) | S | 026a | 完成（M-09 待專案擁有者） |
+| 026c | [整批刪除選中的區塊（含選取列）](026c-batch-delete.md) | S | 026a | 完成（桌面版已實測；M-09 手感待專案擁有者） |
+| 027 | [單選時右側面板蓋住週六、週日標題與最右兩欄](027-inspector-covers-week-end.md) | S～M | 無 | 待專案擁有者決定（只記錄） |
+| 028 | [`test:desktop` 冷啟動時固定 2 秒注入太早](028-desktop-smoke-cold-start.md) | S | 無 | 可開始（需專案擁有者同意改 smoke 模組） |
 
-**待專案擁有者決定**：無。Q-05 已於 2026-11-05 決定；票 026 的行為已於 2026-11-06 訪談定案。
+**待專案擁有者決定**：集中清單在 `docs/CLOSEOUT.md`（2026-11-07，範圍已凍結）。Q-05 已於 2026-11-05 決定；票 026 的行為已於 2026-11-06 訪談定案；U-13 已於 2026-11-06 決定。
 
 ## 依賴圖
 

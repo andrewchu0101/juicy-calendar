@@ -34,3 +34,6 @@
 - **修訂的既有測試**：`engine.test.ts › mutations › applies inspector edits` 的 `withEndTime(base, '01:00')`，舊期待隔天 01:00，依 SRS R-3、PRD Q-04 改為 `null`。其他既有測試（含 `keeps a multi-day end date…`）未動且通過。
 - e2e：`[TC-04]…` 一項；舊引擎紅燈、新引擎 40/40。完整 e2e 連續 3 次 64 passed、清單相同。
 - **限制**：`type=date` 輸入不接受 `2026-02-30`，不存在日期只在單元層驗證；人工操作面板未做。票 021 的持續時間輸入將建立在這裡的規則之上。
+
+## 桌面版補驗證（2026-11-07）
+面板的結束時間與持續時間（含票 021 的小時／分鐘兩欄）在桌面版實測：不合法輸入全被拒絕、欄位還原、事件檔雜湊不變；合法輸入結果正確。細節見 `docs/evidence/desktop-verification-2026-11-07.md`。限制：輸入為 CDP 合成事件，非真人打字。

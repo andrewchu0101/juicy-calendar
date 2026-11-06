@@ -83,9 +83,12 @@ npm run test:desktop  # builds and launches the real app; a window opens briefly
 - **Desktop gestures have partial automated coverage.** `test:e2e` drives real pointer input in Playwright's
   WebKit, not Tauri's own webview. `test:desktop` runs in the real webview, but with synthetic pointer events
   and only for ball dropping. The native folder dialog and macOS menu key handling are not automated.
-- Only macOS has been run. Windows and Linux are untested, and the build is not code-signed.
+- The release build has been launched on Windows 10 and Windows 11 during development, and the installer builds, but the
+  installer has **not** been tried on a clean machine and Windows 10 1803 (the stated minimum) is unverified. Linux is
+  untested. The build is not code-signed.
 - A file edited externally while the app is open is not reloaded, and the app's next save of that file wins.
-- Two windows or instances on one workspace are not coordinated.
+- A second window on a workspace that is already open is refused with an explanation (a `.juicy.lock` file marks
+  the owner). This was verified by automated tests only, not yet with two real app processes.
 - Stored times are UTC instants shown in local time, so changing timezone shifts blocks on the grid.
 - Balls cannot be dragged by keyboard. Time-field formatting (12h or 24h) follows the system locale.
 - There is no dark mode.

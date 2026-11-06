@@ -1,6 +1,6 @@
 # 000：骨架核對：Windows 桌面版啟動與 health 檢查
 
-**大小：** M　**狀態：** ready-for-agent
+**大小：** M　**狀態：** 完成（2026-11-07 核對；歡迎畫面「建立工作區」的原生資料夾對話框流程無法自動化，待專案擁有者；其餘已驗證，見末段）
 
 **成果（What to build）：** 專案已有設定檔、入口與測試，這張票**不建立骨架**，而是確認它在 Windows 上真的能跑：桌面版能啟動，health 檢查可重複執行，基準線全綠並留下證據。不寫任何業務邏輯。
 
@@ -25,3 +25,7 @@
 這是桌面版第一次在 Windows 上實際啟動，可能出現平台差異；有問題先記錄，用 `/diagnosing-bugs` 處理，不要順手重構。
 
 共同規則（先讀）：[`issues/README.md`](README.md)。
+
+## 補充（2026-11-07）
+- 目前原始碼、Windows 11：`npm run test:rust` 43 passed／0 failed；`npm run test:desktop`（用 Git Bash，PowerShell 的 `bash` 會解析成 WSL）3 次 1 失敗 2 通過，失敗為剛編出新 debug 執行檔後的冷啟動時序（票 028）。
+- 免安裝版複本在暫存工作區：視窗出現、工作區載入、關閉（正常關閉）後重開，區塊還原。**沒有驗證**歡迎畫面的「建立工作區」（需要原生資料夾對話框，無法自動化）。證據見 `docs/evidence/desktop-verification-2026-11-07.md`。

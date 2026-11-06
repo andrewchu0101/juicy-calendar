@@ -30,6 +30,7 @@
 - 測試與結果見 `docs/06-test-plan.md` TC-18 與追溯表（`typecheck`、`lint` Passed；`npm test` 405；`test:e2e` 連續 3 次皆 80 passed）。
 - 檔案：`mutations.ts`（`moveEventsTogether`）、`appStore.ts`（`moveEvents`）、`useEventInteractions.ts`（整批手勢、日曆外放開拒絕）、`CalendarGrid.tsx`（預覽）。
 - 磁吸沿用 R-1（8 px 內才吸附），不是固定 30 分鐘；規格已據此寫。訪談時我曾說成「30 分鐘吸附」，那是不精確的說法。
-- **未驗證**：M-09 手感（桌面版）；`test:rust`、`test:desktop` 未跑。
+- **桌面手動驗收**：（2026-11-06 專案擁有者用重新編譯的 Windows 桌面版手動測過：從空白處拖出框、框選兩個活動、拖其中一個讓兩個一起移動，三步通過；M-09 的其餘項目——Escape、視窗外放開、一般點擊與長按不受影響、手感評語——未回報）。
+- **未驗證**：M-09 其餘項目（Escape、視窗外放開）；`test:rust`、`test:desktop` 未跑。
 
 共同規則（先讀）：[`issues/README.md`](README.md)。

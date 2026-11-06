@@ -34,3 +34,6 @@
 - **未涵蓋**：真實兩個 App 行程的人工驗證；`JUICY_SMOKE_WORKSPACE` 除錯路徑不取鎖（沒有改，避免動到 `test:desktop`）；`workspace_select`／`workspace_restore` 命令本身。
 
 共同規則（先讀）：[`issues/README.md`](README.md)。
+
+## 桌面版補驗證（2026-11-07）
+兩個真實 App 行程指向同一工作區：第二個顯示「已在另一個視窗開啟」、不載入、資料未被改；原視窗正常關閉或被強制結束後，新行程都能開啟。細節見 `docs/evidence/desktop-verification-2026-11-07.md`。這取代「人工：在 Windows 開兩個 App 行程」的自動化部分；專案擁有者仍可親手確認視窗畫面。

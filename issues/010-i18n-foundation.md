@@ -39,3 +39,6 @@
 - **改動票以外的既有檔案**：`persistence.test.ts` 內自組的 `WorkspaceBackend` 補三個預設方法（介面新增才能編譯），沒動斷言。
 - **暫存資料夾輔助**：`app_settings` 測試內放了一份小的 `TempDir`，未抽成共用（SDS 建議共用）。
 - **未驗證**：見 `docs/06-test-plan.md` AC-03.2 列的 Manual Pending 與「未涵蓋」。
+
+## 桌面版補驗證（2026-11-07）
+免安裝版實機讀寫 `data/app-settings.json`：首次無檔、切換後寫入、重開保留；損毀與不合法值不被改動、改用偵測結果。細節見 `docs/evidence/desktop-verification-2026-11-07.md`。**未驗證**：英文系統語言的偵測（本機為繁中）。

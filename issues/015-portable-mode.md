@@ -35,3 +35,7 @@
 - 第一個測試（`a_portable_flag_…`）的綠燈是最小寫法（無條件回傳 `<目錄>/data`），由第二個測試（無 flag→`None`）逼出旗標判斷；中間兩次紅燈原因皆為預期的斷言失敗。
 - **未驗證**：①M-02 的人工流程（解壓 .zip、建立區塊、複製到另一台電腦）；②release 版與 .zip 組裝（票 017）；③「`data` 唯讀或被占用」在真實 App 畫面上顯示的文字（只有單元測試覆蓋代碼與文字對照）；④手動切換外部工作區的原生對話框流程（只測了 `activate_in(None, …)`）；⑤WebView2 快取是否能放進 `data`（Tauri `data_directory`）**未驗證**，不宣稱整包帶走；⑥`npm run test:e2e` 本輪沒跑（已知有票 022 的間歇失敗，本票只動 Rust 與錯誤文字）；⑦說明檔文字（外部工作區不在承諾內）尚未寫，留給票 017 組裝時放入。
 - 實機證據（debug 執行檔複製到暫存資料夾，旁放 `portable.flag`，測試腳本放在 scratchpad）：首次啟動 `data` 內出現 `workspace.json`、`settings.json`、6 個 `templates/*.json`、`app-settings.json`（`{"language":"en"}`）、`.juicy.lock`；畫面為日曆（6 顆球）；複製整個資料夾再啟動，語言 `en`、模板 6、直接進日曆；兩次執行後 `%APPDATA%\app.juicycalendar.timeblock` 仍不存在。
+
+## 補充（2026-11-07）
+- `data` 是檔案而非資料夾時，歡迎畫面顯示「無法建立或寫入程式旁的 data 資料夾…」，原檔案未被改（取代「未驗證③」）。
+- 免安裝版把設定放在 `data/app-settings.json`；WebView2 快取不在 `data` 內（先前已查證），本輪沒有改變這點。細節見 `docs/evidence/desktop-verification-2026-11-07.md`。

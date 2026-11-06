@@ -97,3 +97,7 @@
 - **「全新解壓」不等於「WebView2 首次啟動」**（2026-11-05，票 024）：WebView2 資料夾在 `%LOCALAPPDATA%/app.juicycalendar.timeblock/EBWebView`，不在免安裝包內，會跨解壓保留。要測首次啟動，用只作用於該程序的 `WEBVIEW2_USER_DATA_FOLDER` 指到全新資料夾（已驗證 6 個 WebView2 行程使用它），不要刪使用者的資料夾。
 - **同樣的 WebView2 連線，在不同機器上出現的時間與位址不同**（2026-11-05，票 024）：Windows 11 約 +3 s、IPv6；Windows 10 約 +60 s、IPv4（`150.171.28.11:443`，PTR 無紀錄，擁有者未查證）。取樣窗口太短（30 s）會漏掉晚到的連線，M-06 要至少 5 分鐘。
 - **官方文件頁可能 404 或被截斷**（2026-11-05，票 024）：WebView2 隱私頁回 404，Tauri 設定頁被截斷，只拿得到摘要。不能把摘要當逐字引用；缺的答案要標「未取得」，不要補。
+- **`Number()` 比規格寬鬆，且總值會抵銷負數**（2026-11-06，票 021）：`Number('0x10')`＝16、`Number('')`＝0；`2 小時 -30 分`總值 90 落在範圍內。小時／分鐘兩欄必須各自先驗證格式，再合併成總分鐘判斷範圍。`type=number` 的輸入框可產生 `1e1`，規格沒說科學記號是否允許，目前接受並以範圍規則把關。
+- **WebView2 Fixed Version 的環境變數路徑要用反斜線**（2026-11-06，票 024）：`WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 給正斜線路徑時，App 彈出「Could not find the WebView2 Runtime」，行程樹內沒有 WebView2；監看腳本看到 0 個端點，會被誤讀成「零連線」。監看結果一定要同時記錄 WebView2 行程的 `ExecutablePath`，空的就是沒啟動、不是通過。
+- **埠 1421 被卡死的 `npm run dev` 占住時，e2e 起不來**（2026-11-06，票 026c）：`reuseExistingServer` 為 true 也沒用，因為那個伺服器只綁 `::1` 且對請求逾時。不要擅自關掉使用者的行程；用一份暫時的 Playwright 設定把 `baseURL` 與 `webServer` 改到別的埠（例如 1431，`npx vite --port 1431 --strictPort`），用完刪除。
+- **真實按鍵測試要先確認前景視窗**（2026-11-06，票 026c）：`SetForegroundWindow` 可能失敗，按鍵會送到別的視窗，看起來像「App 沒反應」。送鍵前用 `GetForegroundWindow` 核對，不是就中止；並在頁面端記錄收到的 `keydown` 作為證據。

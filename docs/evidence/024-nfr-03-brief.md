@@ -59,6 +59,13 @@
 | `DowngradeVersion` 原則 | 同上 | 讓特定 App 暫時使用較舊的 Runtime | 與網路無關 | 是 | — | 與 03c 無關，僅列出 |
 | `offlineInstaller`／`embedBootstrapper` 安裝模式 | <https://v2.tauri.app/reference/config/>（摘要，未逐字） | `offlineInstaller` 不需網路，安裝檔約 +127 MB；`downloadBootstrapper`（預設）需網路 | 只影響**安裝階段**，不影響執行期 | 否 | 安裝版 | 與 03a 的安裝部分有關，與 03c 無關 |
 
+**文件重查（2026-11-06，只讀文件，沒有實測）**：重新擷取四個頁面，結論不變，且補到幾句逐字引文。
+- 隱私頁 `.../webview2/concepts/privacy` 仍回 **404**；上層 `.../webview2/` 頁（200）沒有隱私、資料蒐集或遙測連結。「執行期傳送哪些資料、能否關閉」**仍然沒有官方答案**。
+- 散佈頁（更新於 2026-10-02）：Evergreen「New versions of the Evergreen WebView2 Runtime are automatically downloaded to the client.」；Fixed Version「The WebView2 Runtime on the client isn't automatically updated.」、「over 250 MB」。**頁面沒有任何一句談到 Fixed Version 的網路行為**，所以它能否消除觀察到的 443 連線，文件無法回答，只能實測。
+- 企業頁（2026-08-22）：只有 `UpdatesSuppressed`（每日抑制自動更新的時段，不是停用開關）與 `DowngradeVersion`；「Policies for Microsoft Edge don't apply to the WebView2 Runtime and WebView2 apps.」；沒有 SmartScreen、遙測、元件更新器的設定。同頁提醒「users should not stop updating their WebView2 Runtime」。
+- Tauri 設定頁（151,087 字元）被截斷：前約 4 萬字逐字，其餘是摘要。`webviewInstallMode` 預設 `{"silent": true, "type": "downloadBootstrapper"}` 為逐字；`fixedRuntime`（約 180 MB）、`offlineInstaller`（約 127 MB）、`embedBootstrapper`（約 1.8 MB）的描述仍來自摘要，**不是逐字**。`additionalBrowserArgs` 在 `app > windows[]` 下，只說「Defines additional browser arguments on Windows」，並警告參數不同的 webview 必須使用不同資料目錄；沒有提到網路行為。
+- 結論：**沒有任何有文件依據、能停止啟動時對外連線的設定**。Fixed Version 仍是唯一值得實測的候選，但文件不預期它能解決。
+
 **沒有依據、不採用**：網路上流傳的「停用遙測」旗標清單、改 Edge 的瀏覽器原則（文件明說瀏覽器原則不適用於 WebView2 Runtime：「Policies for Microsoft Edge don't apply to the WebView2 Runtime and WebView2 apps.」）。
 
 ## 5. 需要專案擁有者決定的事
@@ -76,3 +83,23 @@
 - 控制方式的實測：**未做**（沒有同意；Fixed Version 需要大量下載與改設定）。
 - WebView2 執行期資料傳送的官方說明：**取得失敗**（隱私頁 404），需另找來源。
 - NFR-03a 斷網實測：已加入人工項目 M-08，**未執行**。
+
+## 7. Fixed Version Runtime 實測（2026-11-06，**閒置預跑，不是正式 M-06**）
+
+環境：Windows 11 組建 10.0.26200（登錄 ProductName 仍寫 "Windows 10 Home"）；App 為 `src-tauri/target/portable` 的 release 執行檔複本，放在全新資料夾（沒有 `data`，不碰任何真實工作區）；每組都用程序範圍的 `WEBVIEW2_USER_DATA_FOLDER` 指到全新資料夾（首次啟動）。取樣：`Get-NetTCPConnection` 每 3 秒、120 秒、只看 TCP、無 UDP／DNS、無 `pktmon`、閒置（沒有做規定操作）。腳本為暫存區的 `m06.ps1`（M-06 流程腳本加上 Runtime 路徑記錄），未進版控。
+
+來源：微軟「WebView2 下載」頁選 x64，版本 157.0.4341.42，檔案 `Microsoft.WebView2.FixedVersionRuntime.157.0.4341.42.x64.cab`（310,801,569 位元組，SHA-256 `CEDAF8F3D12202C8803BDBAE727B01C1BE34540B78E8F0A10C6B401C2A8BE97D`，Authenticode 簽章有效，簽署者 Microsoft Corporation）。存在 `D:/DevCache/webview2-fixed/`，以 `expand -F:*` 解壓到 `D:/DevTools/webview2-fixed/`（257 個檔案）。C 槽沒有新增檔案（未做全面檢查，只是沒有任何步驟寫 C 槽）。
+
+| 組別 | WebView2 實際路徑（行程取得） | 非本機端點（+首次出現秒數） | 結果 |
+|---|---|---|---|
+| Evergreen 基準 156.0.4314.58 | `C:\Program Files (x86)\Microsoft\EdgeWebView\Application\156.0.4314.58\msedgewebview2.exe` | `2603:1046:c11:803::2:443`（+9）、`2620:1ec:33:1::11:443`（+60） | 2 個端點 |
+| Fixed Version 157.0.4341.42 | `D:\DevTools\webview2-fixed\Microsoft.WebView2.FixedVersionRuntime.157.0.4341.42.x64\msedgewebview2.exe` | `2603:1046:c11:803::2:443`（+54）、`2620:1ec:33:1::11:443`（+57）、`2620:1ec:33::11:443`（+117，SynSent） | 3 個端點 |
+
+**結論（只限這次閒置預跑）**：Fixed Version **沒有**讓連線消失；端點與 Evergreen 基準相同或同網段，只是出現時間不同（+54 s 對 +9 s，單次觀察，不能推論 Fixed 較晚連線）。位址的擁有者與用途**未查證**。所以 Fixed Version 作為 03c 的控制方式，**在這個條件下無效**；它不能讓 App 宣稱零連線。
+
+**實測過程的踩坑與偏差（誠實列出）**
+1. 第一次與第二次嘗試無效：`WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 用**正斜線**路徑，App 彈出「Could not find the WebView2 Runtime」，行程樹內沒有 WebView2，所以「0 個端點」**不是零連線，是沒啟動**。改用**反斜線**路徑後 App 正常啟動。
+2. 第一次失敗後，我對該 Fixed Version 資料夾執行了文件記載的兩條 `icacls /grant "*S-1-15-2-1:(OI)(CI)(RX)"` 與 `*S-1-15-2-2:(OI)(CI)(RX)"`（只動我建立的資料夾，無需管理員）。**之後才發現原因是正斜線**，所以這兩條授權是否有必要**沒有隔離驗證**（Windows 11 上文件只說 Windows 10 需要）。授權仍在該資料夾上；刪除資料夾即移除。
+3. 一次取樣腳本有一個短命行程的 `ExecutablePath` 為空造成錯誤訊息，不影響結果。
+4. 限制：單次、閒置、TCP only、無 `pktmon`、未做規定操作、只有首次啟動、只有免安裝版複本；與第 3 節 Windows 10 預跑的時間差異（+3 s、+60 s）並存，原因不明。
+5. 未驗證：Fixed Version 對 App 功能的影響（只確認視窗能啟動）、`tauri.conf.json` 的 `fixedRuntime` 打包方式（沒用，改用環境變數）、安裝版。
