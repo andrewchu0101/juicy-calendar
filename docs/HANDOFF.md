@@ -2,6 +2,8 @@
 
 ## 摘要（每次覆寫這一段）
 
+> **票 024（2026-11-07 晚）**：正式 M-06 的免安裝版 2 組（首次、後續）已跑完，只有 `msedgewebview2.exe` 連 `150.171.27.11:443`／`150.171.28.11:443`，App 自己沒有對外連線；證據 `docs/evidence/024-m06-portable-2026-11-07.md`。**專案擁有者決定其餘先放著**：安裝版 2 組（要在另一台電腦）、`pktmon`（需管理員）、M-08 斷網、控制方式實測都未做，票 024 維持開著、M-06 不得標通過。此段修改尚未 commit。
+>
 > **預發行 `v0.2.0-beta.2` 已發布**（2026-11-07）：https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.2 ，標為 Pre-release，tag 與建置 commit 都是 `4d6efe2`，附安裝檔、ZIP、`SHA256SUMS.txt`（已用 `gh release view` 核對三個附件皆 uploaded）。從該 commit 驗證：`npm test` 447、`test:rust` 43、`test:e2e` 97 passed、`test:desktop` Passed、typecheck／lint；ZIP 解壓後 release exe 可啟動並正常關閉。安裝檔**未**在任何機器安裝，仍待另一台電腦驗收。這台已用 winget 裝 `gh` 2.103.3（使用者範圍，C 槽）並以 `andrewchu0101` 登入。beta.2 的 commit 已 push；本段之後的文件修改以 `git log` 為準。上方「Release 尚未重建」已不成立。
 >
 > 2026-11-07 晚：專案擁有者口頭回報人工驗收通過 M-01（票 016，含 1803 依其決定記通過，實際環境 Windows 10 22H2）、M-02（票 017）、M-04（票 019／027）、M-05（票 013）；皆未逐項記錄，已寫入各票、`docs/06-test-plan.md`、`docs/CLOSEOUT.md`。另依其要求，縮小成圓點的右側面板加上與 radial hover 球相同的 `radial-wobble`（`Inspector.tsx`、`index.css`、`e2e/inspectorDock.spec.ts` 2 項新測試，先紅後綠；專案擁有者在桌面版開發模式實測後表示可接受）。驗證：`npm test` 447 passed、typecheck／lint Passed、`inspectorDock`＋`layout` e2e 13 passed；完整 e2e、`test:rust` 本輪未重跑。**下一個要做的是票 024**（見下方「下一步」）。commit／push 已獲授權；是否已完成以 `git log`／`git status -sb` 為準。本機 `.codex/config.toml` 工具核准設定不納入提交。Release 尚未重建，所以預發行包不含圓點 wobble。
