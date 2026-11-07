@@ -9,3 +9,9 @@ args = ["-y", "@upstash/context7-mcp@4.1.1"]
 [mcp_servers.playwright]
 command = "npx"
 args = ["-y", "@playwright/mcp@0.0.83", "--headless", "--isolated"]
+
+[mcp_servers.playwright.tools.browser_run_code_unsafe]
+approval_mode = "approve"
+
+[mcp_servers.playwright.tools.browser_close]
+approval_mode = "approve"
