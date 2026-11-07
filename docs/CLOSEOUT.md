@@ -12,14 +12,14 @@
 
 ---
 
-## 另一台 Windows 電腦驗收（預發行 `v0.2.0-beta.1`）
+## 另一台 Windows 電腦驗收（預發行 `v0.2.0-beta.2`）
 
-- **Release**：https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.1（標為 Pre-release）。建置的 commit：`d0775c89325d7da62a218860210266c28fc70af0`，tag 指向同一個 commit。
+- **Release**：https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.2（標為 Pre-release）。建置的 commit：`4d6efe2e3a0cf04364fa246a3ccabb6d6f0fa4ad`，tag 指向同一個 commit（前一版 `v0.2.0-beta.1` 仍在）。
 - **要下載哪個**：
-  - 驗收「免安裝」：`juicy-calendar_0.2.0-beta.1_x64-portable.zip`。
-  - 驗收「乾淨 Windows 安裝」：`juicy-calendar_0.2.0-beta.1_x64-setup.exe`。
+  - 驗收「免安裝」：`juicy-calendar_0.2.0-beta.2_x64-portable.zip`。
+  - 驗收「乾淨 Windows 安裝」：`juicy-calendar_0.2.0-beta.2_x64-setup.exe`。
   - 兩個都附 `SHA256SUMS.txt`，建議兩個都下載。
-- **校驗**（PowerShell，在下載資料夾）：`Get-FileHash -Algorithm SHA256 .\juicy-calendar_0.2.0-beta.1_x64-setup.exe, .\juicy-calendar_0.2.0-beta.1_x64-portable.zip`，值要和 `SHA256SUMS.txt` 一致。
+- **校驗**（PowerShell，在下載資料夾）：`Get-FileHash -Algorithm SHA256 .\juicy-calendar_0.2.0-beta.2_x64-setup.exe, .\juicy-calendar_0.2.0-beta.2_x64-portable.zip`，值要和 `SHA256SUMS.txt` 一致。
 - **安裝版是否會被 SmartScreen 擋**：會（沒有簽章）。選「其他資訊」→「仍要執行」。
 
 ### 免安裝版（ZIP）怎麼驗
@@ -108,7 +108,7 @@
 - 注意：一般模式會把「上次工作區」記在你的使用者設定資料夾（C 槽），這是 App 的正常行為。
 
 **5. M-02 免安裝 zip（票 015、017）**
-1. 下載上方 Release 的 `juicy-calendar_0.2.0-beta.1_x64-portable.zip`，打開裡面的 `README.txt`，審閱文字（繁中與英文）。
+1. 下載上方 Release 的 `juicy-calendar_0.2.0-beta.2_x64-portable.zip`，打開裡面的 `README.txt`，審閱文字（繁中與英文）。
 2. 用檔案總管「全部解壓縮」到任一資料夾，確認有空的 `data/`。
 3. 執行 exe、建立區塊、切語言，關閉。
 4. 把整個資料夾複製到另一處（有條件則另一台電腦），執行，區塊與語言應相同。
