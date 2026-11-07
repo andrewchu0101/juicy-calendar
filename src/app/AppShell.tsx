@@ -44,7 +44,7 @@ export function AppShell() {
       <TemplateDragOverlay template={drag.activeTemplate} ballRef={drag.overlayBallRef} point={drag.manualPoint} />
       <DropSplash splash={drag.splash} />
       <SplitBurst burst={drag.burst} />
-      <RadialPalette drag={drag.radial} />
+      <RadialPalette drag={drag.radial} columnsRef={columnsRef} />
       <Notices />
     </DndContext>
   );

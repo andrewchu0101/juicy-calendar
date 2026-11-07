@@ -26,6 +26,22 @@ async function openWithEvent(page: Page, createLabel: string) {
 
 const optionTexts = (page: Page, label: string) => page.getByLabel(label).locator('option').allInnerTexts();
 
+test.use({ viewport: { width: 900, height: 560 } });
+
+async function expectGutterLabelsFit(page: Page) {
+  const labels = await page.getByTestId('timeline-label').evaluateAll((nodes) => nodes.map((node) => ({
+    text: node.textContent,
+    left: node.getBoundingClientRect().left,
+    gutterLeft: node.parentElement!.getBoundingClientRect().left,
+    height: node.getBoundingClientRect().height,
+    lineHeight: Number.parseFloat(getComputedStyle(node).lineHeight),
+  })));
+  for (const label of labels) {
+    expect(label.height, `${label.text} stays on one line`).toBeLessThanOrEqual(label.lineHeight + 1);
+    expect(label.left, `${label.text} fits inside the gutter`).toBeGreaterThanOrEqual(label.gutterLeft);
+  }
+}
+
 test.describe('24-hour clock (en-GB, English)', () => {
   test.use({ locale: 'en-GB' });
   test('TC-12 block range and timeline labels use 24 hours', async ({ page }) => {
@@ -33,6 +49,12 @@ test.describe('24-hour clock (en-GB, English)', () => {
     await expect(page.getByTestId('event-time')).toHaveText('10:30–12:30');
     const labels = await optionTexts(page, 'Timeline start');
     expect([labels[0], labels[8], labels[13], labels[23]]).toEqual(['00:00', '08:00', '13:00', '23:00']);
+    const gutter = page.getByTestId('timeline-label');
+    await expect(gutter.nth(0)).toHaveText('08:00');
+    await expect(gutter.nth(5)).toHaveText('13:00');
+    await expect(gutter.nth(15)).toHaveText('23:00');
+    await expect(gutter.nth(16)).toHaveText('00:00+1');
+    await expectGutterLabelsFit(page);
   });
 });
 
@@ -43,6 +65,12 @@ test.describe('12-hour clock, English (en-US)', () => {
     await expect(page.getByTestId('event-time')).toHaveText('10:30 AM–12:30 PM');
     const labels = await optionTexts(page, 'Timeline start');
     expect([labels[0], labels[8], labels[13], labels[23]]).toEqual(['12:00 AM', '8:00 AM', '1:00 PM', '11:00 PM']);
+    const gutter = page.getByTestId('timeline-label');
+    await expect(gutter.nth(0)).toHaveText('8:00 AM');
+    await expect(gutter.nth(5)).toHaveText('1:00 PM');
+    await expect(gutter.nth(15)).toHaveText('11:00 PM');
+    await expect(gutter.nth(16)).toHaveText('12:00 AM+1');
+    await expectGutterLabelsFit(page);
   });
 });
 
@@ -53,5 +81,11 @@ test.describe('12-hour clock, 繁體中文 (zh-TW)', () => {
     await expect(page.getByTestId('event-time')).toHaveText('上午 10:30–下午 12:30');
     const labels = await optionTexts(page, '時間軸起點');
     expect([labels[0], labels[8], labels[13], labels[23]]).toEqual(['上午 12:00', '上午 8:00', '下午 1:00', '下午 11:00']);
+    const gutter = page.getByTestId('timeline-label');
+    await expect(gutter.nth(0)).toHaveText('上午 8:00');
+    await expect(gutter.nth(5)).toHaveText('下午 1:00');
+    await expect(gutter.nth(15)).toHaveText('下午 11:00');
+    await expect(gutter.nth(16)).toHaveText('上午 12:00+1');
+    await expectGutterLabelsFit(page);
   });
 });

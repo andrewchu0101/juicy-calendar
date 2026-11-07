@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { sortedTemplates, useAppStore } from '../../../stores/appStore';
 import { RADIAL_LONG_PRESS_MS, RADIAL_MOVE_TOLERANCE_PX, radialBalls, radialRing, radialStep, type Point, type RadialRing } from '../../calendar/engine';
 
@@ -11,7 +11,7 @@ type Drag = {
   cancel: () => void;
 };
 
-export function useRadialPalette(drag: Drag) {
+export function useRadialPalette(drag: Drag, columnsRef: RefObject<HTMLDivElement | null>) {
   const dragRef = useRef(drag);
   useEffect(() => { dragRef.current = drag; });
   const templates = useAppStore(state => state.templates);
@@ -26,6 +26,7 @@ export function useRadialPalette(drag: Drag) {
     const clear = () => { clearTimeout(timer); session = null; origin = null; pointerId = null; setMenu(null); };
     const down = (event: PointerEvent) => {
       if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest('button,input,select,textarea,[role="button"],[data-testid="event-block"]')) return;
+      if (!columnsRef.current?.contains(event.target)) return;
       clear();
       pointerId = event.pointerId;
       origin = { x: event.clientX, y: event.clientY };
@@ -80,6 +81,6 @@ export function useRadialPalette(drag: Drag) {
       window.removeEventListener('blur', cancel);
       window.removeEventListener('keydown', key);
     };
-  }, [templates]);
+  }, [templates, columnsRef]);
   return { menu, templates: sortedTemplates(templates) };
 }

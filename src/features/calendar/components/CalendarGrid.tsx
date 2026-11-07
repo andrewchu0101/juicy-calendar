@@ -4,12 +4,14 @@ import { useAppStore } from '../../../stores/appStore';
 import { formatDate } from '../../../i18n/dateFormat';
 import { useI18nStore } from '../../../i18n/i18n';
 import { hiddenEventsTitle } from '../../../i18n/hiddenEventsTitle';
+import { formatTime } from '../../../i18n/formatTime';
 import { formatTimeRange } from '../../../i18n/formatTimeRange';
 import { useT } from '../../../i18n/useT';
 import { useTimeFormat } from '../../../i18n/useTimeFormat';
 import {
   GUTTER_WIDTH_PX,
   MIN_COLUMN_WIDTH_PX,
+  columnMinutesToDate,
   isPastDate,
   formatDuration,
   durationMinutes,
@@ -29,6 +31,8 @@ import { EventBlock, GhostBlock } from './EventBlock';
 
 export type GhostEvent = TimedEvent & { id: string; title: string; color: string };
 
+// Like toolbar hour labels, shared clock labels use a neutral day, independent of a visible DST transition.
+const TIME_LABEL_DAY = new Date(2000, 0, 1);
 
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date());
@@ -142,10 +146,11 @@ export function CalendarGrid({
               {marks.map((mark) => (
                 <span
                   key={mark.minutes}
-                  className="absolute right-2 -translate-y-1/2 text-[11px] text-muted tabular-nums first:translate-y-0.5"
+                  data-testid="timeline-label"
+                  className="absolute right-2 -translate-y-1/2 text-[11px] whitespace-nowrap text-muted tabular-nums first:translate-y-0.5"
                   style={{ top: minutesToPixels(mark.minutes, timeline) }}
                 >
-                  {mark.label}
+                  {formatTime(columnMinutesToDate(TIME_LABEL_DAY, mark.minutes, timeline), timeFormat)}
                   {mark.nextDay && mark.hour === 0 && <sup className="ml-0.5 text-[9px]">+1</sup>}
                 </span>
               ))}

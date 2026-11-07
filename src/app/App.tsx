@@ -32,9 +32,10 @@ export function App() {
   const booted = useAppStore((state) => state.booted);
   const languageReady = useI18nStore((state) => state.ready);
   const workspacePath = useAppStore((state) => state.workspacePath);
+  const workspaceClosing = useAppStore((state) => state.workspaceClosing);
   useFlushOnExit();
 
   // Wait for the language so the first paint is never in the wrong one.
   if (!booted || !languageReady) return null;
-  return workspacePath ? <AppShell /> : <WelcomeScreen />;
+  return workspacePath ? <div className="contents" inert={workspaceClosing}><AppShell /></div> : <WelcomeScreen />;
 }

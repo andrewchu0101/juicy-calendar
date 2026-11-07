@@ -35,6 +35,7 @@ export function backendErrorText(language: Language, code: ErrorCode): string {
     case 'PATH_NOT_ALLOWED':
       return translate(language, 'error.pathNotAllowed');
     case 'IO_ERROR':
+    case 'INVALID_FILE_ENCODING':
       return translate(language, 'error.ioError');
     case 'PORTABLE_DATA_UNAVAILABLE':
       return translate(language, 'notice.open.portableDataUnavailable');

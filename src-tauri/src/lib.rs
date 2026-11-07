@@ -193,14 +193,25 @@ fn workspace_restore(
 
 #[tauri::command]
 fn workspace_close(app: AppHandle, state: State<'_, WorkspaceState>) -> Result<(), IpcError> {
-    *state.0.lock().map_err(IpcError::io)? = None;
-    if app.state::<PortableData>().0.is_some() {
-        return Ok(());
+    let remembered = if app.state::<PortableData>().0.is_some() {
+        None
+    } else {
+        Some(last_workspace_file(&app)?)
+    };
+    close_in(&state, remembered.as_deref())
+}
+
+fn close_in(state: &WorkspaceState, remembered: Option<&Path>) -> Result<(), IpcError> {
+    let mut open = state.0.lock().map_err(IpcError::io)?;
+    // Keep the root and writer lock available for recovery until every fallible close step succeeds.
+    if let Some(file) = remembered {
+        match fs::remove_file(file) {
+            Err(error) if error.kind() != ErrorKind::NotFound => return Err(IpcError::io(error)),
+            _ => (),
+        }
     }
-    match fs::remove_file(last_workspace_file(&app)?) {
-        Err(error) if error.kind() != ErrorKind::NotFound => Err(IpcError::io(error)),
-        _ => Ok(()),
-    }
+    *open = None;
+    Ok(())
 }
 
 #[tauri::command]
@@ -216,10 +227,19 @@ fn workspace_list(state: State<'_, WorkspaceState>, dir: String) -> Result<Vec<S
 
 #[tauri::command]
 fn workspace_read(state: State<'_, WorkspaceState>, path: String) -> Result<Option<String>, IpcError> {
-    let target = fs_safe::resolve(&current_root(&state)?, &path)?;
+    read_workspace_file(&current_root(&state)?, &path)
+}
+
+/// Reads UTF-8 without replacing invalid bytes; missing files and unreadable content are distinct.
+fn read_workspace_file(root: &Path, path: &str) -> Result<Option<String>, IpcError> {
+    let target = fs_safe::resolve(root, path)?;
     match fs::read_to_string(target) {
         Ok(contents) => Ok(Some(contents)),
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(None),
+        Err(error) if error.kind() == ErrorKind::InvalidData => Err(IpcError {
+            code: ErrorCode::InvalidFileEncoding,
+            detail: Some(error.to_string()),
+        }),
         Err(error) => Err(IpcError::io(error)),
     }
 }
@@ -315,6 +335,81 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir.canonicalize().unwrap()
+    }
+
+    // TC-07 | FR-06, R-5: report invalid UTF-8 without replacing bytes or hiding other I/O failures.
+    #[test]
+    fn reading_invalid_utf8_returns_a_distinct_code_and_leaves_bytes_unchanged() {
+        let root = temp_dir("encoding-invalid");
+        let file = root.join("events/bad.json");
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        let bytes = [b'{', b'"', 0xff, b'"', b'}'];
+        fs::write(&file, bytes).unwrap();
+
+        let error = read_workspace_file(&root, "events/bad.json").unwrap_err();
+        let after = fs::read(&file).unwrap();
+        fs::remove_dir_all(root).unwrap();
+
+        assert_eq!(after, bytes);
+        assert_eq!(serde_json::to_value(error.code).unwrap(), "INVALID_FILE_ENCODING");
+    }
+
+    // TC-07 | FR-06, R-5: valid UTF-8 (including Chinese) must pass through unchanged.
+    #[test]
+    fn reading_utf8_preserves_text_and_distinguishes_missing_from_io_failure() {
+        let root = temp_dir("encoding-valid");
+        fs::create_dir_all(root.join("events")).unwrap();
+        for (name, text) in [("ascii", "{\"title\":\"Work\"}"), ("chinese", "{\"title\":\"讀書\"}")] {
+            fs::write(root.join(format!("events/{name}.json")), text).unwrap();
+            assert_eq!(read_workspace_file(&root, &format!("events/{name}.json")).unwrap(), Some(text.to_string()));
+        }
+        assert_eq!(read_workspace_file(&root, "events/missing.json").unwrap(), None);
+        fs::create_dir_all(root.join("events/directory.json")).unwrap();
+        let error = read_workspace_file(&root, "events/directory.json").unwrap_err();
+        fs::remove_dir_all(root).unwrap();
+        assert_eq!(error.code, ErrorCode::IoError);
+    }
+
+    // TC-06 / TC-09 | FR-05, FR-07: failed close must retain the writable root and its lock.
+    #[test]
+    fn failed_close_keeps_the_workspace_open_and_locked() {
+        let base = temp_dir("close-failed");
+        let root = base.join("workspace");
+        fs::create_dir_all(&root).unwrap();
+        let remembered = base.join("last-workspace.txt");
+        // A directory at the remembered-file path deterministically makes remove_file fail.
+        fs::create_dir_all(&remembered).unwrap();
+        let state = WorkspaceState::default();
+        activate_in(&state, None, root.clone()).unwrap();
+
+        let error = close_in(&state, Some(&remembered)).unwrap_err();
+        let still_open = current_root(&state);
+        let second_writer = workspace_lock::acquire(&root).map(|_| ()).map_err(|e| e.code);
+
+        drop(state);
+        fs::remove_dir_all(base).unwrap();
+        assert_eq!(error.code, ErrorCode::IoError);
+        assert_eq!(still_open.unwrap(), root);
+        assert_eq!(second_writer, Err(ErrorCode::WorkspaceLocked));
+    }
+
+    // TC-06 / TC-09 | FR-05, FR-07: successful close forgets the root and releases its lock.
+    #[test]
+    fn successful_close_forgets_the_workspace_and_releases_its_lock() {
+        let base = temp_dir("close-success");
+        let root = base.join("workspace");
+        fs::create_dir_all(&root).unwrap();
+        let remembered = base.join("last-workspace.txt");
+        let state = WorkspaceState::default();
+        activate_in(&state, Some(&remembered), root.clone()).unwrap();
+
+        close_in(&state, Some(&remembered)).unwrap();
+
+        assert_eq!(current_root(&state).unwrap_err().code, ErrorCode::NoWorkspaceOpen);
+        assert!(!remembered.exists());
+        let next_writer = workspace_lock::acquire(&root).expect("closed workspace can be reopened");
+        drop(next_writer);
+        fs::remove_dir_all(base).unwrap();
     }
 
     // TC-10（portable 還原）｜FR-11、AC-03.4、API-02：免安裝版 data 不存在 → 建立並開啟，回傳

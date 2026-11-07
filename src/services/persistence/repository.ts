@@ -1,6 +1,7 @@
 import type { ZodType } from 'zod';
 import type { CalendarEvent, Settings, Template, WorkspaceMeta } from '../../types';
 import type { WorkspaceBackend } from './backend';
+import { BackendError } from './backendError';
 import { DEFAULT_SETTINGS, eventSchema, SCHEMA_VERSION, settingsSchema, templateSchema, workspaceSchema } from './schemas';
 
 export type WorkspaceData = {
@@ -63,6 +64,17 @@ function skipReason<T>(raw: string, schema: ZodType<T>): string {
   return result.error.issues[0]?.message ?? 'invalid content';
 }
 
+/** Only decoding failures represent corrupt content; genuine I/O failures must still abort opening. */
+async function readEntityContents(backend: WorkspaceBackend, file: string, issues: WorkspaceIssue[]): Promise<string | null> {
+  try {
+    return await backend.read(file);
+  } catch (error) {
+    if (!(error instanceof BackendError) || error.code !== 'INVALID_FILE_ENCODING') throw error;
+    issues.push({ code: 'FILE_SKIPPED', file, detail: 'invalid UTF-8' });
+    return null;
+  }
+}
+
 async function loadEntities<T extends { id: string }>(
   backend: WorkspaceBackend,
   dir: 'templates' | 'events',
@@ -72,7 +84,7 @@ async function loadEntities<T extends { id: string }>(
   // External IDs such as __proto__ must be ordinary own keys, never prototype setters.
   const entities: Record<string, T> = Object.create(null);
   for (const file of await backend.list(dir)) {
-    const raw = await backend.read(`${dir}/${file}`);
+    const raw = await readEntityContents(backend, `${dir}/${file}`, issues);
     if (raw === null) continue;
     const entity = parseWith(raw, schema);
     if (entity && file === `${entity.id}.json`) entities[entity.id] = entity;

@@ -18,6 +18,7 @@ describe('Tauri backend errors', () => {
     ['close', () => backend.close(), 'IO_ERROR'],
     ['list', () => backend.list('events'), 'NO_WORKSPACE_OPEN'],
     ['read', () => backend.read('../x.json'), 'PATH_NOT_ALLOWED'],
+    ['read invalid encoding', () => backend.read('events/bad.json'), 'INVALID_FILE_ENCODING'],
     ['write', () => backend.write('../x.json', ''), 'PATH_NOT_ALLOWED'],
     ['remove', () => backend.remove('../x.json'), 'PATH_NOT_ALLOWED'],
   ] as const)('%s rejects with a BackendError carrying the code', async (_name, call, code) => {

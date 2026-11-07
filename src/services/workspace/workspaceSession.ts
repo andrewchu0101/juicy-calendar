@@ -59,10 +59,23 @@ export async function selectWorkspace(mode: 'create' | 'open'): Promise<void> {
 }
 
 export async function closeWorkspace(): Promise<void> {
-  if (sync && !(await sync.stop())) return;
-  sync = null;
-  await backend.close();
-  useAppStore.getState().reset();
+  const store = useAppStore.getState();
+  if (store.workspaceClosing) return;
+  store.setWorkspaceClosing(true);
+  let stopped = false;
+  try {
+    if (sync && !(await sync.stop())) return;
+    stopped = sync !== null;
+    sync = null;
+    await backend.close();
+    store.reset();
+  } catch (error) {
+    // Native close keeps the root and writer lock on failure. Resume only that same workspace.
+    if (stopped) sync = startPersistenceSync(backend);
+    store.setSaveError({ code: 'SAVE_FAILED', detail: error instanceof Error ? error.message : String(error) });
+  } finally {
+    store.setWorkspaceClosing(false);
+  }
 }
 
 /** False prevents a normal window close while writes still need recovery. */

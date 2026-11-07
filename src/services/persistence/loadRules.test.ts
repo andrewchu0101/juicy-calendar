@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppStore } from '../../stores/appStore';
 import { buildWorkspaceFixture, FIXTURE_NOW_ISO, type FixtureEvent } from '../../test-support/workspaceFixture';
 import { startPersistenceSync } from './persistenceSync';
+import { BackendError, toBackendError } from './backendError';
 import { loadWorkspace } from './repository';
 
 const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
@@ -54,6 +55,59 @@ describe('TC-07 壞檔略過且不改檔 (AC-02.2, FR-06, NFR-04, R-5)', () => {
     useAppStore.getState().reset();
   });
   afterEach(() => vi.useRealTimers());
+
+  it.each(['events/bad.json', 'templates/bad.json'])(
+    '[TC-07][FR-06,R-5] skips an invalid UTF-8 %s without touching it or healthy entities',
+    async (path) => {
+      const { backend, files } = buildWorkspaceFixture({ events: GOOD_EVENTS, rawFiles: { [path]: 'unreadable bytes' } });
+      const before = new Map(files);
+      const read = backend.read;
+      vi.spyOn(backend, 'read').mockImplementation(async (file) => {
+        if (file === path) throw toBackendError({ code: 'INVALID_FILE_ENCODING', detail: 'invalid UTF-8' });
+        return read(file);
+      });
+      const write = vi.spyOn(backend, 'write');
+      const remove = vi.spyOn(backend, 'remove');
+
+      const data = await loadWorkspace(backend);
+
+      expect(Object.keys(data.events).sort()).toEqual(['evt_good1', 'evt_good2']);
+      expect(Object.keys(data.templates)).toHaveLength(6);
+      expect(data.issues).toEqual([{ code: 'FILE_SKIPPED', file: path, detail: expect.any(String) }]);
+      expect(files).toEqual(before);
+      expect(write).not.toHaveBeenCalled();
+      expect(remove).not.toHaveBeenCalled();
+    },
+  );
+
+  it('[TC-07][FR-06,R-5] propagates a genuine I/O read failure instead of treating it as corrupt content', async () => {
+    const { backend, files } = buildWorkspaceFixture({ events: GOOD_EVENTS });
+    const before = new Map(files);
+    const read = backend.read;
+    const error = new BackendError('IO_ERROR', 'permission denied');
+    vi.spyOn(backend, 'read').mockImplementation(async (path) => {
+      if (path === 'events/evt_good1.json') throw error;
+      return read(path);
+    });
+    await expect(loadWorkspace(backend)).rejects.toBe(error);
+    expect(files).toEqual(before);
+  });
+
+  it.each(['workspace.json', 'settings.json'])(
+    '[TC-07][FR-06,R-5] does not swallow invalid encoding outside entities: %s',
+    async (file) => {
+      const { backend, files } = buildWorkspaceFixture({ events: GOOD_EVENTS });
+      const before = new Map(files);
+      const read = backend.read;
+      const error = toBackendError({ code: 'INVALID_FILE_ENCODING', detail: 'invalid UTF-8' });
+      vi.spyOn(backend, 'read').mockImplementation(async (path) => {
+        if (path === file) throw error;
+        return read(path);
+      });
+      await expect(loadWorkspace(backend)).rejects.toBe(error);
+      expect(files).toEqual(before);
+    },
+  );
 
   it('[TC-07][FR-06,R-5] a valid __proto__ event and template load as ordinary entities without changing files', async () => {
     const event = { ...GOOD_EVENTS[0]!, id: '__proto__', templateId: '__proto__' };

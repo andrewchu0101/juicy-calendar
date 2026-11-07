@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const errorCodeSchema = z.enum(['WORKSPACE_LOCKED', 'NOT_A_WORKSPACE', 'NO_WORKSPACE_OPEN', 'PATH_NOT_ALLOWED', 'IO_ERROR', 'PORTABLE_DATA_UNAVAILABLE']);
+const errorCodeSchema = z.enum(['WORKSPACE_LOCKED', 'NOT_A_WORKSPACE', 'NO_WORKSPACE_OPEN', 'PATH_NOT_ALLOWED', 'IO_ERROR', 'INVALID_FILE_ENCODING', 'PORTABLE_DATA_UNAVAILABLE']);
 export type ErrorCode = z.infer<typeof errorCodeSchema>;
 
 const payloadSchema = z.object({ code: errorCodeSchema, detail: z.string().nullable().optional() });

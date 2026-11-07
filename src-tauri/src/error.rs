@@ -14,6 +14,8 @@ pub enum ErrorCode {
     NoWorkspaceOpen,
     PathNotAllowed,
     IoError,
+    /// The file exists but cannot be decoded as UTF-8; callers may isolate corrupt entity files.
+    InvalidFileEncoding,
     /// Portable mode only: the `data` folder next to the executable cannot be created or written.
     /// Never falls back to another folder (ADR-05).
     PortableDataUnavailable,
@@ -72,6 +74,7 @@ mod tests {
             (ErrorCode::NoWorkspaceOpen, "NO_WORKSPACE_OPEN"),
             (ErrorCode::PathNotAllowed, "PATH_NOT_ALLOWED"),
             (ErrorCode::IoError, "IO_ERROR"),
+            (ErrorCode::InvalidFileEncoding, "INVALID_FILE_ENCODING"),
             (ErrorCode::PortableDataUnavailable, "PORTABLE_DATA_UNAVAILABLE"),
         ];
         for (code, expected) in cases {

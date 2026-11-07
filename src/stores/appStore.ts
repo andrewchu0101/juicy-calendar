@@ -14,6 +14,8 @@ export type EventPatch = Partial<Pick<CalendarEvent, 'title' | 'color' | 'startA
 export type AppState = {
   booted: boolean;
   workspacePath: string | null;
+  /** Closing freezes persisted mutations until the native root and writer lock are settled. */
+  workspaceClosing: boolean;
   workspaceName: string;
   openError: OpenErrorState | null;
   saveError: SaveErrorState | null;
@@ -36,6 +38,7 @@ export type AppState = {
   setBooted(): void;
   setOpenError(error: OpenErrorState | null): void;
   setSaveError(error: SaveErrorState | null): void;
+  setWorkspaceClosing(closing: boolean): void;
   dismissIssues(): void;
   hydrate(data: WorkspaceData, path: string): void;
   reset(): void;
@@ -68,6 +71,7 @@ export type AppState = {
 
 const initial = {
   workspacePath: null,
+  workspaceClosing: false,
   workspaceName: '',
   saveError: null,
   issues: [] as WorkspaceIssue[],
@@ -131,6 +135,7 @@ export const useAppStore = create<AppState>((set, get) => {
     setBooted: () => set({ booted: true }),
     setOpenError: (openError) => set({ openError }),
     setSaveError: (saveError) => set({ saveError }),
+    setWorkspaceClosing: (workspaceClosing) => set({ workspaceClosing }),
     dismissIssues: () => set({ issues: [] }),
 
     hydrate: (data, path) =>
@@ -147,6 +152,7 @@ export const useAppStore = create<AppState>((set, get) => {
     reset: () => set({ ...initial }),
 
     createEventFromTemplate: (templateId, start) => {
+      if (get().workspaceClosing) return null;
       const template = get().templates[templateId];
       if (!template) return null;
       const event: CalendarEvent = {
@@ -164,6 +170,7 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     updateEvent: (id, rawPatch) => {
+      if (get().workspaceClosing) return false;
       const event = get().events[id];
       if (!event) return false;
       let patch = rawPatch;
@@ -178,6 +185,7 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     moveEvents: (changes) => {
+      if (get().workspaceClosing) return false;
       const { events } = get();
       const ids = Object.keys(changes);
       if (ids.length === 0 || ids.some((id) => !events[id])) return false;
@@ -188,6 +196,7 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     deleteSelected: () => {
+      if (get().workspaceClosing) return;
       const { events, selectedEventId, selectedEventIds } = get();
       const doomed = selectedEventIds.length > 0 ? selectedEventIds : selectedEventId ? [selectedEventId] : [];
       const next = { ...events };
@@ -198,6 +207,7 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     deleteEvent: (id) => {
+      if (get().workspaceClosing) return;
       const { events, selectedEventId } = get();
       if (!events[id]) return;
       const { [id]: _removed, ...rest } = events;
@@ -208,12 +218,14 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     undo: () => {
+      if (get().workspaceClosing) return;
       const { past, future, events } = get();
       const previous = past.at(-1);
       if (previous) restore(previous, past.slice(0, -1), [...future, events]);
     },
 
     redo: () => {
+      if (get().workspaceClosing) return;
       const { past, future, events } = get();
       const next = future.at(-1);
       if (next) restore(next, [...past, events], future.slice(0, -1));
@@ -236,6 +248,7 @@ export const useAppStore = create<AppState>((set, get) => {
     clearDropped: () => set({ droppedEventId: null }),
 
     saveTemplate: ({ id, ...rawFields }) => {
+      if (get().workspaceClosing) return false;
       const name = validateTitle(rawFields.name);
       if (name === null) return false;
       const fields = { ...rawFields, name };
@@ -253,21 +266,27 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     deleteTemplate: (id) => {
+      if (get().workspaceClosing) return;
       const { [id]: _removed, ...rest } = get().templates;
       set({ templates: rest });
     },
 
-    updateSettings: (patch) => set((state) => ({ settings: { ...state.settings, ...patch } })),
+    updateSettings: (patch) => {
+      if (get().workspaceClosing) return;
+      set((state) => ({ settings: { ...state.settings, ...patch } }));
+    },
     navigate: (direction) =>
       set((state) => ({
         anchor: shiftAnchor(state.settings.view, new Date(state.anchor), direction).toISOString(),
       })),
     goToday: () => set({ anchor: new Date().toISOString() }),
-    openDay: (day) =>
+    openDay: (day) => {
+      if (get().workspaceClosing) return;
       set((state) => ({
         anchor: day.toISOString(),
         settings: { ...state.settings, view: 'day' },
-      })),
+      }));
+    },
   };
 });
 

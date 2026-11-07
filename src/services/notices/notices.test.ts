@@ -67,6 +67,7 @@ describe('後端錯誤代碼的文字 (TC-11, FR-09)', () => {
     ['NO_WORKSPACE_OPEN', 'No workspace is open', '目前沒有開啟的工作區。'],
     ['PATH_NOT_ALLOWED', 'Path is not allowed', '不允許這個路徑。'],
     ['IO_ERROR', 'The file operation failed.', '檔案操作失敗。'],
+    ['INVALID_FILE_ENCODING', 'The file operation failed.', '檔案操作失敗。'],
     [
       'PORTABLE_DATA_UNAVAILABLE',
       'The data folder next to the app could not be created or written to. Move the whole app folder somewhere writable and open it again.',

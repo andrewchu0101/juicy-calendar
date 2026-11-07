@@ -2,6 +2,12 @@
 
 ## 摘要（每次覆寫這一段）
 
+> **最新工作樹（2026-11-07，票 029）**：以 `4701e12` 為基底完成整體審查的六項修正：原生關閉失敗保留 root／鎖且恢復同步、特殊 ID 刪除落盤、New 模板正常編輯、實際時間軸依 12／24 小時制、非 UTF-8 實體逐檔隔離、radial 限日曆觸發。使用者授權本次由主代理確認紅燈後接續實作，兩個 subagent 分工；未 commit／push／打包。保留既有 `issues/025-radial-activation-speed.md` 修改。
+>
+> **本輪驗證**：typecheck／lint／build exit 0，完整單元 **466 passed**，完整 Rust **47 passed**；各項目標 e2e 通過。完整 WebKit 雙 worker（預熱獨立 1431 伺服器，停用 Playwright webServer 管理）為 **99 passed／2 failed，exit 1**，兩項均在多選測試 beforeEach 的球拖曳 fixture 失敗，尚未進到取消／越界斷言。相同 multiSelect＋radial 組單 worker 19 passed，但根因未定，不宣稱完整 e2e 通過。未改失敗測試或放寬斷言。詳見 `docs/06-test-plan.md` 票 029 段；下方舊 HEAD／測試數／未提交狀態均為歷史。
+>
+> **接手重點**：時間軸欄加寬至 80 px，面板 fit 邊界同步為週 956／日 452 px；API 新增 `INVALID_FILE_ENCODING`，只對事件／模板隔離，真正 I/O 仍拒絕。前端與 native 必須一起更新；工作區磁碟格式與依賴未變。桌面 smoke／人工 WebView2 驗收本輪未執行，Release 不含這些未提交修正。下一步先診斷上述多選 fixture 的不穩定性，再決定提交／發行。
+
 > **票 024（2026-11-07 晚）**：正式 M-06 的免安裝版 2 組（首次、後續）已跑完，只有 `msedgewebview2.exe` 連 `150.171.27.11:443`／`150.171.28.11:443`，App 自己沒有對外連線；證據 `docs/evidence/024-m06-portable-2026-11-07.md`。**專案擁有者決定其餘先放著**：安裝版 2 組（要在另一台電腦）、`pktmon`（需管理員）、M-08 斷網、控制方式實測都未做，票 024 維持開著、M-06 不得標通過。此段修改尚未 commit。
 >
 > **預發行 `v0.2.0-beta.2` 已發布**（2026-11-07）：https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.2 ，標為 Pre-release，tag 與建置 commit 都是 `4d6efe2`，附安裝檔、ZIP、`SHA256SUMS.txt`（已用 `gh release view` 核對三個附件皆 uploaded）。從該 commit 驗證：`npm test` 447、`test:rust` 43、`test:e2e` 97 passed、`test:desktop` Passed、typecheck／lint；ZIP 解壓後 release exe 可啟動並正常關閉。安裝檔**未**在任何機器安裝，仍待另一台電腦驗收。這台已用 winget 裝 `gh` 2.103.3（使用者範圍，C 槽）並以 `andrewchu0101` 登入。beta.2 的 commit 已 push；本段之後的文件修改以 `git log` 為準。上方「Release 尚未重建」已不成立。

@@ -84,6 +84,7 @@
 | `NOT_A_WORKSPACE` | 所選資料夾沒有 `workspace.json`（open 模式） | 否 |
 | `NO_WORKSPACE_OPEN` | 尚未開啟工作區就呼叫檔案命令 | 否 |
 | `PATH_NOT_ALLOWED` | 相對路徑不在允許清單，或跳出工作區 | 否 |
+| `INVALID_FILE_ENCODING` | 工作區檔案不是有效 UTF-8；事件／模板由 repository 逐檔略過並通知，其他檔案仍回報開啟失敗 | 否；不以替代字元改寫或載入壞檔 |
 | `IO_ERROR` | 其他檔案系統錯誤；`detail` 為系統訊息 | 視情況（寫入為原子，失敗不留半個檔案） |
 
 ### API-01｜`workspace_select(mode, title)`（FR-05、FR-07、FR-09；修改）
@@ -101,11 +102,11 @@
 
 ### API-03｜`workspace_close()`（修改）
 
-釋放鎖、清除目前根目錄、刪除 `last-workspace.txt`（安裝版）。工作區未開啟時也成功（冪等）。
+前端在關閉期間暫停持久化變更，先完成待寫入資料。安裝版先刪除 `last-workspace.txt`，成功後才清除目前根目錄並釋放鎖；免安裝版不操作記憶檔。原生關閉失敗時保留根目錄與鎖，前端恢復同步、顯示既有 `SAVE_FAILED` 通知並允許重試。工作區未開啟且記憶檔不存在時也成功（冪等）。
 
 ### API-04｜`workspace_list(dir)`、`workspace_read(path)`、`workspace_write(path, contents)`、`workspace_remove(path)`（現況，僅錯誤格式修改）
 
-允許清單不變：`workspace.json`、`settings.json`、`settings.corrupt.json`、`templates/<安全名稱>.json`、`events/<安全名稱>.json`。`workspace_write` 為「寫暫存檔、同步、改名」的原子寫入。`workspace_read` 對不存在的檔案回傳 `null`。路徑不合法 → `PATH_NOT_ALLOWED`。
+允許清單不變：`workspace.json`、`settings.json`、`settings.corrupt.json`、`templates/<安全名稱>.json`、`events/<安全名稱>.json`。`workspace_write` 為「寫暫存檔、同步、改名」的原子寫入。`workspace_read` 對不存在的檔案回傳 `null`，無效 UTF-8 回傳 `INVALID_FILE_ENCODING`，真正的 I/O 讀取失敗仍回傳 `IO_ERROR`。路徑不合法 → `PATH_NOT_ALLOWED`。
 
 ### API-05｜`app_settings_read()`、`app_settings_write(settings)`（FR-09；新增）
 

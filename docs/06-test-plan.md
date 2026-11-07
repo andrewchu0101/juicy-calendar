@@ -379,6 +379,25 @@ $null = $proc.CloseMainWindow()
 
 ## 追溯與執行證據
 
+### 2026-11-07｜票 029 整體審查回歸
+
+本輪由專案擁有者授權六項修正、兩個 subagent 分工，並授權主代理自行確認原因正確的紅燈後接續實作。基底 HEAD 為 `4701e12`；保留既有 `issues/025-radial-activation-speed.md` 修改。
+
+| 需求／規範 | 回歸測試與紅燈證據 | 修正後驗證 |
+|---|---|---|
+| FR-05、FR-07、R-4；TC-06、09 | `workspaceClose.test.ts`：關閉失敗後新名稱未存檔；等待關閉時修改原先回傳 true。Rust `failed_close_keeps_the_workspace_open_and_locked`：原先得到 `NoWorkspaceOpen` | 關閉中拒絕持久化修改；失敗後恢復訂閱、通知並保留 root／鎖；native 成功後釋放鎖。目標 Vitest 24 passed，完整 Rust 納入下方 47 passed |
+| FR-05、FR-06；TC-06 | `entityDeletion.test.ts`：3 種特殊 ID × 事件／模板共 6 failed，一般 ID 2 passed | 新增 8 項皆 passed；檔案刪除、重開不存在 |
+| 既有模板操作、FR-05、R-6；TC-06 | `templateIdentity.spec.ts`：建立 New 後重開，預期 New、實際空白 | 新增測試與既有模板操作皆通過；以原 ID 編輯、重開、刪除 |
+| FR-10、AC-03.3、NFR-07；TC-12 | `time-format.spec.ts`：真正刻度的英文／繁中 12 小時制 2 failed；56 px 時間欄單行高度檢查另 2 failed | 共用 `formatTime`；80 px 時間欄；週／日面板手算臨界值 956／452 px。時間、layout、inspectorDock 16 passed；引擎／格式單元 58 passed |
+| FR-06、R-5；TC-07、10 | `loadRules.test.ts` 壞事件／模板 2 failed；IPC 契約／通知 4 failed；Rust 真位元組預期 `INVALID_FILE_ENCODING`、實際 `IO_ERROR` | 只隔離壞編碼實體，通知相對檔名且不寫檔；真 I/O／非實體檔案仍拒絕。相關 TS 84 passed；Rust 納入下方 47 passed |
+| FR-04、FR-12、AC-01.4；TC-17、18 | `radialScope.spec.ts`：側欄、工具列、面板長按共 3 failed（預期 0 顆、實際 6 顆） | 由 calendar columns ref 限制起始目標；scope／speed／multiSelect 共 19 passed |
+
+整合驗證：`npm run typecheck`、`npm run lint`、`npm test`（38 檔 **466 passed／0 failed**）、`npm run build` 全部 exit 0；`npm run test:rust` **47 passed／0 failed**（含 main 與 doc-test，均 exit 0）。Rust 測試在使用者環境執行，TEMP／TMP 指向專案 `.scratch/rust-close-tests`，未使用真實工作區。
+
+完整 e2e 在獨立預熱的 1431 伺服器上執行：臨時 `.review-playwright.config.ts` 沿用原設定，只覆寫 baseURL、停用 Playwright 的 webServer 管理；命令 `node node_modules/@playwright/test/cli.js test --config .review-playwright.config.ts --workers 2`，`PLAYWRIGHT_BROWSERS_PATH=D:/DevTools/playwright-browsers`。結果 **99 passed／2 failed，exit 1（3.5 分鐘）**。兩個失敗均在 `multiSelect.spec.ts` 的 beforeEach：Escape 案第三個 `createAt` 等不到 `.ball-dragging-source`，outside 案第二個 `createAt` 的 ghost 與目標差 90 px（原斷言 ≤8 px），尚未執行批次取消／越界斷言。相同 multiSelect 與 radial 目標組在單 worker 已 19 passed；目前沒有確定的新增回歸證據，亦未查明根因，不宣稱完整 e2e 通過。保留測試與斷言，不以重跑覆蓋失敗。原設定的冷啟動與 teardown 問題也未修正。結束後移除臨時設定並停止隔離伺服器。
+
+未執行本輪桌面 smoke／人工驗收，未打包、未更新 Release、未 commit／push；Windows WebView2 的互動與顯示仍需人工確認。
+
 | 需求 | TC／人工 | 證據、執行日期與結果 | 缺口／缺陷 |
 |---|---|---|---|
 | AC-01.1、FR-01、FR-02 | TC-01、TC-03、TC-05、M-01 | TC-01：2026-11-04，`npm run test:e2e` 連續 3 次皆 Passed（標註於 `e2e/core.spec.ts`）；其餘見下列各列 | M-01 未做；TC-05 見下列 FR-02 邊緣上下限列 |

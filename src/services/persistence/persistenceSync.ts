@@ -14,7 +14,7 @@ function diffEntities<T>(
     if (previous[id] !== entity) queue.set(toPath(id), serialize(entity));
   }
   for (const id of Object.keys(previous)) {
-    if (!(id in next)) queue.set(toPath(id), null);
+    if (!Object.hasOwn(next, id)) queue.set(toPath(id), null);
   }
 }
 
