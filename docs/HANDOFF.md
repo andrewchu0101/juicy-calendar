@@ -2,7 +2,9 @@
 
 ## 摘要（每次覆寫這一段）
 
-> 提交前快照：專案擁有者已於 2026-11-07 授權 commit／push 本次修正與交付文件。下方「未提交」描述為提交前狀態，完成後請以 git log／git status 核對；本機 `.codex/config.toml` 工具核准設定不納入產品修正提交。Release 尚未重建。
+> 2026-11-07 晚：專案擁有者口頭回報人工驗收通過 M-01（票 016，含 1803 依其決定記通過，實際環境 Windows 10 22H2）、M-02（票 017）、M-04（票 019／027）、M-05（票 013）；皆未逐項記錄，已寫入各票、`docs/06-test-plan.md`、`docs/CLOSEOUT.md`。另依其要求，縮小成圓點的右側面板加上與 radial hover 球相同的 `radial-wobble`（`Inspector.tsx`、`index.css`、`e2e/inspectorDock.spec.ts` 2 項新測試，先紅後綠；專案擁有者在桌面版開發模式實測後表示可接受）。驗證：`npm test` 447 passed、typecheck／lint Passed、`inspectorDock`＋`layout` e2e 13 passed；完整 e2e、`test:rust` 本輪未重跑。**下一個要做的是票 024**（見下方「下一步」）。commit／push 已獲授權；是否已完成以 `git log`／`git status -sb` 為準。本機 `.codex/config.toml` 工具核准設定不納入提交。Release 尚未重建，所以預發行包不含圓點 wobble。
+
+> 提交前快照（較早）：專案擁有者已於 2026-11-07 授權 commit／push 本次修正與交付文件。Release 尚未重建。
 
 > 2026-11-07 交付審查的 5 個不重複缺陷已經逐輪紅燈確認、修正與反向驗證：儲存失敗關閉、`__proto__` 載入、1 分鐘載入下限、日期標題批次拖曳拒絕、原生標題翻譯。完整證據在 `docs/DELIVERY.md`；原生標題與儲存失敗取消關窗仍待人工實測，未列為已驗收。
 
@@ -25,10 +27,12 @@
 - 無未完成的已授權程式修正；等待人工確認、驗收與審閱，尚未提交或發布修正。
 
 ### 阻塞
-- 等專案擁有者親手驗收：另一台電腦的 ZIP／安裝版／非 100% 縮放、M-09 多選手感、M-04、M-05、M-02、M-08；M-01（票 016）已於 2026-11-05 暫緩。步驟見 `docs/CLOSEOUT.md`。
+- 等專案擁有者親手驗收：另一台電腦的 ZIP／安裝版／非 100% 縮放、M-09 多選手感、M-08；M-01、M-02、M-04、M-05 已於 2026-11-07 口頭回報通過（見上方）。步驟見 `docs/CLOSEOUT.md`。
+- 票 024 剩餘項目需要專案擁有者在場：正式 M-06（5 分鐘以上、免安裝／安裝版 × 首次／後續）、`pktmon`（需管理員）、控制方式實測；安裝版要裝到 C 槽。
 - 等專案擁有者回答：①票 028 的改動要碰 `scripts/desktop-smoke.js` 與 Rust 除錯專用 `smoke` 模組，需同意；②票 021 分鐘欄是否允許科學記號（目前 `1e1` 視為 10 分鐘）；③票 023 語言選單位置；④U-13 衍生文件（`docs/01-brief.md` 第 89 行、`README.md`）的措辭；⑤中文翻譯與 `README.txt` 審閱。打包 NSIS 前依 `AGENTS.md` 規則 15 要先問。
 
 ### 下一步（最多三項）
+0. **票 024**（讀 `issues/024-offline-investigation.md`、`docs/evidence/024-nfr-03-brief.md`、`docs/evidence/manual-checklist-m01-m06-m08.md`）：剩正式 M-06、`pktmon`、控制方式實測，先與專案擁有者確認哪些要在場操作、哪些可由我在這台 Windows 10 做。
 1. 專案擁有者依 `docs/CLOSEOUT.md` 最前面的步驟驗收並回報；不通過的項目記到該檔「D. 新發現」，不另開檔。
 2. 專案擁有者回答上面「阻塞」的確認題；票 028 同意後再動 `scripts/desktop-smoke.js`（先讀 `issues/028-desktop-smoke-cold-start.md`）。
 3. 驗收通過後才處理文件債：SAD／SDS 補多選設計說明、審查 SAD／SDS／測試計畫草稿。

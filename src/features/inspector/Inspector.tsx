@@ -319,7 +319,8 @@ export function Inspector({ docked }: { docked: boolean }) {
         className="absolute top-1 left-3 z-40 flex size-8 items-center justify-center rounded-full border border-line bg-surface shadow-lg transition-transform hover:scale-110"
         onClick={() => (docked ? updateSettings({ inspectorCollapsed: false }) : setPeek(true))}
       >
-        <span className="size-3.5 rounded-full" style={{ backgroundColor: event.color }} />
+        {/* 與 radial 選單 hover 球相同的果凍起伏（index.css 的 radial-wobble），讓縮小的面板容易辨認。 */}
+        <span data-testid="inspector-expand-dot" className="inspector-dot size-5 rounded-full" style={{ backgroundColor: event.color }} />
       </button>
     );
   }

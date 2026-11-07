@@ -127,3 +127,26 @@ test('[NFR-07][UI-06,ticket 027] day view fits the panel even in the minimum win
   await expect(page.getByTestId('inspector')).toBeVisible();
   expect(await covers(page)).toEqual([]);
 });
+
+// 2026-11-07：縮小成圓點的面板太小不易辨認，圓點要套與 radial 選單 hover 球相同的果凍起伏（`radial-wobble`）。
+const dotStyle = (page: Page) =>
+  page.evaluate(() => {
+    const dot = document.querySelector<HTMLElement>('[data-testid="inspector-expand-dot"]')!;
+    const style = getComputedStyle(dot);
+    return { animationName: style.animationName, duration: style.animationDuration, outline: style.outlineStyle };
+  });
+
+test('[NFR-07][UI-06] the collapsed panel dot wobbles like the hovered radial ball', async ({ page }) => {
+  await open(page, { width: 900, height: 560 });
+  await block(page, 'a').click();
+  await expect(page.getByTestId('inspector-expand')).toBeVisible();
+  expect(await dotStyle(page)).toMatchObject({ animationName: 'radial-wobble', duration: '4s' });
+});
+
+test('[NFR-07][UI-06] with reduced motion the dot does not wobble and shows a static outline', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open(page, { width: 900, height: 560 });
+  await block(page, 'a').click();
+  await expect(page.getByTestId('inspector-expand')).toBeVisible();
+  expect(await dotStyle(page)).toMatchObject({ animationName: 'none', outline: 'solid' });
+});

@@ -4,6 +4,8 @@
 
 **提交狀態（2026-11-07 核對）**：既有實作與發行文件已提交至 `d9d7be5`，與本地 `origin/main` 記錄一致；本次未重新連線核對遠端。本次文件修正尚未提交，工作樹狀態以 `git status` 為準。
 
+**專案擁有者口頭回報通過（2026-11-07，未逐項記錄）**：M-01（票 016，Windows 10 專業版 22H2；非乾淨機器；Windows 10 1803 未實測，依擁有者決定記為通過；README 步驟尚未照做）、M-02（票 017；`README.txt` 審閱仍待）、M-04（票 019／027，含縮小圓點 wobble）、M-05（票 013）。下方 B、C 區對這四項的「待驗收／暫緩」敘述以此為準。仍待：M-06／`pktmon`／M-08（票 024）、M-09 其餘手感、非 100% 縮放、另一台電腦。
+
 **環境與證據**：Windows 11 組建 10.0.26200；`npm test` 443/443、`npm run test:e2e` 94 passed（2026-11-07 票 027 後更新）、`npm run test:rust` 43 passed（上一輪）、`typecheck`／`lint` 通過。桌面版逐項證據見 `docs/evidence/desktop-verification-2026-11-07.md`。這些是自動化輔助證據，**不等於你親手驗收**。
 
 **本機要親手測的 exe（票 027 之後的新版，與預發行 `v0.2.0-beta.1` 同一份原始碼；另一台電腦請改用下方的 Release）**：`D:/DevCache/m10/app/juicy-calendar.exe`（2026-11-07 01:17 編出，免安裝模式，SHA-256 與 `src-tauri/target/release/juicy-calendar.exe` 相同，旁邊 `data` 有 3 個原始活動：週一 10:00、週二 10:00、週一 16:00）。舊版（00:04，票 027 之前）在 `D:/DevCache/m09/app/`。測完請正常關閉視窗，不要強制結束。
