@@ -69,7 +69,8 @@ async function loadEntities<T extends { id: string }>(
   schema: ZodType<T>,
   issues: WorkspaceIssue[],
 ): Promise<Record<string, T>> {
-  const entities: Record<string, T> = {};
+  // External IDs such as __proto__ must be ordinary own keys, never prototype setters.
+  const entities: Record<string, T> = Object.create(null);
   for (const file of await backend.list(dir)) {
     const raw = await backend.read(`${dir}/${file}`);
     if (raw === null) continue;

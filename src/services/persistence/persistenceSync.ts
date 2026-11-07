@@ -18,7 +18,8 @@ function diffEntities<T>(
   }
 }
 
-export type PersistenceSync = { flush(): Promise<void>; stop(): Promise<void> };
+/** A false result keeps unsaved changes and the subscription alive for recovery. */
+export type PersistenceSync = { flush(): Promise<boolean>; stop(): Promise<boolean> };
 
 /** Mirrors store changes to disk. Undo and redo need no special handling: they are just changes. */
 export function startPersistenceSync(backend: WorkspaceBackend): PersistenceSync {
@@ -35,9 +36,10 @@ export function startPersistenceSync(backend: WorkspaceBackend): PersistenceSync
   return {
     flush: () => queue.flush(),
     async stop() {
+      if (!(await queue.flush())) return false;
       unsubscribe();
-      await queue.flush();
       queue.dispose();
+      return true;
     },
   };
 }

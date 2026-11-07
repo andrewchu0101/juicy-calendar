@@ -2,6 +2,63 @@
 
 ## 摘要（每次覆寫這一段）
 
+> 提交前快照：專案擁有者已於 2026-11-07 授權 commit／push 本次修正與交付文件。下方「未提交」描述為提交前狀態，完成後請以 git log／git status 核對；本機 `.codex/config.toml` 工具核准設定不納入產品修正提交。Release 尚未重建。
+
+> 2026-11-07 交付審查的 5 個不重複缺陷已經逐輪紅燈確認、修正與反向驗證：儲存失敗關閉、`__proto__` 載入、1 分鐘載入下限、日期標題批次拖曳拒絕、原生標題翻譯。完整證據在 `docs/DELIVERY.md`；原生標題與儲存失敗取消關窗仍待人工實測，未列為已驗收。
+
+| 項目 | 內容 |
+|---|---|
+| 更新時間 | 2026-11-07 |
+| 目前目標 | 預發行 `v0.2.0-beta.1` 已發布；交付審查 5 項缺陷經授權修正，自動回歸通過，尚未提交或更新發行包。人工驗收與確認題見 CLOSEOUT／DELIVERY；票 028 仍暫緩。 |
+| 工作目錄 | `C:/Users/student/Project/juicy-calendar`（第二台，Windows 10 Pro，無 D 槽）；另一台為 `D:/Project/Fun/juicy-calendar/juicy-calendar` |
+| 分支／HEAD | `main` ／ `d9d7be5`。`git fetch` 後 `git pull --ff-only` 由 `ea4d9a2` 快轉 9 個 commit；之後 `git status -sb` 為 `main...origin/main`（無領先、無落後）。tag `v0.2.0-beta.1` 已用 `git ls-remote --tags origin` 核對存在，指向 `d0775c8`（不是 HEAD） |
+| 工作樹 | 有交付修正、回歸測試與文件等未提交變更；另保留既有 CLOSEOUT／HANDOFF 與工具核准設定，詳見 `git status`。未 commit／push |
+
+### 已完成
+- 交付修正：完整單元 447 passed、Rust 43 passed、隔離埠 WebKit e2e 95 passed（exit 0）、typecheck／lint／build、debug no-bundle、桌面 smoke 與維護檢查通過；沒有刻意保留的紅燈。詳見 DELIVERY。
+- 預發行 `v0.2.0-beta.1`：版本欄位改為 0.2.0-beta.1 的 commit 是 `d0775c8`，tag 指向它；之後的 `d9d7be5` 只改文件（`docs/CLOSEOUT.md`、`RELEASING.md`、`LESSONS.md`、`HANDOFF.md`）。證據：`git show --stat d0775c8 d9d7be5`。GitHub Release 頁面與附檔（安裝檔、ZIP、`SHA256SUMS.txt`）依 `docs/CLOSEOUT.md` 記載，**本輪我沒有重新開頁核對**。
+- 票 025、026a～c、021、027 已實作並 commit：`bde7f9f`（025）、`852a5df`（026）、`8fbc3d7`（021、026c）、`2515b3e`（027）。證據：`git log --oneline -12`；各票狀態見 `issues/`。
+- 票 024 的 U-13 決定已落案（SRS NFR-03c 改寫），commit `cb7f942`。
+- 桌面版補驗證（2026-11-07，Windows 11）：證據在 `docs/evidence/desktop-verification-2026-11-07.md`，是 CDP／Win32 輸入的自動化輔助，**不是人工驗收**。
+
+### 進行中
+- 無未完成的已授權程式修正；等待人工確認、驗收與審閱，尚未提交或發布修正。
+
+### 阻塞
+- 等專案擁有者親手驗收：另一台電腦的 ZIP／安裝版／非 100% 縮放、M-09 多選手感、M-04、M-05、M-02、M-08；M-01（票 016）已於 2026-11-05 暫緩。步驟見 `docs/CLOSEOUT.md`。
+- 等專案擁有者回答：①票 028 的改動要碰 `scripts/desktop-smoke.js` 與 Rust 除錯專用 `smoke` 模組，需同意；②票 021 分鐘欄是否允許科學記號（目前 `1e1` 視為 10 分鐘）；③票 023 語言選單位置；④U-13 衍生文件（`docs/01-brief.md` 第 89 行、`README.md`）的措辭；⑤中文翻譯與 `README.txt` 審閱。打包 NSIS 前依 `AGENTS.md` 規則 15 要先問。
+
+### 下一步（最多三項）
+1. 專案擁有者依 `docs/CLOSEOUT.md` 最前面的步驟驗收並回報；不通過的項目記到該檔「D. 新發現」，不另開檔。
+2. 專案擁有者回答上面「阻塞」的確認題；票 028 同意後再動 `scripts/desktop-smoke.js`（先讀 `issues/028-desktop-smoke-cold-start.md`）。
+3. 驗收通過後才處理文件債：SAD／SDS 補多選設計說明、審查 SAD／SDS／測試計畫草稿。
+
+相關 issue／PR：無 PR；工作票在 `issues/`，Release 見 `docs/CLOSEOUT.md`。
+
+### 狀態核對
+
+| 面向 | 狀態 | 說明 |
+|---|---|---|
+| 已實作 | 是（依現有票） | 票 028 仍是「可開始」未做；027 維持凍結範圍外已完成 |
+| 自動測試 | 本輪 Passed | 工作樹：單元 37 檔／447 passed，Rust 43 passed、隔離埠 1431 的 WebKit e2e 95 passed／exit 0，typecheck／lint／build、桌面 smoke、維護檢查通過；原設定的 e2e 伺服器退出問題另記 DELIVERY，不宣稱已查明根因 |
+| 人工驗收 | Manual Pending | 專案擁有者只口頭回報過 026a／b 手感與 M-03 通過，未逐項記錄；其餘皆待做 |
+| 已 commit | 僅既有 HEAD `d9d7be5` | 本次交付修正與文件尚未提交 |
+| 已 push | 本次沒有 | 既有遠端核對屬先前紀錄；未推送本次工作樹修改 |
+
+### 接手者要先知道
+- 這台沒有 D 槽；`CLOSEOUT` 與歷史區提到的 `D:/DevCache/...` exe 都在另一台電腦。
+- 範圍已凍結：新發現先記到 `docs/CLOSEOUT.md` 的 D 區，只有擋住既定驗收的才提出立即處理。
+- e2e 剛啟動 vite 時第一次載入可能逾時（`docs/CLOSEOUT.md` D 區有記錄），重跑再判斷；跑之前要設 `PLAYWRIGHT_BROWSERS_PATH`，且 1421 埠不能被 `npm run dev` 占住。
+- 下方歷史紀錄是各階段原樣保留，其中「未 commit」「README 尚未更新」等句是**當時**狀態，不一定仍成立，一律以 `git log`、`git status` 與檔案為準。
+
+---
+
+## 歷史紀錄
+
+### 2026-11-07 之前的摘要（原樣保留，標題降一級）
+
+#### 摘要（每次覆寫這一段）
+
 | 項目 | 內容 |
 |---|---|
 | 更新時間 | 2026-11-07（票 021、026c 追加、各票桌面補驗證完成；票 024 U-13 已決；**多個工作樹改動未 commit**，以 `git status` 為準） |
@@ -10,7 +67,7 @@
 | 分支／HEAD | `main` ／ 票 020 的 commit（`git log -1` 查雜湊）；上一個已知 HEAD 為 `7e9a6be`（票 019）。本輪**未 push**，以 `git status` 核對，不要只信這一行 |
 | 工作樹 | commit 後應為乾淨（以 `git status` 核對）。原 demo 在 `../juicy-calendar-oneshotted-demo`，未動 |
 
-### 已完成
+#### 已完成
 - 預發行 `v0.2.0-beta.1`（2026-11-07）：已 push 並發布 GitHub Pre-release（https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.1），tag 指向建置 commit `d0775c8`；附安裝檔、免安裝 ZIP、`SHA256SUMS.txt`。版本規則與發行步驟見 `docs/RELEASING.md`；另一台電腦的驗收步驟在 `docs/CLOSEOUT.md` 最前面。草稿 Release `v0.1.0-m01-test`（舊的乾淨機測試用）仍在，未動。
 - 票 027 單選面板排法（2026-11-07，**未 commit**）：專案擁有者選排法 A（寬時固定佔版面、窄時收合成圓點）；單元 443、e2e 94 passed，桌面版真的調整視窗大小實測通過；**同時修正已推送 HEAD 的 `npm run lint` 失敗**（證據腳本被 ESLint 檢查，已在 `eslint.config.js` 忽略）。新版 exe：`D:/DevCache/m10/app/juicy-calendar.exe`（01:17）。詳見 `issues/027-inspector-covers-week-end.md`。
 - 2026-11-07 收尾（**未 commit**）：①票 026c 選取列改放工具列（不再蓋住週日標題）＋版面測試 6 項；②桌面版補驗證（TC-07、兩個行程、語言設定檔、面板、release 缺 WebView2、`data` 不可用、zip 複製、批次刪除）見 `docs/evidence/desktop-verification-2026-11-07.md`；③新票 027（右側面板蓋住週六／週日，只記錄）、028（`test:desktop` 冷啟動間歇失敗）；④`test:rust` 43 passed、`npm test` 441、e2e 89 passed。**注意**：1421 埠被使用者的 `npm run dev` 占住，e2e 用暫時設定跑，已刪。
@@ -76,10 +133,10 @@
 - 票 025 radial 選單啟動速度（2026-11-05，未 commit）：長按 250 ms、進場 120 ms、移動容許 6 px 維持（專案擁有者決定）；常數在 `limits.ts`；`e2e/radialSpeed.spec.ts` TC-17 三項；PRD／SRS／DESIGN／SDS／測試計畫已同步。`typecheck`、`lint` Passed；`npm test` 387；`test:e2e` 3 次皆 71 passed。M-03 手感已由專案擁有者回報通過（桌面版開發模式，口頭）；`test:rust`／`test:desktop` 未跑。
 - 票 026 框選多個區塊（2026-11-06，未 commit）：經 `/grilling` 訪談定案為「框選已存在的區塊，整批移動、整批刪除」（不建立新區塊，不與 NG-03 衝突）。規格：Brief G-08、PRD US-04（AC-04.1～04.4）、SRS FR-12～FR-14 與 R-9、測試計畫 TC-18 與 M-09。實作拆為 026a 框選、026b 整批移動、026c 整批刪除，皆完成：`useMarqueeSelect.ts`（新）、`appStore.ts`（`selectedEventIds`、`selectMany`、`moveEvents`、`deleteSelected`）、`mutations.ts`（`moveEventsTogether`）、`pointer.ts`（`rectFromPoints`、`rectsIntersect`）、`useEventInteractions.ts`、`useKeyboardShortcuts.ts`、`CalendarGrid.tsx`；測試 `selection.test.ts`、`multiSelect.test.ts`、`e2e/multiSelect.spec.ts`。`typecheck`、`lint` Passed；`npm test` 405；`test:e2e` 連續 3 次皆 80 passed。**未驗證**：M-09 手感（桌面版）、`test:rust`／`test:desktop`、框的樣式（實作者假設）。訪談中兩處我說錯，已在規格更正：吸附是 R-1 的磁吸（8 px 內），不是固定 30 分鐘；Escape 清除選取本來就存在。SAD／SDS 尚未補多選的設計說明。
 
-### 進行中
+#### 進行中
 - 無。
 
-### 阻塞
+#### 阻塞
 - **（已解決，票 001，2026-11-04）e2e 不穩定的原因與修法**：`e2e/core.spec.ts` 的 `dragBall` 在最後一次 `mouse.move` 後立刻 `mouse.up()`。dnd-kit 的拖曳啟動要等 React 狀態提交，約 100 ms 後 `ball-dragging-source` 才出現；`mouse.up()` 若早於此，`onDragEnd` 拿不到 active，就不會建立事件。證據：獨立腳本每組 5 次，放開前等 0 ms → 0/5 建立事件；等 50／200／500 ms → 皆 5/5。完整測試時各測試的耗時與機器負載不同，所以失敗數每次都不一樣（9／20／23）。已排除：沒有殘留 server、`isPrimary`／`button` 正常、沒有 blur／resize／visibilitychange 取消、沒有 console 錯誤、載入後多等 3 秒無改善。
   - 判斷：測試端的時序問題。人類操作放開前通常超過 50 ms，不受影響。
   - 修法（已實作，票 001）：`dragBall` 放開前等待拖曳狀態與放置預覽；`test:e2e` 連續 3 次皆 29/29。之後仍有少數**不相關**的間歇失敗（`overlapping events…`、`weekly and daily views…`、magnet 約 1/40），票 022（2026-11-05）已處理，原因是 `dragBall` 在預覽還停在中途點時放開；NFR-01 現已達成。
@@ -87,12 +144,12 @@
 - 票 000 在第二台電腦重跑（2026-11-04，Windows 10 Pro 10.0.19045；工作目錄 `C:/Users/student/Project/juicy-calendar`，HEAD `6592827`，工作樹乾淨）：node v26.13.0、npm 11.20.0、Rust 1.90.0（`C:/DevTools/rust`，只用程序層級環境變數，未改 PATH）、jq 1.8.2。`typecheck`、`lint` Passed；`npm test` 19 files／181 passed；`test:rust` 23 passed；`test:desktop`（Git Bash）Passed（6 顆球、拖放後 10:30–12:30、重開後 `blocksOnLaunch: 1`、路徑穿越類寫入全被拒絕）。`npm run desktop`：視窗「Juicy Calendar」出現且 Responding；Vite `http://localhost:1421/` 回 HTTP 200。觀察：Vite 只監聽 `::1`，`127.0.0.1:1421` 拒絕連線（webview 用 `localhost` 正常）；`tauri dev` 的檔案監看對 `src-tauri/target/debug/deps` 的 exe／pdb 印出 `EBUSY` 警告，不影響啟動。人工「建立工作區、關閉、重開還原」：專案擁有者表示**已人工驗收完成**（2026-11-04，第二台電腦，由專案擁有者操作；我沒有親眼看到操作過程，也沒有截圖，依其回報記錄）。票 000 的狀態刻意維持「可開始」，專案擁有者換工作區時會優先再跑一次。驗收後已關閉視窗，`juicy-calendar` 行程與埠 1421 皆已結束。`test:e2e` 不在此票範圍（同日另測 43 passed／1 failed，失敗為票 022 已知的 `overlapping events…`，單獨重跑 3 次皆通過）。未修改任何產品程式。
 - Playwright WebKit 已重裝到 `D:\DevTools\playwright-browsers`（實體檔案，175 MB），C 槽 `ms-playwright` 已刪除（那是 2026-11-03 我自己裝的）。
 
-### 下一步（最多三項）
+#### 下一步（最多三項）
 1. **專案擁有者要先決定的事**（我無法代決）：①票 024：NFR-03c 要保留、改寫還是拆開，以及是否同意做安裝版 M-06、`pktmon`（需管理員）、Fixed Version Runtime 實測（簡報在 `docs/evidence/024-nfr-03-brief.md` 第 5 節）；②票 023：工具列語言選單的位置與樣式（目前是最右側、同歡迎畫面的下拉，為實作者假設）；③票 021 已於 2026-11-06 全部決定並修訂 SRS R-3／FR-03（兩欄位、小時整數、分鐘可超過 59 直接換算且小數四捨五入、兩欄皆空拒絕、走 i18n），可開工。
 2. 票 025、026（026a～c）已實作完成，待 M-03／M-09 手感；SAD／SDS 補多選的設計說明。
 3. 人工驗收仍待專案擁有者：M-01（票 016，暫緩）、M-02、M-04、M-05、M-06（正式）、M-08（斷網，新增）；以及審查 SAD／SDS／測試計畫草稿。
 
-### 狀態核對
+#### 狀態核對
 
 | 面向 | 狀態 | 說明 |
 |---|---|---|
@@ -102,7 +159,7 @@
 | 已 commit | 是（到票 024；`git log -1` 查雜湊） | |
 | 已 push | 以 `git status`／`git log origin/main..HEAD` 核對 | 2026-11-05 依專案擁有者要求 push；不要只信這一行 |
 
-### 接手者要先知道
+#### 接手者要先知道
 - 跑 e2e 前要在該程序設 `PLAYWRIGHT_BROWSERS_PATH=D:\DevTools\playwright-browsers`；沒設會找 C 槽、報 `Executable doesn't exist`（已驗證）。安裝同理：`npx playwright install webkit` 前先設。
 - `PRODUCT.md`／`DESIGN.md`／`ARCHITECTURE.md` 是 demo 作者的描述，不是人確認過的規格。
 - Rust 不在 PATH。執行 `test:rust`／`desktop` 前，在該程序設：`RUSTUP_HOME=D:\DevTools\rust\rustup`、`CARGO_HOME=D:\DevTools\rust\cargo`、PATH 加 `D:\DevTools\rust\cargo\bin`。

@@ -55,6 +55,40 @@ describe('TC-07 壞檔略過且不改檔 (AC-02.2, FR-06, NFR-04, R-5)', () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it('[TC-07][FR-06,R-5] a valid __proto__ event and template load as ordinary entities without changing files', async () => {
+    const event = { ...GOOD_EVENTS[0]!, id: '__proto__', templateId: '__proto__' };
+    const template = { id: '__proto__', name: 'Valid', color: '#E98B87', defaultDuration: 120, order: 6 };
+    const { backend, files } = buildWorkspaceFixture({
+      events: [event],
+      rawFiles: { 'templates/__proto__.json': json(template) },
+    });
+    const before = new Map(files);
+
+    const data = await loadWorkspace(backend);
+
+    expect(Object.values(data.events)).toEqual([event]);
+    expect(Object.values(data.templates)).toContainEqual(template);
+    expect(data.issues).toEqual([]);
+    expect(files).toEqual(before);
+  });
+
+  it('[TC-07][FR-06,R-5,AGENTS-9] skips a 30-second event, accepts exactly one minute, and writes nothing', async () => {
+    const minute = { ...GOOD_EVENTS[0]!, id: 'minute', endAt: '2026-11-02T15:31:00.000Z' };
+    const short = { ...GOOD_EVENTS[0]!, id: 'short', endAt: '2026-11-02T15:30:30.000Z' };
+    const { backend, files } = buildWorkspaceFixture({ events: [minute, short] });
+    const before = new Map(files);
+    const write = vi.spyOn(backend, 'write');
+    const remove = vi.spyOn(backend, 'remove');
+
+    const data = await loadWorkspace(backend);
+
+    expect(Object.values(data.events)).toEqual([minute]);
+    expect(data.issues).toEqual([{ code: 'FILE_SKIPPED', file: 'events/short.json', detail: expect.any(String) }]);
+    expect(files).toEqual(before);
+    expect(write).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   it.each(BAD_FILES)('$label：開啟成功、2 個好事件、通知該檔、檔案不變、載入時 events/ 零寫入', async ({ path, contents }) => {
     const { backend, files } = buildWorkspaceFixture({ events: GOOD_EVENTS, rawFiles: { [path]: contents } });
     const hashBefore = sha256(contents);

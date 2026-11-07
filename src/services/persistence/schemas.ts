@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EVENT_MAX_MINUTES } from '../../features/calendar/engine/limits';
+import { EVENT_MAX_MINUTES, EVENT_MIN_MINUTES } from '../../features/calendar/engine/limits';
 import { validateTitle } from '../../features/calendar/engine/mutations';
 import type { Settings } from '../../types';
 
@@ -36,6 +36,9 @@ export const eventSchema = z
   })
   .refine((event) => new Date(event.endAt) > new Date(event.startAt), {
     message: 'endAt must be after startAt',
+  })
+  .refine((event) => new Date(event.endAt).getTime() - new Date(event.startAt).getTime() >= EVENT_MIN_MINUTES * 60_000, {
+    message: 'event is shorter than the minimum length',
   })
   .refine((event) => new Date(event.endAt).getTime() - new Date(event.startAt).getTime() <= EVENT_MAX_MINUTES * 60_000, {
     message: 'event is longer than the maximum length',

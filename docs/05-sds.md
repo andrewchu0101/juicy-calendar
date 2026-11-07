@@ -86,12 +86,12 @@
 | `PATH_NOT_ALLOWED` | 相對路徑不在允許清單，或跳出工作區 | 否 |
 | `IO_ERROR` | 其他檔案系統錯誤；`detail` 為系統訊息 | 視情況（寫入為原子，失敗不留半個檔案） |
 
-### API-01｜`workspace_select(mode)`（FR-05、FR-07；修改）
+### API-01｜`workspace_select(mode, title)`（FR-05、FR-07、FR-09；修改）
 
 使用者按「建立／開啟工作區」時呼叫，`mode` 為 `"create"` 或 `"open"`。順序固定：
 ①跳出原生資料夾選擇視窗 → ②決定根目錄（open：必須有 `workspace.json`；create：空資料夾直接用，否則建立子資料夾）→ ③若根目錄與目前已開啟的相同，直接回傳目前位置（**不重複取鎖**，因為同一行程用另一個把手重鎖會被自己擋住）→ ④**取得 `.juicy.lock` 的獨占鎖**，失敗回傳 `WORKSPACE_LOCKED` 並結束，不寫任何檔案 → ⑤寫入 `last-workspace.txt` → ⑥釋放舊工作區的鎖、換成新根目錄。
 
-- 請求：`{"mode": "open"}`。
+- 請求：`{"mode": "open", "title": "開啟工作區"}`。`title` 由前端目前語言的 `welcome.create`／`welcome.open` 字典產生（2026-11-07 交付審查修正）；Rust 不自帶介面文字，拒絕空白或包含控制字元的標題後，才開啟原生視窗。
 - 成功：`{"path": "D:\\Plans\\MyTimeBlock", "initialized": true}`；使用者取消視窗則回傳 `null`。
 - 失敗（資料夾被占用）：`{"code": "WORKSPACE_LOCKED", "detail": null}`。資料夾內的檔案與 `last-workspace.txt` 都不被修改。
 

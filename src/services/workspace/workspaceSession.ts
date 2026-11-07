@@ -59,12 +59,13 @@ export async function selectWorkspace(mode: 'create' | 'open'): Promise<void> {
 }
 
 export async function closeWorkspace(): Promise<void> {
-  await sync?.stop();
+  if (sync && !(await sync.stop())) return;
   sync = null;
   await backend.close();
   useAppStore.getState().reset();
 }
 
-export function flushWorkspace(): Promise<void> {
-  return sync?.flush() ?? Promise.resolve();
+/** False prevents a normal window close while writes still need recovery. */
+export function flushWorkspace(): Promise<boolean> {
+  return sync?.flush() ?? Promise.resolve(true);
 }

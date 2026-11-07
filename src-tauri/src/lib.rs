@@ -137,17 +137,17 @@ fn workspace_select(
     app: AppHandle,
     state: State<'_, WorkspaceState>,
     mode: String,
+    title: String,
 ) -> Result<Option<WorkspaceLocation>, IpcError> {
     let creating = match mode.as_str() {
         "create" => true,
         "open" => false,
         other => return Err(IpcError::io(format!("Unknown mode: {other}"))),
     };
-    let title = if creating {
-        "Choose where to create your workspace"
-    } else {
-        "Open a workspace folder"
-    };
+    // Display text comes from the frontend dictionary; reject malformed IPC input before opening UI.
+    if title.trim().is_empty() || title.chars().any(char::is_control) {
+        return Err(IpcError::io("Invalid dialog title"));
+    }
     let Some(picked) = app.dialog().file().set_title(title).blocking_pick_folder() else {
         return Ok(None);
     };

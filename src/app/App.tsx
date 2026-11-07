@@ -14,7 +14,9 @@ function useFlushOnExit() {
     let unlisten: (() => void) | undefined;
     if (isTauri()) {
       void getCurrentWindow()
-        .onCloseRequested(() => flushWorkspace())
+        .onCloseRequested(async (event) => {
+          if (!(await flushWorkspace())) event.preventDefault();
+        })
         .then((stop) => {
           unlisten = stop;
         });

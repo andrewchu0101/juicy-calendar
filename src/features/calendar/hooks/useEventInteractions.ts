@@ -91,8 +91,9 @@ export function useEventInteractions(
       };
 
       const isOutsideCalendar = (point: Point) => {
-        const grid = columns.getBoundingClientRect();
-        return point.x < grid.left || point.x > grid.right || point.y < grid.top || point.y > grid.bottom;
+        // The scrolled content extends behind sticky headers and overlays; only visible grid hits count.
+        const target = document.elementFromPoint(point.x, point.y);
+        return !target || !columns.contains(target);
       };
 
       const tick = () => {

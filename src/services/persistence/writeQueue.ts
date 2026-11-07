@@ -3,8 +3,8 @@ import type { WorkspaceBackend } from './backend';
 export type WriteQueue = {
   /** Queues a write, or a delete when contents is null. Later changes to a path replace earlier ones. */
   set(path: string, contents: string | null): void;
-  /** Resolves once everything queued so far has been attempted. */
-  flush(): Promise<void>;
+  /** Attempts pending changes; false means unsaved changes remain available for retry. */
+  flush(): Promise<boolean>;
   /** Removes any pending timer. Pending changes that were not flushed are dropped. */
   dispose(): void;
 };
@@ -60,6 +60,7 @@ export function createWriteQueue(
       clearTimer();
       if (running) await running;
       if (pending.size > 0) await run();
+      return pending.size === 0;
     },
     dispose() {
       clearTimer();

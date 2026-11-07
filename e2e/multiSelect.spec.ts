@@ -205,6 +205,30 @@ test('[TC-18][AC-04.3,FR-13] releasing a batch drag outside the calendar puts ev
   await expect(selected(page)).toHaveCount(2);
 });
 
+test('[TC-18][AC-04.3,FR-13] a batch dropped on the sticky date header after scrolling is rejected without writes', async ({ page }) => {
+  await selectAAndB(page);
+  const before = await stored(page);
+  const filesBefore = await page.evaluate(() => Object.fromEntries(
+    Object.keys(localStorage).filter((key) => key.startsWith('juicy-calendar:file:')).sort()
+      .map((key) => [key, localStorage.getItem(key)]),
+  ));
+  await page.getByTestId('calendar-scroller').evaluate((element) => { element.scrollTop = 80; });
+  const header = await box(page.getByTestId('day-header').first());
+  const target = { x: header.x + header.width / 2, y: header.y + header.height / 2 };
+  await dragBlock(page, await point(page, 0, 10, 30), target, false);
+  await expect(page.getByTestId('drag-chip')).toBeVisible();
+  expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-testid]')?.getAttribute('data-testid'), target)).toBe('day-header');
+  await page.mouse.up();
+  await settle(page);
+
+  expect(await stored(page)).toEqual(before);
+  await expect(selected(page)).toHaveCount(2);
+  expect(await page.evaluate(() => Object.fromEntries(
+    Object.keys(localStorage).filter((key) => key.startsWith('juicy-calendar:file:')).sort()
+      .map((key) => [key, localStorage.getItem(key)]),
+  ))).toEqual(filesBefore);
+});
+
 test('[TC-18][AC-04.4,FR-14] Delete removes every selected block and its file, with no confirmation, and one undo brings them back', async ({ page }) => {
   const before = await stored(page);
   await selectAAndB(page);

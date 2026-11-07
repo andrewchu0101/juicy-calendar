@@ -1,5 +1,6 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import type { Language } from '../../i18n/detectLanguage';
+import { translate, useI18nStore } from '../../i18n/i18n';
 import { BackendError, toBackendError } from './backendError';
 import { appSettingsFileSchema, systemInfoSchema } from './schemas';
 
@@ -39,7 +40,10 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
 }
 
 const tauriBackend: WorkspaceBackend = {
-  select: (mode) => call('workspace_select', { mode }),
+  select: (mode) => call('workspace_select', {
+    mode,
+    title: translate(useI18nStore.getState().language, mode === 'create' ? 'welcome.create' : 'welcome.open'),
+  }),
   restore: () => call('workspace_restore'),
   close: () => call('workspace_close'),
   list: (dir) => call('workspace_list', { dir }),
