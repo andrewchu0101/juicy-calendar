@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { newEventTimes, shiftAnchor, validateTitle, type EventTimes } from '../features/calendar/engine';
-import { DEFAULT_SETTINGS } from '../services/persistence/schemas';
+import { copiedEventTimes, newEventTimes, shiftAnchor, validateTitle, type EventTimes } from '../features/calendar/engine';
+import { DEFAULT_SETTINGS, eventSchema, settingsSchema, settingsPatchSchema } from '../services/persistence/schemas';
 import type { OpenErrorState, SaveErrorState } from '../services/notices/notices';
 import type { WorkspaceData, WorkspaceIssue } from '../services/persistence/repository';
 import type { CalendarEvent, Settings, Template } from '../types';
@@ -34,6 +34,10 @@ export type AppState = {
   droppedEventId: string | null;
   past: EventMap[];
   future: EventMap[];
+  /** App-memory snapshot; reset/hydrate clear it together with the workspace session. */
+  copiedEvents: CalendarEvent[];
+  copySelected(): boolean;
+  pasteCopied(start: Date): boolean;
 
   setBooted(): void;
   setOpenError(error: OpenErrorState | null): void;
@@ -84,6 +88,7 @@ const initial = {
   droppedEventId: null,
   past: [] as EventMap[],
   future: [] as EventMap[],
+  copiedEvents: [] as CalendarEvent[],
 };
 
 function makeId(prefix: string): string {
@@ -150,6 +155,32 @@ export const useAppStore = create<AppState>((set, get) => {
         openError: null,
       }),
     reset: () => set({ ...initial }),
+
+    copySelected: () => {
+      const { workspaceClosing, selectedEventId, selectedEventIds, events } = get();
+      const ids = selectedEventIds.length ? selectedEventIds : selectedEventId ? [selectedEventId] : [];
+      if (workspaceClosing || ids.length === 0 || ids.some(id => !Object.hasOwn(events, id))) return false;
+      set({ copiedEvents: ids.map(id => ({ ...events[id]! })) });
+      return true;
+    },
+
+    pasteCopied: (start) => {
+      const { copiedEvents, workspaceClosing, workspacePath, events } = get();
+      if (workspaceClosing || !workspacePath) return false;
+      const shifted = copiedEventTimes(copiedEvents, start);
+      if (!shifted) return false;
+      const parsed = copiedEvents.map((event, index) => eventSchema.safeParse({
+        ...event, ...shifted[index], id: makeId('evt'),
+      }));
+      if (parsed.some(result => !result.success)) return false;
+      const copies = parsed.flatMap(result => result.success ? [result.data] : []);
+      const ids = copies.map(event => event.id);
+      commit({ ...events, ...Object.fromEntries(copies.map(event => [event.id, event])) }, {
+        selectedEventId: ids.length === 1 ? ids[0]! : null, selectedEventIds: ids.length > 1 ? ids : [],
+        editingEventId: null, droppedEventId: ids.length === 1 ? ids[0]! : null,
+      });
+      return true;
+    },
 
     createEventFromTemplate: (templateId, start) => {
       if (get().workspaceClosing) return null;
@@ -273,7 +304,12 @@ export const useAppStore = create<AppState>((set, get) => {
 
     updateSettings: (patch) => {
       if (get().workspaceClosing) return;
-      set((state) => ({ settings: { ...state.settings, ...patch } }));
+      const parsed = settingsPatchSchema.safeParse(patch);
+      if (!parsed.success) return;
+      const settings = { ...get().settings, ...parsed.data };
+      if (!settingsSchema.safeParse(settings).success) return;
+      if (Object.entries(parsed.data).every(([key, value]) => get().settings[key as keyof Settings] === value)) return;
+      set({ settings });
     },
     navigate: (direction) =>
       set((state) => ({

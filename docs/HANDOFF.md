@@ -2,6 +2,56 @@
 
 ## 摘要（每次覆寫這一段）
 
+**2026-11-09，v0.2.0-beta.3 發布準備**：使用者授權將累積的 030a～c 及本輪調整 commit／push／建立 release。設定頁起點、終點新增專用中英 `(hr)` 標籤，工具列既有文字不變；中英 900×560 截圖已更新。版本同步 package／npm lock／Cargo manifest／lock／Tauri config；Cargo 自動將 lockfile 格式更新至 v4，沒有更新依賴。最新單元 493 passed、設定頁 e2e 8 passed、typecheck／lint／release build 通過；上一輪完整 e2e 141 與 Rust 47 證據保留，這次文字調整未重跑全部 e2e／Rust。桌面捷徑所指同一 release exe 已更新；使用者先正常關閉 App，未強制終止。
+
+免安裝包在全新 `src-tauri/target/publish-v0.2.0-beta.3` 組裝並實際解壓驗證：exe SHA-256 與桌面 release 完全一致，`data/` 空、portable.flag 為空，無使用者資料。ZIP SHA-256：`c32de3723cefa66e2787eb5f340789220042bc3847f410f43de33350d8a1dc32`。本次 release 提供 portable ZIP 與 SHA256SUMS，維持私人 repo／pre-release；未重製 NSIS 安裝包。遠端發布結果待下方後續紀錄。
+
+**2026-11-09 桌面測試入口更新**：已確認使用者桌面 `Juicy Calendar.lnk` 直接指向本專案 `src-tauri/target/release/juicy-calendar.exe`，無額外參數。舊 binary 早於 030b／c 前端成果；依使用者要求，以明確 Node／Rust 路徑執行 Tauri `build --no-bundle`，beforeBuildCommand 重新 typecheck／Vite build，release 編譯成功（exit 0），同一捷徑現在會開啟包含 030b／c 的新建置。未修改捷徑、未製作 NSIS 安裝包、未啟動 App／開啟真實工作區；桌面人工仍待使用者驗收。未 commit／push。
+
+2026-11-08，`D:/Project/Fun/juicy-calendar/juicy-calendar`，分支 main／HEAD 1c261c4。030b／030c 已實作，前述逐項暫停已被使用者「直接把030b跟030c完成」及 continue 取代。新增右鍵選單／集中設定頁；共用事件 action／語言 API／持久化，未改套件、Rust、IPC 或磁碟格式。
+
+已驗證：完整單元 **493 passed**、Rust **47 passed**（含 main／doc-tests exit 0）、typecheck／lint／build 通過；獨立核心流程與中英 900×560 截圖已驗。完整 e2e 第一輪 139 passed／2 failed（9.0m／exit 1），新 Settings 文字入口使寬視窗選取列出現後日曆頂端從 64→102px；已用探針確認並修成精簡齒輪入口與間距，原 layout／selectionBar 12 項全綠。修正後完整 **141 passed／0 failed（9.3m／exit 0）**；紅綠證據、命令、流程實際偏差集中在 [030bc-verification](evidence/030bc-verification.md)。原先未提交變更保留，未 commit／push。
+
+未驗證：Windows WebView2 原生選單／焦點／手感、portable 實機保存位置、桌面 smoke、多 worker 穩定性。本輪瀏覽器驗證不代替桌面人工。
+
+下一步：專案擁有者驗收 Windows WebView2 右鍵／焦點／最小視窗及設定頁；本輪自動驗證與追溯已完成，測試伺服器已停止。沒有自動 commit／push／打包。
+
+## 階段紀錄（歷史，以摘要為準）
+
+> **最新：2026-11-08，030b 格式期待已獲准修正；Escape 紅燈待確認**：使用者「請修正」後，僅將 TC-21.3 期待時間文字改為既有契約 `11:00–13:30`，星期三欄位與 150 分鐘長度條件保留；前五項 5 passed（12.8s／exit 0）。TC-21.3 是已實作行為的特徵化，不冒充新的紅綠循環。接續新增 TC-21.4／AC-07.3／FR-19／R-12「Escape 關閉空白時間選單」，`--grep TC-21.4 --workers=1` 1 failed（6.3s／exit 1）：選單開啟後按 Escape，選單數預期 0、實際 1，第 136 行失敗，符合目前缺少 Escape 關閉處理。尚未修正，待人確認。未 commit／push；完整回歸／完整核心流程／桌面人工未執行。
+
+> **最新：2026-11-08，030b 第四輪已綠；新增測試期待誤寫待確認**：使用者確認後，CalendarGrid 在右鍵 pointerdown 用 engine pointerToTime 計算並保存時間，選單 click 呼叫共用 pasteCopied 後關閉；原四測試未改、4 passed（9.2s／exit 0）。新增 TC-21.3 專屬驗證星期三 11:00、150 分鐘來源 → 13:30，副本確在第三日欄，實際時間 `11:00–13:30`；但測試誤寫 `11:00 – 13:30`，1 failed（6.9s／exit 1）。這不是業務紅燈；依既有 formatTimeRange 格式，應只刪期待字串中 en dash 兩旁空格，不放寬時間／欄位條件。尚未改測試，待人確認更正後重跑；不能宣稱固定目標已有正式通過。未 commit／push；完整回歸／核心完整流程／桌面人工仍未執行。
+
+> **最新：2026-11-08，030b 第三輪已綠、第四紅燈待確認**：確認後新增中英 Paste 項目／Ctrl+V 提示，以 copiedEvents 是否為空決定 disabled；前三項原測試未改、3 passed（5.8s／exit 0）。接續新增 TC-21.2／AC-07.2／FR-18「點 Paste 建立副本」，Ctrl+C 後 Paste 已啟用且 click 完成，但事件數預期 2、實際 1（第 95 行）；四項執行 3 passed／1 failed（14.1s／exit 1）。目前缺少按鈕貼上 action，尚未接線；停下待確認。typecheck／相關 lint／diff check 通過，900×560 WebKit 停用項目截圖已檢視；完整回歸、核心完整流程及桌面人工仍未做。原測試條件未放寬、未 commit／push。下一步：確認第四紅燈後接共用 action 與右鍵固定目標，再循環其餘需求。
+
+> **最新：2026-11-08，030b 第二輪已綠、第三紅燈待確認**：使用者確認後，在 CalendarGrid 的有效空白區接 contextmenu，顯示使用既有色彩 token 的選單容器，名稱來自中英字典；目前是尚無操作項目的中間成果。原兩項未改、2 passed（3.2s／exit 0）。新增 TC-21.2／AC-07.2／FR-18「空快照時提供停用 Paste」，三項執行為 2 passed／1 failed（10.8s／exit 1），第 69 行找不到 Paste menuitem；原因是項目尚缺，尚未驗到 disabled 判定，不宣稱停用邏輯錯誤。停下待人確認才補項目。typecheck、相關 lint、diff check 通過；900×560 WebKit 截圖已檢視容器（test-results/030b-red/menu-shell.png），不是 Windows 桌面人工驗收。截圖輔助腳本首跑 import 相對路徑錯誤已修正並正常 exit 0；未改業務測試。完整測試／核心完整流程／桌面人工仍未做，未 commit／push。
+
+> **最新：2026-11-08，030b 第一輪已綠、第二紅燈待確認**：使用者確認首個紅燈後，將 `useMarqueeSelect` 的非主鍵提前返回移到讀取／清除選取之前，TC-21.1 原測試未改、1 passed（exit 0）。接續新增 TC-21.2／AC-07.2／FR-18「右鍵空白時間開啟選單」，同一命令執行兩項：1 passed／1 failed（7.9s／exit 1），失敗於 contextMenu.spec.ts 第 55 行，`getByRole('menu')` element(s) not found；日曆載入和右鍵操作已完成，產品目前尚無右鍵選單。停在第二個紅燈，未實作選單。沿用下述明確 Node／隔離環境與執行命令；未改舊測試期待，未 commit／push。完整回歸、核心完整流程及桌面人工未執行。
+
+> **最新：2026-11-08，030b 首個紅燈待人確認**：使用者已確認 Playwright 真實滑鼠 → 畫面選取狀態接縫。新增 `e2e/contextMenu.spec.ts` 的 TC-21.1／AC-07.2／FR-18：框選 A、B 後右鍵有效空白時間，預期保留 2 個選取，實際 0。右鍵前兩個 ID 的選取斷言通過；失敗在右鍵後 count 斷言（第 40 行），符合 `useMarqueeSelect` 在主鍵檢查前清選取的已知缺口。1 failed（7.2s，exit 1），產品程式及舊測試未改。待人確認才做綠燈。
+>
+> **本輪環境／限制**：Node `C:/Program Files/nodejs/node.exe` v24.22.0，使用專案 `node_modules/@playwright/test/cli.js`；本專案隔離依賴為 node_modules，無 Python venv。獨立 Vite 127.0.0.1:1441，臨時 config 位於忽略的 `test-results/030b-red/playwright.config.ts`，沿用原設定、停用 webServer、替換 baseURL；TEMP／TMP 指向該暫存目錄。資料為 Playwright 可拋棄 context 的 localStorage，不開原生真實工作區。完整測試、核心流程、桌面人工尚未執行；沒有產品偏差修正，只有已重現的選取缺口。未 commit／push。下一步：確認紅燈 → 最小修正 → 跑同一測試綠燈，再循環下一行為。
+
+> **最新：2026-11-08，030a 完成**：單／多選 Ctrl+C 快照、游標位置 Ctrl+V 批次貼上、新 ID／保留長度與相對時間、一次復原／重做、磁吸、重開持久與切換清剪貼簿、拒絕零副作用及文字／手勢隔離已實作。使用者授權直接完成後，代理自行確認後續紅燈再綠燈；舊測試期待未改。無新套件、IPC 或磁碟欄位；未 commit／push。
+>
+> **最終驗證**：typecheck／lint／build exit 0，完整單元 39 檔／476 passed；完整 WebKit 單 worker 113 passed（7.5m／exit 0）。雙 worker 112 passed／1 failed（4.0m／exit 1），失敗在舊 multiSelect beforeEach 第三個 createAt，尚未進入批次移動斷言；單 worker 同案例通過，根因未定，不宣稱並行穩定。證據 docs/evidence/030a-full-e2e-fixture-failure.md，重做方式見 Test Plan 030a 最終驗證。獨立伺服器與臨時 config 已清理；Rust／原生桌面人工未另跑。
+>
+> **下一步**：另開對話 `$implement-gaston` 指定 issues/030b-context-menu.md；030c 尚未實作。下方「紅燈待確認／未完成」皆為歷史階段快照，以本段為準。
+
+> **2026-11-08，030a 單選已建置，多選紅燈待確認**：使用者確認後新增 appStore 單選快照／貼上、useKeyboardShortcuts 最新游標定位（engine 算時間）與 AppShell 接線。單選 150 分鐘 e2e 診斷重跑逐項通過、原拒絕仍通過；首輪單選逾時原因未定，e2e 收尾未退出已中止，不宣稱穩定綠燈。新增多選成功案例 src/stores/copyPaste.test.ts，1 failed（copySelected 預期 true、實際 false），其後批次／歷史／持久斷言尚未跑，等人確認才擴充。typecheck／lint 通過，新增多選測試前完整單元 466 passed；現在有刻意保留的正確紅燈。舊測試期待未改，030a 未完成，未 commit／push。
+
+> **e2e 收尾限制**：第一輪驗證（copyPaste 原拒絕＋multiSelect）14 個案例均逐項回報通過，但程序未退出，已 Ctrl+C 中止；不能記為整個命令成功。下一個獨立 150 分鐘成功案例紅燈則有正式 exit 1。後續驗收仍須取得正常退出的 e2e 結果。
+
+> **2026-11-08，030a 第一輪已綠、下一紅燈待確認**：使用者「好ok」後修正 useKeyboardShortcuts 的 `is-interacting` 命令隔離，原拖曳中 Delete 拒絕案例已綠。完整單元 38 檔／466 passed，typecheck／lint／diff check 通過，舊測試期待未改。新增 TC-19／AC-05.1／FR-15 單選 150 分鐘 Ctrl+C／V 成功案例，`--grep 150-minute --workers=1` 1 failed（8.5s）：應有 2 事件但只有 1，證明功能尚缺，非拒絕案例。已停下等人確認才建置複製貼上；目前只完成手勢隔離，030a 未完成，完整 e2e 未跑。未 commit／push。
+
+> **2026-11-08，030a 紅燈待確認**：已讀票與引用規格，新增 `e2e/copyPaste.spec.ts`，真實事件拖曳中按 Delete 的拒絕案例在舊實作失敗：事件／選取預期 1 實際 0、來源檔被刪，觀測到 removeItem。最終目標 e2e 1 failed（2.0s），typecheck／lint／diff check 通過。只改新測試與追溯文件，既有規格工作樹保留，產品／舊測試未改；完整回歸未跑。依使用者要求停在紅燈，等其確認才修 `useKeyboardShortcuts` 的進行中手勢隔離，再循序做其餘 030a 行為；未 commit／push。
+
+> **2026-11-08 新需求規格交接（票 030）**：專案擁有者逐輪確認 Ctrl+C／V 單多選快照、游標貼上（保留長度／相對時間／一次復原）、集中設定頁（四類既有設定／保留工具列）、右鍵選單（事件與空白時間／固定右鍵目標／保留多選／原生文字操作）。已依序更新 Brief／PRD／SRS／SAD／SDS 與 Test Plan TC-19～21，建立 030、030a～c；僅文件與案例設計，測試程式及產品程式未改，新案例未執行，未 commit／push。
+>
+> **下一步：** 另開新對話使用 `$implement-gaston` 指定 `issues/030a-event-copy-paste.md`；其後 030b → 030c。先核對舊基準（票 029 曾有完整 e2e fixture 失敗），每個新規則先取得原因正確紅燈、貼出輸出等人確認，再改程式。030a 無功能空操作可能使拒絕測試本已通過，不能冒充拒絕紅燈；見 TC-19 策略，無法滿足時先回報確認。既有有效測試仍需通過；目前沒有核准修訂的舊期待，如需改先列 AC／FR 依據給人確認。
+>
+> **相容邊界：** 模板球仍 120 分鐘，貼上保留來源長度；語言全域／其他工作區設定，Windows 時間格式不變；頁面縮放 0.5..3、磁碟舊值 0.4..4 保留。無新增 IPC、套件或磁碟欄位。右鍵空白清選取現況與 updateSettings 非法值合併是已查接縫，留給實作對話先紅後綠。
+
 > **最新工作樹（2026-11-07，票 029）**：以 `4701e12` 為基底完成整體審查的六項修正：原生關閉失敗保留 root／鎖且恢復同步、特殊 ID 刪除落盤、New 模板正常編輯、實際時間軸依 12／24 小時制、非 UTF-8 實體逐檔隔離、radial 限日曆觸發。使用者授權本次由主代理確認紅燈後接續實作，兩個 subagent 分工；未 commit／push／打包。保留既有 `issues/025-radial-activation-speed.md` 修改。
 >
 > **本輪驗證**：typecheck／lint／build exit 0，完整單元 **466 passed**，完整 Rust **47 passed**；各項目標 e2e 通過。完整 WebKit 雙 worker（預熱獨立 1431 伺服器，停用 Playwright webServer 管理）為 **99 passed／2 failed，exit 1**，兩項均在多選測試 beforeEach 的球拖曳 fixture 失敗，尚未進到取消／越界斷言。相同 multiSelect＋radial 組單 worker 19 passed，但根因未定，不宣稱完整 e2e 通過。未改失敗測試或放寬斷言。詳見 `docs/06-test-plan.md` 票 029 段；下方舊 HEAD／測試數／未提交狀態均為歷史。

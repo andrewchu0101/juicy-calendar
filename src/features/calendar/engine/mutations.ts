@@ -24,6 +24,18 @@ export function moveEvent(event: TimedEvent, pointerTime: Date, grabOffsetMs: nu
   return times(start, new Date(start.getTime() + elapsed));
 }
 
+/** Paste anchors the earliest snapshot start; reject the whole batch before serializing invalid dates. */
+export function copiedEventTimes(events: TimedEvent[], target: Date): EventTimes[] | null {
+  if (events.length === 0 || !Number.isFinite(target.getTime())) return null;
+  const starts = events.map(event => new Date(event.startAt).getTime());
+  const delta = target.getTime() - Math.min(...starts);
+  const shifted = events.map((event, index) => ({
+    start: new Date(starts[index]! + delta), end: new Date(new Date(event.endAt).getTime() + delta),
+  }));
+  if (shifted.some(({ start, end }) => !Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()))) return null;
+  return shifted.map(({ start, end }) => times(start, end));
+}
+
 /**
  * 整批移動（SRS R-9）：被抓住的區塊已經算好新時間，其他區塊以同樣的時間差位移，
  * 所以彼此的間隔與各自的長度都不變。

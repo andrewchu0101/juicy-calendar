@@ -13,11 +13,11 @@ export function useMarqueeSelect() {
   useEffect(() => () => stopRef.current?.(), []);
 
   const onPointerDown = useCallback((press: ReactPointerEvent<HTMLElement>) => {
+    if (press.button !== 0) return;
     const store = useAppStore.getState();
     // 框選前的選取，Escape 時還原。
     const before = store.selectedEventIds.length > 0 ? store.selectedEventIds : store.selectedEventId ? [store.selectedEventId] : [];
     store.select(null);
-    if (press.button !== 0) return;
 
     const columns = press.currentTarget;
     const pointerId = press.pointerId;

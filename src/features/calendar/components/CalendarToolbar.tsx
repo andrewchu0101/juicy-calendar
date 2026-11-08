@@ -13,7 +13,7 @@ const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const iconButton =
   'flex size-8 items-center justify-center rounded-full text-lg text-ink transition-transform hover:scale-110 hover:bg-line active:scale-95';
 
-export function CalendarToolbar() {
+export function CalendarToolbar({ onOpenSettings }: { onOpenSettings(): void }) {
   const { days } = useCalendarModel();
   const t = useT();
   const timeFormat = useTimeFormat();
@@ -45,7 +45,7 @@ export function CalendarToolbar() {
 
       <SelectionBar />
 
-      <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+      <div className="ml-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
         <label className="flex items-center gap-1 text-muted">
           <span className="sr-only">{t('toolbar.timelineStart')}</span>
           <select
@@ -108,6 +108,13 @@ export function CalendarToolbar() {
         </div>
 
         <LanguageMenu className="!flex-row !items-center" />
+        <button data-testid="open-settings" aria-label={t('settings.title')} title={t('settings.title')} onClick={onOpenSettings}
+          className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink hover:bg-line focus-visible:outline-2 focus-visible:outline-ink">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+            <path d="M10 3h4l.6 2.5 2.2 1.3 2.5-.7 2 3.4-1.9 1.8v2.6l1.9 1.8-2 3.4-2.5-.7-2.2 1.3L14 21h-4l-.6-2.5-2.2-1.3-2.5.7-2-3.4 1.9-1.8v-2.6L2.7 9.3l2-3.4 2.5.7 2.2-1.3Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
       </div>
     </header>
   );

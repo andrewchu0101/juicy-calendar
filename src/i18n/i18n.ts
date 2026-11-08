@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { backend as defaultBackend, type WorkspaceBackend } from '../services/persistence/backend';
 import { detectLanguage, type Language } from './detectLanguage';
 import { dictionaries, type Dictionary, type TranslationKey } from './dictionary';
+import { languageSchema } from '../services/persistence/schemas';
 
 /** `saveError` is a code, never a sentence or a diagnostic: the screen translates it (AGENTS.md rule 11). */
 export type LanguageSaveError = 'LANGUAGE_SAVE_FAILED';
@@ -42,7 +43,10 @@ export async function initLanguage(
  * Switches right away, then saves. A failed save never throws: the screen keeps the new language and
  * `saveError` carries a code only (no diagnostic, no path). The next successful save clears it.
  */
-export async function setLanguage(language: Language, backend: LanguageBackend = defaultBackend) {
+export async function setLanguage(input: unknown, backend: LanguageBackend = defaultBackend) {
+  const parsed = languageSchema.safeParse(input);
+  if (!parsed.success) return;
+  const language = parsed.data;
   useI18nStore.setState({ language });
   try {
     await backend.writeAppSettings({ language });

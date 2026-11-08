@@ -1,5 +1,6 @@
 import { DndContext } from '@dnd-kit/core';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { SettingsPage } from '../features/settings/SettingsPage';
 import { Notices } from '../components/Notices';
 import { CalendarGrid } from '../features/calendar/components/CalendarGrid';
 import { CalendarToolbar } from '../features/calendar/components/CalendarToolbar';
@@ -14,10 +15,11 @@ import { useTemplateDrag } from '../features/templates/hooks/useTemplateDrag';
 import { useAppStore } from '../stores/appStore';
 
 export function AppShell() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const columnsRef = useRef<HTMLDivElement>(null);
   const drag = useTemplateDrag(scrollerRef, columnsRef);
-  useKeyboardShortcuts();
+  useKeyboardShortcuts(columnsRef, !settingsOpen);
   const areaRef = useRef<HTMLDivElement>(null);
   const areaWidth = useElementWidth(areaRef);
   const dayCount = useAppStore((state) => (state.settings.view === 'day' ? 1 : 7));
@@ -26,10 +28,14 @@ export function AppShell() {
 
   return (
     <DndContext {...drag.dndProps}>
-      <div className="flex h-full select-none">
+      {settingsOpen && <SettingsPage onBack={() => {
+        setSettingsOpen(false);
+        requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('[data-testid="open-settings"]')?.focus());
+      }} />}
+      <div className="flex h-full select-none" style={{ display: settingsOpen ? 'none' : undefined }}>
         <TemplatePalette />
         <main className="relative flex min-w-0 flex-1 flex-col pr-3 pb-3">
-          <CalendarToolbar />
+          <CalendarToolbar onOpenSettings={() => setSettingsOpen(true)} />
           {/* 日曆區是一列：日曆在左、面板在右。放得下時面板固定佔版面（日曆讓出寬度，不遮任何日期）；放不下時面板改成
               右上角圓點，點開才以浮層顯示（票 027、NFR-07）。浮層與圓點錨定在這個區塊，而非整個 main：工具列在窄視窗
               折行時，它們不會蓋住工具列。 */}

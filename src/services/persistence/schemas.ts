@@ -62,6 +62,15 @@ export const DEFAULT_SETTINGS: Settings = {
   magnetEnabled: true,
 };
 
+/** Page edits use a narrower zoom range; the disk schema intentionally still accepts 0.4..4. */
+export const settingsPagePatchSchema = settingsSchema.extend({
+  magnetEnabled: z.boolean(),
+  pixelsPerMinute: z.number().min(0.5).max(3),
+}).partial().strict();
+
+/** Patches must not apply disk defaults to omitted fields. */
+export const settingsPatchSchema = settingsSchema.extend({ magnetEnabled: z.boolean() }).partial().strict();
+
 /** App-wide settings of this computer (API-05). Anything else on disk is treated as "not set". */
 export const languageSchema = z.enum(['zh-TW', 'en']);
 export const appSettingsFileSchema = z.object({ language: languageSchema });

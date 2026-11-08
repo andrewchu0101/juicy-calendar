@@ -97,6 +97,7 @@ export function EventBlock({
   return (
     <div
       data-testid="event-block"
+      tabIndex={-1}
       data-event-id={event.id}
       data-selected={selected}
       data-active={active}
