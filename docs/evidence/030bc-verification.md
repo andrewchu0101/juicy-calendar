@@ -2,6 +2,8 @@
 
 **2026-11-09 beta.3 補驗**：設定頁時間軸起點／終點加 `(hr)`，使用頁面專用中英字典鍵，原工具列文字保留。重新執行完整 Vitest 493 passed、設定頁 e2e 8 passed、typecheck／lint／release build 與獨立核心流程均 exit 0；重新檢視中英 900×560 截圖並更新本目錄圖片。原完整 e2e 141／Rust 47 為下述上一輪結果，本次純文案／版號調整沒有重新宣稱這兩組完整檢查已再跑。免安裝 ZIP 解壓後比對 exe SHA、空 data、空 portable.flag 均通過；沒有執行 App 開啟真實工作區。
 
+**發布結果**：`102ae1917047aee691e88cef9c497b50df745c41` 已推送至 origin/main，annotated tag `v0.2.0-beta.3` 解析至同一提交。[私人儲存庫預發行](https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.3) 已發布，附 portable ZIP 與 SHA256SUMS；GitHub ZIP digest `c32de3723cefa66e2787eb5f340789220042bc3847f410f43de33350d8a1dc32` 與本機一致。沒有新的 NSIS 安裝包；本機桌面捷徑仍指向同步更新的 release exe。後續只另提交本筆發布結果文件，標籤與建置來源不變。
+
 ## 環境與命令
 
 - 工作目錄：`D:/Project/Fun/juicy-calendar/juicy-calendar`，分支 `main`，HEAD `1c261c4`。開始前已有 030a 與規格未提交變更，本輪保留，沒有 commit／push。

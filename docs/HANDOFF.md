@@ -2,9 +2,9 @@
 
 ## 摘要（每次覆寫這一段）
 
-**2026-11-09，v0.2.0-beta.3 發布準備**：使用者授權將累積的 030a～c 及本輪調整 commit／push／建立 release。設定頁起點、終點新增專用中英 `(hr)` 標籤，工具列既有文字不變；中英 900×560 截圖已更新。版本同步 package／npm lock／Cargo manifest／lock／Tauri config；Cargo 自動將 lockfile 格式更新至 v4，沒有更新依賴。最新單元 493 passed、設定頁 e2e 8 passed、typecheck／lint／release build 通過；上一輪完整 e2e 141 與 Rust 47 證據保留，這次文字調整未重跑全部 e2e／Rust。桌面捷徑所指同一 release exe 已更新；使用者先正常關閉 App，未強制終止。
+**2026-11-09，v0.2.0-beta.3 已發布**：使用者授權將累積的 030a～c 及本輪調整 commit／push／建立 release；功能提交 `102ae1917047aee691e88cef9c497b50df745c41` 已推送，`v0.2.0-beta.3` annotated tag 指向同一提交。設定頁起點、終點新增專用中英 `(hr)` 標籤，工具列既有文字不變；中英 900×560 截圖已更新。版本同步 package／npm lock／Cargo manifest／lock／Tauri config；Cargo 自動將 lockfile 格式更新至 v4，沒有更新依賴。最新單元 493 passed、設定頁 e2e 8 passed、typecheck／lint／release build 通過；上一輪完整 e2e 141 與 Rust 47 證據保留，這次文字調整未重跑全部 e2e／Rust。桌面捷徑所指同一 release exe 已更新；使用者先正常關閉 App，未強制終止。
 
-免安裝包在全新 `src-tauri/target/publish-v0.2.0-beta.3` 組裝並實際解壓驗證：exe SHA-256 與桌面 release 完全一致，`data/` 空、portable.flag 為空，無使用者資料。ZIP SHA-256：`c32de3723cefa66e2787eb5f340789220042bc3847f410f43de33350d8a1dc32`。本次 release 提供 portable ZIP 與 SHA256SUMS，維持私人 repo／pre-release；未重製 NSIS 安裝包。遠端發布結果待下方後續紀錄。
+免安裝包在全新 `src-tauri/target/publish-v0.2.0-beta.3` 組裝並實際解壓驗證：exe SHA-256 與桌面 release 完全一致，`data/` 空、portable.flag 為空，無使用者資料。ZIP SHA-256：`c32de3723cefa66e2787eb5f340789220042bc3847f410f43de33350d8a1dc32`。本次 release 提供 portable ZIP 與 SHA256SUMS，維持私人 repo／pre-release；未重製 NSIS 安裝包。[GitHub release](https://github.com/andrewchu0101/juicy-calendar/releases/tag/v0.2.0-beta.3) 已核對 isDraft=false／isPrerelease=true，兩個附件均 uploaded，遠端 ZIP digest 與本機一致。發布後本筆文件收尾另作 docs commit，不改版本標籤或建置來源。
 
 **2026-11-09 桌面測試入口更新**：已確認使用者桌面 `Juicy Calendar.lnk` 直接指向本專案 `src-tauri/target/release/juicy-calendar.exe`，無額外參數。舊 binary 早於 030b／c 前端成果；依使用者要求，以明確 Node／Rust 路徑執行 Tauri `build --no-bundle`，beforeBuildCommand 重新 typecheck／Vite build，release 編譯成功（exit 0），同一捷徑現在會開啟包含 030b／c 的新建置。未修改捷徑、未製作 NSIS 安裝包、未啟動 App／開啟真實工作區；桌面人工仍待使用者驗收。未 commit／push。
 
