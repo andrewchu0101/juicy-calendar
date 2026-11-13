@@ -1,5 +1,6 @@
 // Assembles the portable .zip (FR-11, ADR-05): juicy-calendar.exe, an empty portable.flag, an empty
-// data/ folder and a README.txt. Paths are parameters so tests never touch the real build output.
+// data/ folder, a README.txt, and the LICENSE and THIRD-PARTY-LICENSES.md from the project root (D-10: the MIT and the
+// third-party licenses require their notices to travel with the binary). Paths are parameters so tests never touch the real build output.
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,6 +8,8 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 export const PACKAGE_DIR = 'juicy-calendar-portable';
+/** Copied unchanged from the project root into the package. A release must not go out without them. */
+export const LICENSE_FILES = ['LICENSE', 'THIRD-PARTY-LICENSES.md'];
 
 const WEBVIEW2_URL = 'https://developer.microsoft.com/microsoft-edge/webview2/';
 // Windows line endings, so Notepad shows the file properly.
@@ -27,6 +30,7 @@ const README_TEXT = [
   '6. 需要 Microsoft Edge WebView2 執行階段。若電腦缺少它，程式會顯示說明並結束；請用瀏覽器到下列官方網頁自行下載後再開啟（程式本身不會連網）：',
   `   ${WEBVIEW2_URL}`,
   '7. 沒有解除安裝步驟：刪除這個資料夾，就移除了程式與其中的使用者資料。WebView2 可能另在這台電腦留下快取，不在這個資料夾內。',
+  '8. 授權：本程式採 MIT 授權（見 LICENSE）；內含的第三方程式與它們的授權見 THIRD-PARTY-LICENSES.md。',
   '',
   '[English]',
   '',
@@ -38,14 +42,20 @@ const README_TEXT = [
   '6. The Microsoft Edge WebView2 Runtime is required. If it is missing, the app shows a help window and exits; download it in a browser from the official page below, then start the app again (the app itself never goes online):',
   `   ${WEBVIEW2_URL}`,
   '7. There is no uninstaller: delete this folder to remove the program and your data inside it. WebView2 may leave its own cache elsewhere on this computer.',
+  '8. Licenses: this program is MIT-licensed (see LICENSE); the third-party software it contains, and its licenses, are listed in THIRD-PARTY-LICENSES.md.',
   '',
 ].join(EOL);
 
 /** Builds the folder that gets zipped and returns its path. */
-export function assembleLayout({ exePath, outDir }) {
+export function assembleLayout({ exePath, rootDir, outDir }) {
   // Check first: failing later would leave a half-built folder behind.
   if (!existsSync(exePath)) {
     throw new Error(`${exePath} not found: the executable has not been built. Build it first (npx tauri build --no-bundle).`);
+  }
+  for (const name of LICENSE_FILES) {
+    if (!existsSync(join(rootDir, name))) {
+      throw new Error(`${name} not found in ${rootDir}: a release must ship its license files. Run npm run licenses for THIRD-PARTY-LICENSES.md.`);
+    }
   }
   const folder = join(outDir, PACKAGE_DIR);
   // Start clean: a folder that was run once holds user data that must never end up in a release.
@@ -54,6 +64,7 @@ export function assembleLayout({ exePath, outDir }) {
   copyFileSync(exePath, join(folder, 'juicy-calendar.exe'));
   writeFileSync(join(folder, 'portable.flag'), '');
   writeFileSync(join(folder, 'README.txt'), README_TEXT);
+  for (const name of LICENSE_FILES) copyFileSync(join(rootDir, name), join(folder, name));
   return folder;
 }
 
@@ -63,8 +74,8 @@ export function tarCommand() {
 }
 
 /** Assembles the folder and zips it. Returns the path of the .zip inside `outDir`. */
-export function makeZip({ exePath, outDir, version }) {
-  assembleLayout({ exePath, outDir });
+export function makeZip({ exePath, rootDir, outDir, version }) {
+  assembleLayout({ exePath, rootDir, outDir });
   const zipPath = join(outDir, `juicy-calendar_${version}_x64-portable.zip`);
   rmSync(zipPath, { force: true });
   // -C makes the archive start at the package folder, so entries are `juicy-calendar-portable/...`.
@@ -79,6 +90,7 @@ export function makeZip({ exePath, outDir, version }) {
 export function defaultPaths(rootDir) {
   const { version } = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
   return {
+    rootDir,
     exePath: join(rootDir, 'src-tauri', 'target', 'release', 'juicy-calendar.exe'),
     // Under src-tauri/target, which .gitignore excludes: the package never reaches version control.
     outDir: join(rootDir, 'src-tauri', 'target', 'portable'),

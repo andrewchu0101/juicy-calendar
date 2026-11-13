@@ -26,7 +26,7 @@
 2. 版本升級單獨一個 commit：`chore(release): <版本>`，只改上面六處。push。
 3. **從這個 commit** 重跑：`npm run typecheck`、`npm run lint`、`npm test`、`npm run test:rust`、`npm run test:e2e`、`npm run test:desktop`。已知：`test:desktop` 剛編出新 debug 執行檔後的第一次冷啟動可能失敗（票 028），保留初次與重跑結果。
 4. 建置（Rust 環境變數見 `issues/README.md` 共同規則第 6 條）：`npx tauri build --bundles nsis` 產安裝檔；再 `npx tauri build --no-bundle` 加 `node scripts/make-portable-zip.mjs` 產免安裝 ZIP（ZIP 用不帶安裝檔 bundle 標記的執行檔，沿用 `npm run portable` 的做法）。兩份都在同一個 commit、工作樹乾淨時建置；建置前後 `git status` 都要是乾淨的。
-5. 檔名帶版本號：`juicy-calendar_<版本>_x64-setup.exe`、`juicy-calendar_<版本>_x64-portable.zip`；附 `SHA256SUMS.txt`（格式同 `sha256sum`，每行 `雜湊 *檔名`）。ZIP 內要有 `juicy-calendar.exe`、`portable.flag`、空的 `data/`、`README.txt`。
+5. 檔名帶版本號：`juicy-calendar_<版本>_x64-setup.exe`、`juicy-calendar_<版本>_x64-portable.zip`；附 `SHA256SUMS.txt`（格式同 `sha256sum`，每行 `雜湊 *檔名`）。ZIP 內要有 `juicy-calendar.exe`、`portable.flag`、空的 `data/`、`README.txt`、`LICENSE`、`THIRD-PARTY-LICENSES.md`（組裝腳本從專案根目錄原樣複製，少了任何一個就會失敗）；NSIS 安裝檔的安裝資料夾也要有這兩個檔（`src-tauri/tauri.conf.json` 的 `bundle.resources`）。**相依套件有變就先 `npm run licenses` 重新產生 `THIRD-PARTY-LICENSES.md`**（`scripts/third-party-licenses.test.ts` 會比對鎖定檔雜湊，過期時測試失敗）。發行前確認 ZIP 與安裝資料夾裡真的有這兩個檔。
 6. 驗證：解壓 ZIP 啟動 release 執行檔、確認視窗與工作區。安裝檔在開發機不安裝（會寫 C 槽與登錄），改在乾淨的另一台 Windows 驗收。
 7. 發布：`gh release create v<版本> --target <build 的 commit> --prerelease --notes-file …` 附上三個檔案。tag 必須指向實際建置的 commit。
 8. 更新 `docs/CLOSEOUT.md`（下載與驗收步驟）與 `docs/HANDOFF.md`。

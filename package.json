@@ -15,7 +15,8 @@
     "tauri": "tauri",
     "desktop": "tauri dev",
     "desktop:build": "tauri build",
-    "portable": "tauri build --no-bundle && node scripts/make-portable-zip.mjs"
+    "portable": "tauri build --no-bundle && node scripts/make-portable-zip.mjs",
+    "licenses": "node scripts/third-party-licenses.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
