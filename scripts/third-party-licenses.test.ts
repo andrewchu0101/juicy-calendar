@@ -141,11 +141,12 @@ describe('renderMarkdown', () => {
   // 專案的 pre-commit 檢查（AGENTS.md 第 16 條）不允許文件含控制字元。授權全文原本有 Tab（縮排），換成四個空格；
   // 空白的寬窄不改變條文，也不影響相同文字的歸組（normalizeText 本來就把空白壓成一個）。
   it('輸出沒有 Tab 等控制字元，只有換行；授權全文裡的 Tab 換成四個空格', () => {
-    const tabbed = [{ ...pkg('tabby', 'MIT'), texts: ['MIT License\n\tindented with a tab\n'], synthesized: false }];
+    // 有些套件的授權檔是 Windows 換行（CRLF）：也統一成 LF。
+    const tabbed = [{ ...pkg('tabby', 'MIT'), texts: ['MIT License\r\n\tindented with a tab\r\n'], synthesized: false }];
 
     const md = renderMarkdown({ entries: tabbed, ...meta });
 
-    expect(md).toContain('    indented with a tab');
+    expect(md).toContain('MIT License\n    indented with a tab');
     expect(md).not.toMatch(/[\u0000-\u0009\u000b-\u001f]/);
   });
 });

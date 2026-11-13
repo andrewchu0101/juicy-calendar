@@ -157,7 +157,7 @@ export function renderMarkdown({ entries, hashes, scope }) {
   lines.push('', '## License texts', '');
   groupTexts(sorted).forEach((group, index) => {
     // Tabs become four spaces: the project's pre-commit check (AGENTS.md rule 16) rejects control characters in documents.
-    lines.push(`### ${index + 1}. Used by: ${group.packages.join(', ')}`, '', '````text', group.text.trim().replace(/\t/g, '    '), '````', '');
+    lines.push(`### ${index + 1}. Used by: ${group.packages.join(', ')}`, '', '````text', group.text.trim().replace(/\r\n?/g, '\n').replace(/\t/g, '    '), '````', '');
   });
   return lines.join(LF);
 }
