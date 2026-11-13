@@ -9,12 +9,21 @@ import { assembleLayout, defaultPaths, makeZip, tarCommand } from './make-portab
 // 暫存位置：每個測試自己的資料夾，用假的 exe（幾個位元組），不碰真實建置輸出與使用者資料。
 let work: string;
 let exePath: string;
+let projectRoot: string;
+const LF = String.fromCharCode(10);
+const LICENSE_TEXT = ['MIT License', '', 'Copyright (c) 2026 Test', ''].join(LF);
+const NOTICES_TEXT = ['# Third-party licenses', ''].join(LF);
 const EXE_BYTES = Buffer.from('MZ-not-a-real-executable');
 
 beforeEach(() => {
   work = mkdtempSync(join(tmpdir(), 'juicy-portable-zip-'));
   exePath = join(work, 'built-juicy-calendar.exe');
   writeFileSync(exePath, EXE_BYTES);
+  // 專案根目錄：放 LICENSE 與第三方授權聲明（組裝時會一起放進包裡）。
+  projectRoot = join(work, 'project-root');
+  mkdirSync(projectRoot);
+  writeFileSync(join(projectRoot, 'LICENSE'), LICENSE_TEXT);
+  writeFileSync(join(projectRoot, 'THIRD-PARTY-LICENSES.md'), NOTICES_TEXT);
 });
 
 afterEach(() => {
@@ -27,9 +36,9 @@ describe('免安裝版面 (TC-14, FR-11, AC-03.4)', () => {
   it('包含執行檔、空的 portable.flag、空的 data 資料夾與說明檔', () => {
     const outDir = join(work, 'out');
 
-    const folder = assembleLayout({ exePath, outDir });
+    const folder = assembleLayout({ exePath, rootDir: projectRoot, outDir });
 
-    expect(readdirSync(folder).sort()).toEqual(['README.txt', 'data', 'juicy-calendar.exe', 'portable.flag']);
+    expect(readdirSync(folder).sort()).toEqual(['LICENSE', 'README.txt', 'THIRD-PARTY-LICENSES.md', 'data', 'juicy-calendar.exe', 'portable.flag']);
     expect(readFileSync(join(folder, 'juicy-calendar.exe'))).toEqual(EXE_BYTES);
     expect(statSync(join(folder, 'portable.flag')).size).toBe(0);
     expect(statSync(join(folder, 'data')).isDirectory()).toBe(true);
@@ -42,7 +51,7 @@ describe('免安裝版面 (TC-14, FR-11, AC-03.4)', () => {
 // 資料在 data、外部工作區不在整包帶走的範圍、data 無法寫入時不會改存別處、缺少 WebView2 的處理與官方網址、
 // 刪除資料夾即可移除程式與其中的使用者資料。句子是提案，待專案擁有者審閱。
 describe('說明檔內容 (TC-14, FR-11, U-12)', () => {
-  const readme = () => readFileSync(join(assembleLayout({ exePath, outDir: join(work, 'out') }), 'README.txt'), 'utf-8');
+  const readme = () => readFileSync(join(assembleLayout({ exePath, rootDir: projectRoot, outDir: join(work, 'out') }), 'README.txt'), 'utf-8');
 
   it('繁體中文段落逐項寫明', () => {
     const text = readme();
@@ -87,17 +96,17 @@ describe('說明檔內容 (TC-14, FR-11, U-12)', () => {
 describe('可重複執行 (TC-14, FR-11)', () => {
   it('重跑後 data 是空的、多餘的檔案消失、執行檔是新的', () => {
     const outDir = join(work, 'out');
-    const folder = assembleLayout({ exePath, outDir });
+    const folder = assembleLayout({ exePath, rootDir: projectRoot, outDir });
     writeFileSync(join(folder, 'data', 'workspace.json'), '{"private":"user data"}');
     mkdirSync(join(folder, 'data', 'events'));
     writeFileSync(join(folder, 'leftover.txt'), 'stale');
     const newBytes = Buffer.from('MZ-the-second-build');
     writeFileSync(exePath, newBytes);
 
-    const again = assembleLayout({ exePath, outDir });
+    const again = assembleLayout({ exePath, rootDir: projectRoot, outDir });
 
     expect(again).toBe(folder);
-    expect(readdirSync(again).sort()).toEqual(['README.txt', 'data', 'juicy-calendar.exe', 'portable.flag']);
+    expect(readdirSync(again).sort()).toEqual(['LICENSE', 'README.txt', 'THIRD-PARTY-LICENSES.md', 'data', 'juicy-calendar.exe', 'portable.flag']);
     expect(readdirSync(join(again, 'data'))).toEqual([]);
     expect(readFileSync(join(again, 'juicy-calendar.exe'))).toEqual(newBytes);
   });
@@ -109,7 +118,7 @@ describe('zip 檔 (TC-14, FR-11, AC-03.4)', () => {
   it('解壓到別的資料夾後版面與位元組都相同，空的 data 資料夾也在', () => {
     const outDir = join(work, 'out');
 
-    const zip = makeZip({ exePath, outDir, version: '0.0.0-test' });
+    const zip = makeZip({ exePath, rootDir: projectRoot, outDir, version: '0.0.0-test' });
 
     expect(zip).toBe(join(outDir, 'juicy-calendar_0.0.0-test_x64-portable.zip'));
     expect(existsSync(zip)).toBe(true);
@@ -118,11 +127,40 @@ describe('zip 檔 (TC-14, FR-11, AC-03.4)', () => {
     const result = spawnSync(tarCommand(), ['-xf', zip, '-C', elsewhere]);
     expect(result.status, String(result.stderr)).toBe(0);
     const root = join(elsewhere, 'juicy-calendar-portable');
-    expect(readdirSync(root).sort()).toEqual(['README.txt', 'data', 'juicy-calendar.exe', 'portable.flag']);
+    expect(readdirSync(root).sort()).toEqual(['LICENSE', 'README.txt', 'THIRD-PARTY-LICENSES.md', 'data', 'juicy-calendar.exe', 'portable.flag']);
     expect(readFileSync(join(root, 'juicy-calendar.exe'))).toEqual(EXE_BYTES);
     expect(statSync(join(root, 'portable.flag')).size).toBe(0);
     expect(statSync(join(root, 'data')).isDirectory()).toBe(true);
     expect(readdirSync(join(root, 'data'))).toEqual([]);
+  });
+});
+
+// 授權與第三方聲明（專案擁有者 2026-11-13）｜MIT 與各第三方授權都要求散布時附上版權與授權文字：
+// 包裡的 LICENSE 與 THIRD-PARTY-LICENSES.md 是專案根目錄那兩份的逐位元組複本；少了任何一個就不發。
+describe('授權檔 (D-10)', () => {
+  it('LICENSE 與 THIRD-PARTY-LICENSES.md 是根目錄檔案的原樣複本', () => {
+    const folder = assembleLayout({ exePath, rootDir: projectRoot, outDir: join(work, 'out') });
+
+    expect(readFileSync(join(folder, 'LICENSE'), 'utf-8')).toBe(LICENSE_TEXT);
+    expect(readFileSync(join(folder, 'THIRD-PARTY-LICENSES.md'), 'utf-8')).toBe(NOTICES_TEXT);
+  });
+
+  it.each(['LICENSE', 'THIRD-PARTY-LICENSES.md'])('缺少 %s 就丟出錯誤，不建立版面', (missing) => {
+    rmSync(join(projectRoot, missing));
+    const outDir = join(work, 'out');
+
+    expect(() => assembleLayout({ exePath, rootDir: projectRoot, outDir })).toThrow(missing);
+
+    expect(existsSync(join(outDir, 'juicy-calendar-portable'))).toBe(false);
+  });
+
+  it('說明檔提到授權檔（中英各一句）', () => {
+    const text = readFileSync(join(assembleLayout({ exePath, rootDir: projectRoot, outDir: join(work, 'out') }), 'README.txt'), 'utf-8');
+
+    expect(text).toContain('LICENSE');
+    expect(text).toContain('THIRD-PARTY-LICENSES.md');
+    expect(text).toContain('授權');
+    expect(text).toContain('licenses');
   });
 });
 
@@ -131,11 +169,11 @@ describe('zip 檔 (TC-14, FR-11, AC-03.4)', () => {
 describe('缺少執行檔 (TC-14, FR-11)', () => {
   it('丟出說明要先建置的錯誤，不建立版面，也不動既有的 zip', () => {
     const outDir = join(work, 'out');
-    const goodZip = makeZip({ exePath, outDir, version: '0.0.0-test' });
+    const goodZip = makeZip({ exePath, rootDir: projectRoot, outDir, version: '0.0.0-test' });
     const zipBefore = readFileSync(goodZip);
     rmSync(join(outDir, 'juicy-calendar-portable'), { recursive: true });
 
-    expect(() => makeZip({ exePath: join(work, 'no-such.exe'), outDir, version: '0.0.0-test' })).toThrow(
+    expect(() => makeZip({ exePath: join(work, 'no-such.exe'), rootDir: projectRoot, outDir, version: '0.0.0-test' })).toThrow(
       /no-such\.exe.*not found.*build/i,
     );
 
@@ -154,6 +192,7 @@ describe('預設位置 (TC-14, FR-11)', () => {
 
     const paths = defaultPaths(root);
 
+    expect(paths.rootDir).toBe(root);
     expect(paths.exePath).toBe(join(root, 'src-tauri', 'target', 'release', 'juicy-calendar.exe'));
     expect(paths.outDir).toBe(join(root, 'src-tauri', 'target', 'portable'));
     expect(paths.version).toBe('1.2.3');

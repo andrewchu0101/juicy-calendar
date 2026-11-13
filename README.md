@@ -93,4 +93,17 @@ npm run test:desktop  # builds and launches the real app; a window opens briefly
 - Balls cannot be dragged by keyboard. Time-field formatting (12h or 24h) follows the system locale.
 - There is no dark mode.
 
+## License
+
+Juicy Calendar's source code is released under the [MIT License](LICENSE).
+
+- The MIT License covers the software and its source code only. The "Juicy" name and brand, the logo and icons, and the
+  visual design are not licensed for use as the name or look of another product; see the `TRADEMARKS.md` in
+  [juicy-landing-page](https://github.com/andrewchu0101/juicy-landing-page/blob/main/TRADEMARKS.md).
+- The program you download contains third-party software. Its copyright notices and license texts are in
+  [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md), which also ships next to the executable in the portable `.zip` and in the
+  installer's folder. Regenerate it with `npm run licenses` after any dependency change (it needs `npm install` and `cargo`).
+- [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) is separate: it covers material from the project template (hooks and
+  documentation templates), not the program itself.
+
 See `PRODUCT.md`, `DESIGN.md`, `ARCHITECTURE.md` and `AGENTS.md` for more.

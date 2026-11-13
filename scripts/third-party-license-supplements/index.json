@@ -1,0 +1,9 @@
+{
+  "_readme": "License texts for packages that ship no license file themselves. Keyed by the package's repository URL (as listed in its manifest). Each file was copied unchanged from the upstream repository; see source and fetched.",
+  "https://github.com/wravery/webview2-rs": {
+    "file": "webview2-rs.LICENSE",
+    "source": "https://raw.githubusercontent.com/wravery/webview2-rs/main/LICENSE",
+    "fetched": "2026-11-13",
+    "packages": ["webview2-com", "webview2-com-sys", "webview2-com-macros"]
+  }
+}
